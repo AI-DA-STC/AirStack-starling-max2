@@ -11,6 +11,8 @@ changes live here, and none of them is added to ``scripted.REGISTRY``: the calib
   holds, each is its script bit for bit.
 * ``SwitchRecorder``: flies a moved player and records its command error against the original script on the same
   observation (so the calibration reports a command error for the moved switches too).
+* ``SWITCHES``: the near-miss switch keys, each with its team, the code it moves, its moved player and that player's
+  keyword (shared by the calibration and the distillation gate file).
 
 The recorded error (``errors()``), the same for the wrapper and the recorder: d = flown command - the original
 script's command, on the live drones of each slot's first game only (``play_match`` and ``HeldPlayer`` count only the
@@ -298,3 +300,15 @@ class ConvergeMovedGather(scripted.StrikeConverge):
         a = torch.where(go[..., None], _unit(-own_p) * pace[..., None], place_a)
         a = torch.where((n_live >= 2)[..., None], a, straight)
         return _pack(a, obs)
+
+
+# the moved switches, one per near-miss switch key (R2 OA-3): key -> (team, the code it moves, the moved player, the
+# player's keyword for the value, in that player's unit). Read by the calibration (LS1.5) and the equivalence read's
+# gate file (configs/ste_ls1/distil_gates.toml [controls] near_miss.switch; task LS1-M2-T1 moved it here from
+# scripts/ste_ls1_calibration.py, unchanged).
+SWITCHES = {
+    "sacrifice_entry_rad": ("strike", "strike_sacrifice", SacrificeMovedEntry, "entry_half_angle_rad"),
+    "converge_gather_rad": ("strike", "strike_converge", ConvergeMovedGather, "gather_angle_rad"),
+    "flank_margin_m": ("strike", "strike_flank", FlankMoved, "margin_m"),
+    "field_range_m": ("guard", "guard_field", FieldMovedRange, "range_m"),
+}

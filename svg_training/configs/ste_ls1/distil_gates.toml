@@ -1,0 +1,173 @@
+# Route 3, stage LS1: the distillation gate file (task LS1-M2-T1; plan ste_learning/drafts/LS1_TASK_PLAN.md, section 3;
+# workflow ste_learning/drafts/LS_EXECUTION_WORKFLOW.md section 5). Loaded by ste/distil.load_distil_gates: every key
+# below is required, none has a code default, no unknown key or section is accepted.
+# Read by: scripts/ste_ls1_distil.py (jobs LS1.0 smoke on the CPU, LS1.1 distil on the GPU; task LS1-M2-T4) and
+# scripts/ste_ls1_equivalence.py (job LS1.2, the equivalence read on the CPU; tasks LS1-M2-T5, T6).
+#
+# Status of the values. [limits] and the owner's [controls] keys are the owner's (R38): they hold a FILL_ string until
+# the owner sets them from the calibration read (LS1.5), and a run of record refuses the file while any is FILL_ (exit
+# 2); under --smoke the steps that need them are written NOT_RUN. [read] alpha, interval and correction are PROPOSED
+# (OP-11) and confirmed by the owner with the limits (OQ-3). Every other value is PROPOSED: its source is on its line
+# (the plan's section 1 table, workflow v3, review A, or "the builder's" where the plan gives none). The lead fills the
+# owner's values, QC reads the file and the lead hashes it before LS1.1 (plan section 7, lead step 3); the stop rules
+# below are pre-registered with that hash (R47).
+#
+# Training simulator, tier 1 (fast engine); observed in the training simulator. Not for flight.
+
+[run]
+task = "LS1.1"                     # the budget key of the GPU job (configs/ste_learning.toml [budget_ls]); LS1.0 runs this file with --smoke
+device = "cuda"                    # the device of LS1.1 (collection and fit); the smoke uses [smoke] device
+
+[source]
+# The pins (refused on any change): the skills gate file (its [players] order is the code order, its [learner] the
+# two-level lists, its [games] base the game), the cells of the read (shared with the calibration, one ruler), the
+# scripts the network copies, and the game file the network is trained and read on (the skills gate file's base).
+skills_gates = "configs/ste_l3/skills_gates.toml"
+skills_gates_sha256 = "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e"
+cells = "configs/ste_ls1/cells.toml"
+cells_sha256 = "464fa2db50ab78353604de25f0291e7ea0c3a16490d11425dd9190630ec221fd"
+scripted_sha256 = "b7ccafdeaa4b01c72f0ea9fa20a846e29556eaaa1c7223aee2191b76995bad3a"
+game_file = "configs/ste_l011/base.toml"
+game_sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d"
+
+[data]
+# The collection of each relabelling round (task LS1-M2-T2). A game flies one mode, drawn per game: uniform (one code
+# on every drone all game), mix (a free combination all game) or random (a new two-level choice every hold ticks).
+games = 4096                       # PROPOSED (workflow section 5 row LS1.1-G): games at once per round
+ticks_per_round = 600              # PROPOSED (workflow section 5 row LS1.1-G)
+hold = 12                          # PROPOSED: the random mode's decision ticks, the skills gate file's [trainer] decision_ticks
+uniform_share = 0.5                # PROPOSED (review A F1, workflow section 3: uniform at least half)
+mix_share = 0.25                   # PROPOSED (the builder's split of the rest)
+random_share = 0.25                # PROPOSED (the builder's split of the rest)
+absent_min_share = 0.2             # PROPOSED (review A F6: kept rows with a mate absent; measured natural share 0.22 Guard, 0.27 Strike)
+keep_rows = 2_000_000              # PROPOSED (bridge plan): rows kept per round
+switch_jump = 0.2                  # PROPOSED (scout probe): a label jump above this (max channel, one tick) marks a switch
+switch_window_ticks = 12           # PROPOSED (the builder's: one decision): ticks a switch mark is held
+switch_floor = 1.0                 # PROPOSED (the builder's: the mean weight): the least keep weight of a near-switch row
+seed = 150001                      # PROPOSED (C8): the data's games and schedule
+pool_seed = 150002                 # PROPOSED (C8): the opponent pool's draws
+
+[dagger]
+# The script-flown share of each relabelling round, round 0 first (bridge plan): round 0 is flown by the scripts only.
+script_share = [1.0, 0.5, 0.25, 0.0]
+
+[net]
+hidden = [256, 256, 256]           # PROPOSED (bridge plan)
+zeroed_inputs = [6, 7, 10, 11]     # PROPOSED (workflow section 3, OP-5): yaw sine and cosine, time left, team flag
+std_floor = 0.01                   # PROPOSED (the builder's): the input normaliser's least standard deviation
+
+[fit]
+epochs = 40                        # PROPOSED (bridge plan)
+lr = 0.001                         # PROPOSED (bridge plan)
+batch = 8192                       # PROPOSED (bridge plan)
+seed = 150003                      # PROPOSED (C8)
+
+[report]
+# The fit report's final read: a fresh, unweighted, net-flown collection (task LS1-M2-T3). Sizes the builder's.
+games = 1024                       # PROPOSED (the builder's)
+ticks = 600                        # PROPOSED (the builder's: one round's length)
+seed = 150004                      # PROPOSED (C8)
+hold_bins_ticks = [0, 12, 60, 240, 600]   # PROPOSED (the builder's): bin edges of the ticks a flown code has been held
+
+[clips]
+# 2-D clips with the height panel: each code below flown by the network beside the same start flown by the scripts
+# (task LS1-M2-T4). Video sizes as the skills gate file's [videos]; counts the builder's.
+games = 4                          # PROPOSED (the builder's): starts played per code
+keep = 1                           # PROPOSED (the builder's): clips kept per code (workflow section 5: 4 clips per side)
+seed = 150005                      # PROPOSED (C8)
+max_ticks = 2400
+speed = 8
+fps = 10
+dpi = 50
+
+[clips.codes]
+guard = ["guard_parked_ring", "guard_field", "guard_mark_edge", "guard_mirror"]          # PROPOSED (the builder's)
+strike = ["strike_sacrifice", "strike_converge", "strike_flank", "strike_straight"]     # PROPOSED (the builder's)
+
+[smoke]
+# Job LS1.0 (OP-15): --smoke runs this same file on the CPU, not of record (R2 B1). The rule (design check of M2):
+# collection plays [smoke] games x ticks for the first [smoke] rounds entries of [dagger] script_share; the keep takes
+# min(keep_rows, the rows collected) rows and an absent quota of at most the absent rows there are; the report plays
+# [smoke] games and ticks; the clips play [smoke] games and ticks with at most one code; the read plays [smoke]
+# read_games starts per cell (ste/distil.py SMOKE_RULE).
+games = 16                         # PROPOSED (workflow section 5 row LS1.0)
+rounds = 2                         # PROPOSED (workflow section 5 row LS1.0)
+ticks = 120                        # PROPOSED (the builder's)
+read_games = 24                    # PROPOSED (workflow section 5 row LS1.0)
+device = "cpu"
+
+[read]
+# The equivalence read (tasks LS1-M2-T5, T6). Its game count per cell is cells.toml [read] games_per_cell (one ruler,
+# B-6); its game length, cap check and starts are the pinned skills gate file's [run] ticks_cap, cap_check_every_ticks
+# and its T44 reference's seed (CA-3). Per-cell intervals at adjusted_z(alpha, m), m the side's gated cells; the
+# pooled row at plain alpha (C7).
+alpha = 0.05                       # PROPOSED (OP-11), = calibration.toml [intervals] alpha; the owner confirms it (OQ-3)
+interval = "newcombe_hybrid"       # PROPOSED (OP-11): the only method built (ste/cells.py)
+correction = "bonferroni_per_side" # PROPOSED (OP-11): the only correction built (ste/cells.py)
+path_times_s = [1, 3, 10]          # PROPOSED (workflow section 5): flight-path distance marks
+chunk_cells = 6                    # PROPOSED (calibration.toml [run] chunk_cells, measured on the CPU 25 Nov 2026)
+device = "cpu"
+
+[read.near_miss_cells]
+# The cells of the near-miss controls C6 (systematic: bias, turn and one arm per switch player of the side) and C7
+# (random: noise), at cells.toml [read] games_per_cell games each (OP-20: fixed cells plus a mixed one). A cell is one
+# code of the side (its fixed cell) or a cells.toml [mixed] combination, against a script of the other team's
+# [players]. Every switch player of the side flies in at least one cell (the loader refuses otherwise). Opponents: the
+# skills gate file's maximin scripts. Cost (the builder's count): Guard 4 cells x 3 kinds + 1 switch cell = 13
+# cell-plays; Strike 5 x 3 + 4 = 19.
+guard = [
+    { codes = ["guard_field"], opponent = "strike_straight" },
+    { codes = ["guard_mark_edge"], opponent = "strike_straight" },
+    { codes = ["guard_parked_centre"], opponent = "strike_straight" },
+    { codes = ["guard_mark_edge", "guard_mirror", "guard_parked_centre"], opponent = "strike_straight" },
+]
+strike = [
+    { codes = ["strike_sacrifice"], opponent = "guard_mark_edge" },
+    { codes = ["strike_converge"], opponent = "guard_mark_edge" },
+    { codes = ["strike_flank"], opponent = "guard_mark_edge" },
+    { codes = ["strike_straight"], opponent = "guard_mark_edge" },
+    { codes = ["strike_high", "strike_straight", "strike_flank"], opponent = "guard_mark_edge" },
+]
+
+[limits]
+# The owner's (R38), set from the calibration read (LS1.5). Command error: an active channel's RMSE, an unused
+# channel's largest output, the zero-command skill's largest output; games changed (b + c) per cell; the per-cell and
+# pooled intervals inside the margins; with end_time_gated, the mean |end-tick difference| per cell (OP-18).
+# end_time_max_ticks is required and a number whatever end_time_gated says (no FILL_ survives into a run of record).
+cmd_rmse_max = "FILL_OWNER_R38"
+cmd_unused_max_abs = "FILL_OWNER_R38"
+cmd_zero_skill_max_abs = "FILL_OWNER_R38"
+flips_max_games = "FILL_OWNER_R38"
+cell_margin = "FILL_OWNER_R38"
+pooled_margin = "FILL_OWNER_R38"
+end_time_gated = "FILL_OWNER_R38"
+end_time_max_ticks = "FILL_OWNER_R38"
+
+[controls]
+# The owner's (R38, OP-21, OQ-3): at least this many cells miss for the permuted codes (C3, C5; the permutation is
+# cells.toml [permutation]) and for an unfitted network (C4).
+permuted_min_miss_cells = "FILL_OWNER_R38"
+unfitted_min_miss_cells = "FILL_OWNER_R38"
+
+[controls.near_miss]
+# The owner's (OQ-3), set with the limits so the two cannot contradict each other: bias on xy (C6), a turn of xy in
+# degrees (C6), noise (C7, which must pass).
+bias = "FILL_OWNER_R38"
+rotate_deg = "FILL_OWNER_R38"
+noise = "FILL_OWNER_R38"
+
+[controls.near_miss.switch]
+# One moved-switch player per key, at this value in that player's unit (opponents/perturbed.py SWITCHES): Strike
+# SacrificeMovedEntry, ConvergeMovedGather, FlankMoved; Guard FieldMovedRange (C6).
+sacrifice_entry_rad = "FILL_OWNER_R38"
+converge_gather_rad = "FILL_OWNER_R38"
+flank_margin_m = "FILL_OWNER_R38"
+field_range_m = "FILL_OWNER_R38"
+
+[stop]
+# The stop rules of LS1 (workflow section 5), as the owner acknowledged them on 25 Nov 2026 (R47): pre-registered with
+# this file's hash.
+control_fails = "A control fails: the verdict is INCONCLUSIVE (exit 6). The cause is found and fixed on the CPU, and the read is repeated once, announced with its cost."
+not_distilled = "NOT DISTILLED: no limit is moved. One announced fix round is allowed (fix_round). If it still fails, LS1 stops and the record says which skills do not copy and why."
+fix_round = "The one fix round may change only items of this file: the data mix ([data]), the relabelling rounds ([dagger]), the network size ([net] hidden) and [net] zeroed_inputs. It cannot add network inputs: added inputs (each drone's and its team-mates' bearing and distance from the zone) are a named later build if the first fit fails (R47)."
+one_side_only = "Dropped (R47): head training (LS1.4) starts only after DISTILLED on both sides. A side DISTILLED alone is reported and waits for the other."

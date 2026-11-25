@@ -33,7 +33,9 @@ from __future__ import annotations
 import itertools
 import math
 import random
-from dataclasses import dataclass
+import tomllib
+from dataclasses import dataclass, field
+from pathlib import Path
 from statistics import NormalDist
 
 import numpy as np
@@ -158,6 +160,94 @@ def draw_mixed(spec: CellSpec, count: int, seed: int) -> list[tuple[str, ...]]:
     (stable across torch and NumPy versions). A proposal tool: the read's combinations are written as data in
     ``configs/ste_ls1/cells.toml``, so no read relies on this stream."""
     return random.Random(seed).sample(mixed_pool(spec), count)
+
+
+# ------------------------------------------------------------------------------------------- cells.toml, a side's cells
+# (task LS1-M2-T1 moved these here from scripts/ste_ls1_calibration.py, unchanged, so the calibration and the
+# equivalence read use one reader and one m)
+CELLS_KEYS = {"mixed": {"seed", "guard", "strike"}, "permutation": {"guard", "strike"},
+              "info_opponents": {"guard", "strike"}, "read": {"games_per_cell"}}
+FIXED, MIXED, INFO = "fixed", "mixed", "info"   # a cell's kind: fixed and mixed are gated, info is not
+
+
+def exact_sections(data: dict, keys: dict, what: str) -> None:
+    """ValueError unless ``data`` has exactly the sections of ``keys`` (each a table) and each exactly its keys."""
+    extra = set(data) - set(keys)
+    if extra:
+        raise ValueError(f"{what}: unknown section(s) {sorted(extra)}")
+    for section, want in keys.items():
+        if section not in data or not isinstance(data[section], dict):
+            raise ValueError(f"{what}: missing section [{section}]")
+        got = set(data[section])
+        if want - got:
+            raise ValueError(f"{what}: [{section}] misses {sorted(want - got)}")
+        if got - want:
+            raise ValueError(f"{what}: [{section}] has unknown key(s) {sorted(got - want)}")
+
+
+def load_cells(path: Path) -> dict:
+    """cells.toml: every key required, none unknown (ValueError); the members are checked against a side's spec by
+    :func:`check_cells`."""
+    data = tomllib.loads(Path(path).read_text())
+    exact_sections(data, CELLS_KEYS, str(path))
+    games = data["read"]["games_per_cell"]
+    if isinstance(games, bool) or not isinstance(games, int) or games < 1:
+        raise ValueError(f"[read] games_per_cell must be a whole number >= 1, got {games!r}")
+    return data
+
+
+def check_cells(spec: CellSpec, cells_cfg: dict, gates) -> str | None:
+    """Why cells.toml does not fit ``spec``'s side of the skills gate file, or None."""
+    side = spec.side
+    try:
+        mixed_choices(spec, [tuple(c) for c in cells_cfg["mixed"][side]])
+    except ValueError as err:
+        return f"cells.toml [mixed] {side}: {err}"
+    combos = [tuple(c) for c in cells_cfg["mixed"][side]]
+    if len(set(combos)) != len(combos):
+        return f"cells.toml [mixed] {side}: a combination is repeated"
+    perm = list(cells_cfg["permutation"][side])
+    if sorted(perm) != list(range(len(spec.players))) or any(p == i for i, p in enumerate(perm)):
+        return f"cells.toml [permutation] {side} = {perm} is not a derangement of the {len(spec.players)} codes"
+    gated = skills.team_skills(gates.players, other(side))
+    for name in cells_cfg["info_opponents"][side]:
+        team = getattr(REGISTRY.get(name), "TEAM", "unknown")
+        if name in gated or team not in (None, other(side)):
+            return f"cells.toml [info_opponents] {side}: {name!r} is not an ungated script of the {other(side)} team"
+    return None
+
+
+@dataclass(frozen=True)
+class Cell:
+    """One cell of a side: ``index`` in the side's full list (opponent by opponent; per opponent the K fixed choices,
+    then the mixed combinations), the ``choice`` (``cells.fixed_choices`` / ``mixed_choices``), the ``opponent``, and
+    the ``kind`` (fixed, mixed: gated; info)."""
+    index: int
+    choice: dict = field(compare=False)
+    opponent: str
+    kind: str
+
+
+def gated_opponents(gates, side: str) -> list[str]:
+    """The other team's ``[players]``: the opponents of ``side``'s gated cells."""
+    return skills.team_skills(gates.players, other(side))
+
+
+def side_cells(spec: CellSpec, cells_cfg: dict, gates) -> list[Cell]:
+    """Every cell of ``spec.side``, gated then info opponents (see :class:`Cell`)."""
+    info = list(cells_cfg["info_opponents"][spec.side])
+    choices = fixed_choices(spec) + mixed_choices(spec, [tuple(c) for c in cells_cfg["mixed"][spec.side]])
+    out = []
+    for opp in gated_opponents(gates, spec.side) + info:
+        for j, choice in enumerate(choices):
+            kind = INFO if opp in info else FIXED if j < len(spec.players) else MIXED
+            out.append(Cell(len(out), choice, opp, kind))
+    return out
+
+
+def gated_m(spec: CellSpec, cells_cfg: dict, gates) -> int:
+    """m of C7: the side's gated cells, (K + the mixed combinations) x the other team's [players]."""
+    return (len(spec.players) + len(cells_cfg["mixed"][spec.side])) * len(gated_opponents(gates, spec.side))
 
 
 class ConstHeads(nn.Module):

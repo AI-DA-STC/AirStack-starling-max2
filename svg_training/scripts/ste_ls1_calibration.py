@@ -73,7 +73,7 @@ import re
 import sys
 import time
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,7 +86,7 @@ import ste_l3_held_arm as held  # noqa: E402  (the input checks of the skills ga
 import ste_sweep_l011 as l011  # noqa: E402  (the simulator words, JSON writing)
 from svg_training.core.rewards import GUARD_WIN, RUNNING, STRIKE_WIN  # noqa: E402
 from svg_training.opponents import perturbed  # noqa: E402
-from svg_training.opponents.scripted import REGISTRY, make_strategy  # noqa: E402
+from svg_training.opponents.scripted import make_strategy  # noqa: E402
 from svg_training.ste import atomic, cells, exploit, scoring, skills, sweep  # noqa: E402
 from svg_training.ste.run_contract import (EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_FOR_STOP, EXIT_NONFINITE,  # noqa: E402
                                            EXIT_REFUSED, STOP_INTERRUPTED, NonFiniteError, RunBusyError, RunGuard)
@@ -98,19 +98,15 @@ BATCH_PREFIX = "batch_"
 HOUR_S = 3600.0
 PASS, FAIL = scoring.PASS, scoring.FAIL
 SCRIPTED = ROOT / "source" / "svg_training" / "opponents" / "scripted.py"
-FIXED, MIXED, INFO = "fixed", "mixed", "info"
+FIXED, MIXED, INFO = cells.FIXED, cells.MIXED, cells.INFO
 REFERENCE, IDENTITY = "reference", "identity"
 NOISE, NOISE_ACTIVE, BIAS, ZERO_BIAS, SCALE, TURN, SWITCH = ("noise", "noise_active", "bias", "zero_bias", "scale",
                                                              "turn", "switch")
 ALL_CHANNELS = tuple(range(perturbed.COMMAND_DIM))
 HOLD_TICKS = 1                     # C6: every read plays hold 1
-# the moved switches: key -> (team, the code it moves, the moved player, its keyword) (R2 OA-3)
-SWITCHES = {
-    "sacrifice_entry_rad": ("strike", "strike_sacrifice", perturbed.SacrificeMovedEntry, "entry_half_angle_rad"),
-    "converge_gather_rad": ("strike", "strike_converge", perturbed.ConvergeMovedGather, "gather_angle_rad"),
-    "flank_margin_m": ("strike", "strike_flank", perturbed.FlankMoved, "margin_m"),
-    "field_range_m": ("guard", "guard_field", perturbed.FieldMovedRange, "range_m"),
-}
+# the moved switches: key -> (team, the code it moves, the moved player, its keyword) (R2 OA-3); moved to
+# opponents/perturbed.py by task LS1-M2-T1 (the distillation gate file reads the same map)
+SWITCHES = perturbed.SWITCHES
 CAL_KEYS = {
     "noise": {"sizes", "channels", "active_only_arm", "seed"},
     "bias": {"sizes", "channels", "zero_skill_sizes"},
@@ -121,8 +117,7 @@ CAL_KEYS = {
     "intervals": {"alpha"},
     "source": {"skills_gates", "skills_gates_sha256", "cells", "cells_sha256", "scripted_sha256"},
 }
-CELLS_KEYS = {"mixed": {"seed", "guard", "strike"}, "permutation": {"guard", "strike"},
-              "info_opponents": {"guard", "strike"}, "read": {"games_per_cell"}}
+CELLS_KEYS = cells.CELLS_KEYS     # cells.toml's keys (ste/cells.py since task LS1-M2-T1)
 RESULT_KEYS = {"format", "side", "of_record", "overrides", "simulator", "calibration_file", "calibration_sha256",
                "cells_file", "cells_sha256", "skills_gates", "skills_gates_sha256", "scripted_sha256", "reference_file",
                "reference_sha256", "variant", "device", "seed", "ticks_cap", "hold_ticks", "games_per_cell",
@@ -152,18 +147,7 @@ def _label(value) -> str:
 
 
 # ================================================================================================ the two files
-def _exact(data: dict, keys: dict, what: str) -> None:
-    extra = set(data) - set(keys)
-    if extra:
-        raise ValueError(f"{what}: unknown section(s) {sorted(extra)}")
-    for section, want in keys.items():
-        if section not in data or not isinstance(data[section], dict):
-            raise ValueError(f"{what}: missing section [{section}]")
-        got = set(data[section])
-        if want - got:
-            raise ValueError(f"{what}: [{section}] misses {sorted(want - got)}")
-        if got - want:
-            raise ValueError(f"{what}: [{section}] has unknown key(s) {sorted(got - want)}")
+_exact = cells.exact_sections      # ste/cells.py since task LS1-M2-T1 (the same check)
 
 
 def _number(v, what: str, positive: bool = True) -> float:
@@ -222,48 +206,13 @@ def load_calibration(path: Path) -> dict:
     return data
 
 
-def load_cells(path: Path) -> dict:
-    """cells.toml: every key required, none unknown (ValueError); the members are checked against a side's spec by
-    :func:`check_cells`."""
-    data = tomllib.loads(Path(path).read_text())
-    _exact(data, CELLS_KEYS, str(path))
-    games = data["read"]["games_per_cell"]
-    if isinstance(games, bool) or not isinstance(games, int) or games < 1:
-        raise ValueError(f"[read] games_per_cell must be a whole number >= 1, got {games!r}")
-    return data
-
-
-def check_cells(spec: cells.CellSpec, cells_cfg: dict, gates) -> str | None:
-    """Why cells.toml does not fit ``spec``'s side of the skills gate file, or None."""
-    side = spec.side
-    try:
-        cells.mixed_choices(spec, [tuple(c) for c in cells_cfg["mixed"][side]])
-    except ValueError as err:
-        return f"cells.toml [mixed] {side}: {err}"
-    combos = [tuple(c) for c in cells_cfg["mixed"][side]]
-    if len(set(combos)) != len(combos):
-        return f"cells.toml [mixed] {side}: a combination is repeated"
-    perm = list(cells_cfg["permutation"][side])
-    if sorted(perm) != list(range(len(spec.players))) or any(p == i for i, p in enumerate(perm)):
-        return f"cells.toml [permutation] {side} = {perm} is not a derangement of the {len(spec.players)} codes"
-    gated = skills.team_skills(gates.players, cells.other(side))
-    for name in cells_cfg["info_opponents"][side]:
-        team = getattr(REGISTRY.get(name), "TEAM", "unknown")
-        if name in gated or team not in (None, cells.other(side)):
-            return f"cells.toml [info_opponents] {side}: {name!r} is not an ungated script of the {cells.other(side)} team"
-    return None
+# cells.toml's reader and check (ste/cells.py since task LS1-M2-T1, unchanged: one reader for both reads)
+load_cells = cells.load_cells
+check_cells = cells.check_cells
 
 
 # ================================================================================================ cells and arms
-@dataclass(frozen=True)
-class Cell:
-    """One cell of a side: ``index`` in the side's full list (opponent by opponent; per opponent the K fixed choices,
-    then the mixed combinations), the ``choice`` (``cells.fixed_choices`` / ``mixed_choices``), the ``opponent``, and
-    the ``kind`` (fixed, mixed: gated; info)."""
-    index: int
-    choice: dict = field(compare=False)
-    opponent: str
-    kind: str
+Cell = cells.Cell                   # one cell of a side (ste/cells.py since task LS1-M2-T1)
 
 
 @dataclass(frozen=True)
@@ -285,25 +234,11 @@ REFERENCE_ARM = Arm(REFERENCE, REFERENCE)
 IDENTITY_ARM = Arm(IDENTITY, IDENTITY, 1.0, ALL_CHANNELS)
 
 
-def gated_opponents(gates, side: str) -> list[str]:
-    return skills.team_skills(gates.players, cells.other(side))
-
-
-def side_cells(spec: cells.CellSpec, cells_cfg: dict, gates) -> list[Cell]:
-    """Every cell of ``spec.side``, gated then info opponents (see :class:`Cell`)."""
-    info = list(cells_cfg["info_opponents"][spec.side])
-    choices = cells.fixed_choices(spec) + cells.mixed_choices(spec, [tuple(c) for c in cells_cfg["mixed"][spec.side]])
-    out = []
-    for opp in gated_opponents(gates, spec.side) + info:
-        for j, choice in enumerate(choices):
-            kind = INFO if opp in info else FIXED if j < len(spec.players) else MIXED
-            out.append(Cell(len(out), choice, opp, kind))
-    return out
-
-
-def gated_m(spec: cells.CellSpec, cells_cfg: dict, gates) -> int:
-    """m of C7: the side's gated cells, (K + the mixed combinations) x the other team's [players]."""
-    return (len(spec.players) + len(cells_cfg["mixed"][spec.side])) * len(gated_opponents(gates, spec.side))
+# the side's opponents, cells and m of C7 (ste/cells.py since task LS1-M2-T1, unchanged: the calibration and the
+# equivalence read keep one m, Guard 150, Strike 130)
+gated_opponents = cells.gated_opponents
+side_cells = cells.side_cells
+gated_m = cells.gated_m
 
 
 def arms_of(calcfg: dict, side: str) -> list[Arm]:

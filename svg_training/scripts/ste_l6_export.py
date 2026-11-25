@@ -10,12 +10,14 @@ Reads the run's own gate file copy (``gates.toml``, its sha256 equal to the run'
 (velocity: ``exploit_train.team_from_modules``; skills: ``skill_team_from_modules`` with the gate file's dispatch,
 which refuses other skill lists). Exports with ``ste/export.py`` (``golden_observations`` + ``export_policy``):
 one ONNX file per drone slot and ``interface.toml``, which records ``source_run``, ``source_checkpoint``,
-``source_checkpoint_sha256`` and the run's ``gates_sha256``. Control ``ctl_team_equals_export`` (controls.json): the
+``source_checkpoint_sha256`` and the run's ``gates_sha256``. The variant is the run's own (``results.json``
+``variant``, "base" when absent; route 3, task LS1-M3-T1): its game gives the golden observations and the dispatch, and
+``interface.toml`` records its game and ``train_seed`` (and names it when it is not "base"). Control ``ctl_team_equals_export`` (controls.json): the
 loaded team's own outputs (velocity: mean actions; skills: logits) on the golden observations equal the exported
 golden rows within ``export.within`` (absolute + relative).
 
 Exit codes: 0 done; 2 refused (a finished export folder, an unfinished run, a gate file copy that is not the pin,
-a checkpoint the route's loader refuses); 6 the control failed. The reload check in a fresh process is the
+a checkpoint the route's loader refuses, a variant the gate file copy does not hold); 6 the control failed. The reload check in a fresh process is the
 reader's (``export.reload_check``). Pipeline check, not for flight; observed in the training simulator."""
 from __future__ import annotations
 
@@ -42,11 +44,13 @@ def refuse(why: str) -> int:
     return EXIT_REFUSED
 
 
-def team_outputs(saved: dict, gates, side: str, obs: torch.Tensor) -> torch.Tensor:
-    """The run's team through the route's loader, its outputs on ``obs`` [G, M, 71] (ValueError: the loader refuses)."""
+def team_outputs(saved: dict, gates, side: str, obs: torch.Tensor, variant: str = "base") -> torch.Tensor:
+    """The run's team through the route's loader, its outputs on ``obs`` [G, M, 71] (ValueError: the loader refuses,
+    or ``variant`` is not in the gate file)."""
     hidden = list(gates.trainer["hidden"])
+    export.check_variant(gates, variant)
     if gates.learner.skills:
-        d = skills.two_level_dispatch(gates.learner, gates.players, side, exploit.variant_cfg(gates, "base"),
+        d = skills.two_level_dispatch(gates.learner, gates.players, side, exploit.variant_cfg(gates, variant),
                                       obs.shape[0], "cpu", 0)
         team = exploit_train.skill_team_from_modules(side, saved, hidden, d, "cpu")
         return team.logits(obs)
@@ -81,14 +85,18 @@ def main(argv: list[str] | None = None) -> int:
     side = res.get("side")
     if side not in ("guard", "strike"):
         return refuse(f"{run}/{RESULTS}: side {side!r}")
+    variant = res.get("variant", "base")
+    if variant not in gates.variants:
+        return refuse(f"{run}/{RESULTS}: variant {variant!r} not in the gate file copy (its variants: "
+                      f"{sorted(gates.variants)})")
     saved = torch.load(run / AGENT, map_location="cpu", weights_only=False)
-    obs = export.golden_observations(gates, side, games=a.games)
+    obs = export.golden_observations(gates, side, games=a.games, variant=variant)
     try:
-        want = team_outputs(saved, gates, side, obs)
+        want = team_outputs(saved, gates, side, obs, variant=variant)
     except ValueError as err:
         return refuse(f"{run}/{AGENT}: the route's loader refuses it: {err}")
     source = {"run": str(run), "checkpoint": str(run / AGENT), "checkpoint_sha256": exploit.sha256_file(run / AGENT)}
-    folder = export.export_policy(saved, gates, side, out, obs, source=source)
+    folder = export.export_policy(saved, gates, side, out, obs, source=source, variant=variant)
     meta = tomllib.loads((folder / "interface.toml").read_text())
     got = torch.tensor([row["outputs"] for row in meta["golden"]], dtype=want.dtype)
     ok, diff, scale = export.within(got.numpy(), want.detach().numpy())

@@ -6,6 +6,9 @@ ste_learning/drafts/L3_L6_PIPELINE_SPEC.md section 5; lead's answer 3: schemas `
   ONNX file per drone slot (input ``obs [B, 71]`` raw, the observation scaler folded into the graph; output
   ``action_mean [B, 4]`` or ``logits [B, T+1+K_d]``) and ``interface.toml`` (STANDARDS section 3 rule 1's fields, the
   schema, the status, the files' sha256, the skills route's lists and rules, golden rows on real observations).
+  ``variant`` (route 3, task LS1-M3-T1; default "base"): the gate file's variant whose game and ``train_seed`` the
+  export records; ``interface.toml`` names it (``variant = "<name>"``) only when it is not "base", so a base export is
+  the same bytes as before.
 * :func:`reload_check`: in a fresh process, the folder read back WITHOUT torch's modules: onnxruntime (the primary
   runtime) and ``onnx.reference.ReferenceEvaluator`` (an independent second check). Refuses (ValueError) a missing or
   changed status, an unknown schema, a changed file, skill lists unlike the ONNX files' own. Outputs within
@@ -78,12 +81,21 @@ class FoldedPolicy(nn.Module):
         return self.net(x)
 
 
-def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int = GOLDEN_SEED) -> torch.Tensor:
-    """Real observations of ``side`` [games, M, 71] after ``GOLDEN_TICKS`` ticks of scripted play in the gate file's
-    game (CPU), where some drones may be out."""
+def check_variant(gates, variant: str) -> None:
+    """ValueError unless ``variant`` is a name of the gate file's ``[variants]`` (``exploit.variant_cfg`` alone would
+    take a ``[games]`` key too)."""
+    if variant not in gates.variants:
+        raise ValueError(f"variant {variant!r} not in the gate file (its variants: {sorted(gates.variants)})")
+
+
+def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int = GOLDEN_SEED,
+                        variant: str = "base") -> torch.Tensor:
+    """Real observations of ``side`` [games, M, 71] after ``GOLDEN_TICKS`` ticks of scripted play in the game of the
+    gate file's ``variant`` (CPU), where some drones may be out. The scripted players stay fixed."""
     from ..opponents.scripted import make_strategy
     from .exploit_train import TrainGame
-    cfg = exploit.variant_cfg(gates, "base")
+    check_variant(gates, variant)
+    cfg = exploit.variant_cfg(gates, variant)
     guards, strikes = sweep.parse_size(gates.run["size"])
     game = TrainGame(cfg, games, guards, strikes, device="cpu", seed=seed)
     obs = game.reset()
@@ -94,20 +106,25 @@ def golden_observations(gates, side: str, games: int = GOLDEN_GAMES, seed: int =
     return obs[side].clone()
 
 
-def _dispatch(gates, side: str, games: int):
-    return skills.two_level_dispatch(gates.learner, gates.players, side, exploit.variant_cfg(gates, "base"), games,
+def _dispatch(gates, side: str, games: int, variant: str = "base"):
+    check_variant(gates, variant)
+    return skills.two_level_dispatch(gates.learner, gates.players, side, exploit.variant_cfg(gates, variant), games,
                                      "cpu", 0)
 
 
-def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, source: dict | None = None) -> Path:
+def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, source: dict | None = None,
+                  variant: str = "base") -> Path:
     """Export ``saved`` (``Learner.saved()`` of ``gates``' route, team ``side``) to ``out_dir``; golden rows on ``obs``
     [G, M, 71]. ``source``: {"run", "checkpoint", "checkpoint_sha256"} of the run it came from (written as
-    ``source_run``, ``source_checkpoint``, ``source_checkpoint_sha256``; ``scripts/ste_l6_export.py``). Returns the
-    folder."""
+    ``source_run``, ``source_checkpoint``, ``source_checkpoint_sha256``; ``scripts/ste_l6_export.py``). ``variant``:
+    the gate file's variant the run played (its game and ``train_seed`` go into ``interface.toml``, which names it as
+    ``variant`` when it is not "base"); a name not in ``[variants]`` is refused before anything is written. Returns
+    the folder."""
     import onnx
     from skrl.resources.preprocessors.torch import RunningStandardScaler
 
     from ..opponents.learned import OBS_SPACE, StandinPolicy, TwoLevelPolicy
+    check_variant(gates, variant)
     route = "skills" if gates.learner.skills else "velocity"
     if (route == "skills") != (set(saved) == {"skills", "modules"}):
         raise ValueError(f"the checkpoint does not match the gate file's route ({route})")
@@ -117,7 +134,7 @@ def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, sou
     probe = RunningStandardScaler(OBS_SPACE, device="cpu")
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    d = _dispatch(gates, side, obs.shape[0]) if route == "skills" else None
+    d = _dispatch(gates, side, obs.shape[0], variant=variant) if route == "skills" else None
     files, outputs = [], []
     skills_json = json.dumps(skills.skills_meta(d), sort_keys=True) if route == "skills" else None
     for slot, a in enumerate(names):
@@ -153,13 +170,16 @@ def export_policy(saved: dict, gates, side: str, out_dir, obs: torch.Tensor, sou
         command = d.act(obs, flown)                                              # [G, M, 4]
         for gi, row in enumerate(golden):
             row.update(heads=heads[gi].tolist(), flown=flown[gi].tolist(), command=command[gi].tolist())
-    (out / "interface.toml").write_text(_interface(gates, side, route, files, golden, d, source))
+    (out / "interface.toml").write_text(_interface(gates, side, route, files, golden, d, source,
+                                                       variant=variant))
     return out
 
 
-def _interface(gates, side: str, route: str, files: list, golden: list, d, source: dict | None = None) -> str:
-    cfg = exploit.variant_cfg(gates, "base")
-    game = gates.games[gates.variants["base"]["game"]]
+def _interface(gates, side: str, route: str, files: list, golden: list, d, source: dict | None = None,
+               variant: str = "base") -> str:
+    check_variant(gates, variant)
+    cfg = exploit.variant_cfg(gates, variant)
+    game = gates.games[gates.variants[variant]["game"]]
     params = exploit.ROOT / cfg.starling.params
     try:
         commit = subprocess.run(["git", "-C", str(exploit.ROOT), "rev-parse", "HEAD"], capture_output=True,
@@ -188,10 +208,12 @@ def _interface(gates, side: str, route: str, files: list, golden: list, d, sourc
              f'team = "{side}"', f"slots = {len(files)}", f"tag_radius_m = {float(cfg.tag.radius_m)}",
              f'filter_share = "{cfg.filter.share}"', f'game_file = "{game.file}"', f'game_sha256 = "{game.sha256}"',
              f'drone_model_file = "{cfg.starling.params}"', f'drone_model_sha256 = "{sha256_file(params)}"',
-             f'git_commit = "{commit}"', f"seed = {int(gates.variants['base']['train_seed'][side])}",
-             f'gates_sha256 = "{gates.sha256}"',
-             f"golden_output_scale = {float(np.abs(np.asarray([r['outputs'] for r in golden])).max())!r}",
-             f'golden_tolerance = "{tolerance_text()}"']
+             f'git_commit = "{commit}"', f"seed = {int(gates.variants[variant]['train_seed'][side])}"]
+    if variant != "base":                       # written only for another variant: a base export is unchanged (OP-24)
+        lines.append(f'variant = "{variant}"')
+    lines += [f'gates_sha256 = "{gates.sha256}"',
+              f"golden_output_scale = {float(np.abs(np.asarray([r['outputs'] for r in golden])).max())!r}",
+              f'golden_tolerance = "{tolerance_text()}"']
     for key in ("run", "checkpoint", "checkpoint_sha256"):
         if source is not None:
             lines.append(f'source_{key} = "{source[key]}"')

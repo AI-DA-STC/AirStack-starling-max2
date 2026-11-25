@@ -144,7 +144,7 @@ def test_learner_spec_keeps_the_new_fields(gates, tmp_path):
     nets = {"strike": ("ste_provisional/skill_nets/x/skill_net_strike.pt", WRONG_SHA),
             "guard": (str(tmp_path / "skill_net_guard.pt"), FILL_SHA)}
     text = net_gates_text(SKILLS_GATES.read_text(), nets)
-    assert H.READING_IN_NET_FILES is False and "[reading]" not in text
+    assert ("[reading]" in text) is H.READING_IN_NET_FILES          # LS1-M4-T1: True (a net file needs [reading])
     g = exploit.load_gates(write(tmp_path, text))
     assert g.learner.skill_source == "net"
     assert g.learner.skill_net == {side: {"file": f, "sha256": s} for side, (f, s) in nets.items()}
@@ -227,7 +227,7 @@ def test_fill_prefix_is_the_gate_files_mark():
 def test_tier2_loader_refuses_a_net(tmp_path):
     base = tier2_train.GATES_FILE.read_text() + H.TIER2_PLAYERS + H.TIER2_TWO_LEVEL
     assert tier2_train.load_gates(write(tmp_path, base, "base.toml")).learner.choice == "two_level"
-    text = net_gates_text(base, {side: ("a.pt", WRONG_SHA) for side in SIDES})
+    text = net_gates_text(base, {side: ("a.pt", WRONG_SHA) for side in SIDES}, reading=False)   # tier 2 has no [reading]
     with pytest.raises(ValueError, match="not wired"):
         tier2_train.load_gates(write(tmp_path, text))
 

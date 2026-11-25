@@ -11,7 +11,8 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
 * ``reading_block``: a ``[reading]`` TOML block filled from ``STAND_IN``.
 * ``net_gates_text`` (task LS1-M1-T4): the one writer of a net gate file's text in every route 3 test (C4's keys
   added to a two-level gate file's text); ``READING_IN_NET_FILES`` says whether it appends ``reading_block()``
-  (False until LS1-M4-T1, which sets it True: until then the loaders refuse an unknown ``[reading]`` section).
+  (False until LS1-M4-T1, which set it True: ``exploit.load_gates`` requires ``[reading]`` in a net gate file);
+  its keyword ``reading`` overrides the flag for one file (False: a net file without ``[reading]``).
 * ``TIER2_PLAYERS``, ``TIER2_TWO_LEVEL``: what makes ``configs/ste_l013/gates.toml`` a two-level tier-2 gate file (the
   text of tests/test_ste_l3_tier2.py, copied: test modules are not imported).
 * ``tiny_learner_saved``: a tiny learner's ``saved()`` dict for whatever route the gate file holds (the recipe of
@@ -52,7 +53,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS_GATES = ROOT / "configs" / "ste_l3" / "skills_gates.toml"
 DISTIL_GATES = ROOT / "configs" / "ste_ls1" / "distil_gates.toml"
 STD_FLOOR = 0.0029                       # synthetic meta value (the real one is distil_gates.toml [net] std_floor)
-READING_IN_NET_FILES = False             # LS1-M4-T1 sets this True (its [reading] section is then required)
+READING_IN_NET_FILES = True              # set by LS1-M4-T1 (a net gate file's [reading] section is required)
 CHOICE_ANCHOR = re.compile(r'^choice = "two_level".*$', re.MULTILINE)   # the whole line, its comment included
 HOLD = 12                                # the tiny learner's decision ticks (tests/test_ste_l3_export.py)
 UNFILLED = "FILL_OWNER_R38"               # an owner key not set yet (R38; exploit.FILL_MARK convention)
@@ -191,16 +192,18 @@ def after_choice_line(base_text: str, lines: str) -> str:
     return base_text[:end] + "\n" + lines.rstrip("\n") + base_text[end:]
 
 
-def net_gates_text(base_text: str, nets: dict) -> str:
+def net_gates_text(base_text: str, nets: dict, reading: bool | None = None) -> str:
     """A net gate file's text (C4): ``base_text`` (a two-level gate file's text) with ``skill_source = "net"`` after
     its ``choice = "two_level"`` line and a ``[learner.skill_net]`` table of ``nets`` {side: (file, sha256)} appended
     at the end (a table header after the choice line would take the keys that follow it, ``mask_absent`` in
-    skills_gates.toml); then ``reading_block()`` when ``READING_IN_NET_FILES``."""
+    skills_gates.toml); then ``reading_block()`` when ``reading`` (None: ``READING_IN_NET_FILES``; False writes a net
+    file without ``[reading]``, which ``exploit.load_gates`` refuses from LS1-M4-T1 on, for the tests of refusals and
+    of loaders that refuse a net before they see the section)."""
     text = after_choice_line(base_text, 'skill_source = "net"')
     table = ["", "[learner.skill_net]"] + [f"{side} = {{ file = {json.dumps(str(f))}, sha256 = {json.dumps(str(s))} }}"
                                            for side, (f, s) in nets.items()]
     text = text.rstrip("\n") + "\n" + "\n".join(table) + "\n"
-    if READING_IN_NET_FILES:
+    if (READING_IN_NET_FILES if reading is None else reading):
         text += "\n" + reading_block()
     return text
 

@@ -1,12 +1,14 @@
-INTERNAL · DRAFT v3 for the owner's review: how route 3 (the learned-skills route) is executed towards a policy that is useful on the drones: what is added to the pipeline, which jobs run, in what order, on which machine, at what cost, and where the owner is asked · rulings R35 to R41 recorded; nothing is built or run; v3 is in its two-reviewer design review · the route explained: [../LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md) (its stage order is older than R41); the task-level plan of LS1: [LEARNED_SKILLS_BRIDGE_PLAN.md](LEARNED_SKILLS_BRIDGE_PLAN.md)
+INTERNAL · DRAFT v3 for the owner's review: how route 3 (the learned-skills route) is executed towards a policy that is useful on the drones: what is added to the pipeline, which jobs run, in what order, on which machine, at what cost, and where the owner is asked · rulings R35 to R41 recorded; design review done (two reviewers, 25 Nov 2026) and folded in; nothing is built or run; the build waits for the owner's word · the route explained: [../LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md) (its stage order is older than R41); the task-level plan of LS1: [LEARNED_SKILLS_BRIDGE_PLAN.md](LEARNED_SKILLS_BRIDGE_PLAN.md)
 
-# Route 3 execution workflow (draft v3, 25 Nov 2026)
+# Route 3 execution workflow (draft v3, reviewed, 25 Nov 2026)
 
 Version 1: the lead (Opus 5.5), 25 Nov 2026. Version 2, the same day (the lead, a Fable 5.2 session, with the advisor
 tool): checked against the code, eight corrections. **Version 3, the same day:** the owner's rulings R39 to R41 change
-the aim and the order: no GPU-hour cap, the heads trained again on the skill network on both sides, self-play brought
-forward, the aim a policy that is useful on the drones. Section 8 lists what each version changed. This file is about
-route 3 only; "v3" is the third version of this file, not a route.
+the aim and the order (no GPU-hour cap, the heads trained again on the skill network on both sides, self-play brought
+forward, the aim a policy that is useful on the drones); then the **design review** by two independent reviewers
+(A: learning soundness and gates; B: build, pipeline, budget, export; Sonnet 5.5, read-only; the lead checked their
+file references against the code) was folded in. Section 9 lists the review's findings, section 10 what each version
+changed. This file is about route 3 only; "v3" is the third version of this file, not a route.
 
 Stage LS1 and the head training (LS1.4) are given job by job. LS2, self-play and LS3 are outlines with their open
 questions; each comes back with its own design note before code. Where this file and the plan differ, this file wins.
@@ -16,10 +18,11 @@ questions; each comes back with its own design note before code. Where this file
 | | Now, job by job | Later, outlines |
 |---|---|---|
 | Stages | **LS1 Distil** (the scripts copied into one skill network per team) → **LS1.4 Head training** (the heads trained again on the skill network, both sides) | **LS2 Fine-tune** (the skills trained by the game reward) → **Self-play** (the stage called LS4 League on the route page, brought forward by R41) → **LS3 Free codes** (skills no script has; last, an extension) |
-| Adds to the pipeline | 2 new modules, 4 new scripts, 2 gate files, small changes to the skills switch, the export and the budget table | a pool entry for saved teams (self-play), a skill-level learner (LS2), a diversity reward (LS3) |
-| Changes existing behaviour | no: a new setting whose default keeps today's behaviour bit for bit | the same rule |
-| GPU-hours | no cap (R39). Asked per job: LS1 0.9, LS1.4 2.9 (two seeds per arm); expected use about 2.3 (estimate) | not estimated again here; each note brings its hours |
-| Owner asked | the pass limits after the noise-floor read (R38); the confirmation of the lead's reading of R39 | each stage's design note; the held-out set |
+| Adds to the pipeline | 3 new modules, 6 new scripts, 3 gate files, changes to the skills switch, the training driver's controls, the export and its reload check, the budget table and the status line | a pool entry for saved teams (self-play), a skill-level learner (LS2), a diversity reward (LS3) |
+| Changes existing behaviour | no: a new setting whose default keeps today's behaviour bit for bit; existing checkpoints and exports load as before | the same rule |
+| GPU-hours | no cap (R39). Asked per job: LS1 0.9, LS1.4 4.0 (two seeds per arm, clips included); expected use about 2.8 (estimate) | each note brings its hours |
+| Build | four merges, about 2 to 4 days of agent work (estimate; the review added four pieces) | self-play and LS2 are new builds, 3 to 5 days each (estimate) |
+| Owner asked | the word for the build; the reading of R39; the limits and margins after the calibration read (R38) | each stage's design note; the held-out scripts |
 
 "Distil" means fitting a network to imitate a behaviour. LS1 does not copy any pipeline code: the game, the trainer,
 the scoring and the export of phases L1 to L6 are used as they are. What is copied is the **behaviour** of the eleven
@@ -34,13 +37,13 @@ owner's words.
 
 | # | Ruling | What it means here |
 |---|---|---|
-| R35 | the learned-skills route is adopted as the third route | no code and no run before the two-reviewer design review |
+| R35 | the learned-skills route is adopted as the third route | no code and no run before the two-reviewer design review (done 25 Nov, section 9) |
 | R36 | LS1 may use 1.0 GPU-h from the L3–L6 cap | superseded in its charging by R39; until the lead's reading of R39 is confirmed, GPU launches stay inside this 1.0 |
 | R37 | LS1 is built now, route 3 first | the learner v2 note follows; the build session runs on Opus 5.5, high effort, as a multi-agent workflow |
-| R38 | the owner sets the LS1 pass limits, on the lead's advice | asked after the noise-floor read (job LS1.5), before the gate file is hashed |
-| R39 | no GPU-hour cap on route 3; the aim is a useful policy | **lead's reading, PROPOSED until the owner confirms:** all stages of route 3; hours no longer charged to the 20 of R23; every job still states its hours before launch; every status shows the route's hours so far; a single job above 5 GPU-h is announced before launch; the launcher needs a number, so the route's budget section carries 200 GPU-h with this ruling beside it |
-| R40 | the heads are trained again on the skill network, on both sides | job group LS1.4, in place of the small optional job of v2; a team of route 3 is a set of heads and a skill network trained together |
-| R41 | self-play is brought forward | order LS1 → LS1.4 → LS2 → self-play → LS3; whether self-play can start on the heads of LS1.4, before LS2, is a question of the design review |
+| R38 | the owner sets the LS1 pass limits, on the lead's advice | asked after the calibration read (job LS1.5), before the gate file is hashed; the margin of LS1.4 is asked at the same time |
+| R39 | no GPU-hour cap on route 3; the aim is a useful policy | **lead's reading, PROPOSED until the owner confirms:** all stages of route 3; hours no longer charged to the 20 of R23; every job still states its hours before launch; every status shows the route's hours so far; a single job above 5 GPU-h is announced before launch. In the code a number is still needed: the route's budget section carries 200 GPU-h, and each job group keeps a task cap (a cap per task is how the launcher stops a job that hangs) |
+| R40 | the heads are trained again on the skill network, on both sides | job group LS1.4; a team of route 3 is a set of heads and a skill network trained together |
+| R41 | self-play is brought forward | order LS1 → LS1.4 → LS2 → self-play → LS3. After the review: the pool entry for saved teams is built early and a self-play pilot runs right after LS1.4; whether the full stage starts before LS2 is decided by three measurements (section 7) |
 
 ## 2. What "useful on the drones" asks, and what route 3 gives
 
@@ -49,53 +52,54 @@ The track's goal is [PLAN §1](../PLAN.md). Route 3 is one part of it. Checked a
 | PLAN §1 asks | Route 3 as planned here | What is missing, and where it comes from |
 |---|---|---|
 | plays the game under rules that can fly | yes: the same game and safety filter as routes 1 and 2 (tier 1) | — |
-| robust to attackers it did not train against (self-play with a pool) | the self-play stage | **a new build:** the opponent pool takes script names only (`ste/pool.py:84-113`, `make_strategy` from the scripts' registry); a saved team cannot be a training opponent today. The loaders and the player objects exist (`exploit_train.py:427-473`, `exploit.SkillTeam`), the pool entry and the drivers' wiring do not |
-| a held-out test | not possible today for the Strike side: every Strike script is in the training pool. One Guard script, `guard_mark_inside`, is in the registry and in no pool (`scripted.py:206-211, 479-484`) | **the held-out set must be fixed before self-play is designed** (section 6) |
-| keeps the team plan when a drone is lost (one shared policy per drone) | partly: the skill network is one network shared by a team's drones; the heads are one network per drone slot, and LS1 is 3v3 only | the shared actor and training at drawn team sizes (learner v2); the absent-drone mask exists |
+| robust to attackers it did not train against (self-play with a pool) | the self-play stage | **a new build:** the opponent pool takes script names only (`ste/pool.py:84-113`); a saved team cannot be a training opponent today. The loaders and the player objects exist (`exploit_train.py:427-473`, `exploit.SkillTeam`), the pool entry and the drivers' wiring do not |
+| a held-out test | not possible today: every Strike script is in the training pool; the one unused Guard script, `guard_mark_inside`, is mark the edge with one number changed (`scripted.py:105-122`) | **new held-out scripts, two per side, written before self-play is designed** (section 7) |
+| keeps the team plan when a drone is lost (one shared policy per drone) | partly: the skill network is one network shared by a team's drones and is fitted on states with a drone absent; the heads are one network per drone slot; team size 3v3 only | the shared actor and training at drawn team sizes (learner v2); the absent-drone mask exists |
 | trained with the Isaac Lab Starling (tier 2) | no: route 3 trains on tier 1; tier 2 has replayed fixed choices only (L3.1) | a tier-2 score of the trained team, then tier-2 training: its own task |
-| the robustness suite (held-out attackers, drone loss, filter mismatch) | the scoring matrix exists; the suite as a whole does not | its own task, after self-play |
-| export and reload | yes: heads and skill network per team | — |
+| the robustness suite (held-out attackers, drone loss, filter mismatch) | the scoring matrix exists but its scripts refuse a skills gate file (`scripts/ste_score_matrix.py:215`) | a scorer for route 3 teams (merge M4), then the suite: its own task, after self-play |
+| export and reload | yes: heads and skill network per team, with a new branch in the reload check | — |
 | AirStack simulator, real flight | owner-gated (L7, L8); a team of route 3 needs no port of the scripts into the flight software | unchanged |
 
-**What this means for the size of the work.** LS1 and LS1.4 are small changes to a pipeline that exists: about 1 to 2
-days of agent work (estimate). Self-play and LS2 are **new builds**, not small edits: a pool that can hold saved teams
-and the runs that take turns (estimate 3 to 5 days of agent work with its note and reviews), and a learner that trains
-the skill network at every tick with a tie to the scripts (estimate 3 to 5 days). Both estimates are the lead's, with
-nothing measured behind them.
+**The size of the work.** LS1 and LS1.4 are changes to a pipeline that exists, but not only small ones: the review
+found that the training driver's controls, the export's reload check and the reader need changes too (section 9).
+Self-play and LS2 are new builds. Every figure is the lead's estimate, with nothing measured behind it.
 
-## 3. What is added to the pipeline
-
-### LS1 and LS1.4
+## 3. What is added to the pipeline (LS1 and LS1.4)
 
 | File | New or changed | What it does | Off means identical | Tests |
 |---|---|---|---|---|
-| `source/svg_training/ste/skill_net.py` | new | the skill network (one per team, inputs: what the drone sees, its slot, the skill code; output: a velocity); save and load with refusals (wrong team, wrong skill list or order, wrong team size, scripts edited since the fit); the net-backed dispatch that the two-level heads drive | not used unless the setting says so | `tests/test_ste_ls1_skill_net.py`, `test_ste_ls1_dispatch.py` |
-| `source/svg_training/ste/distil.py` | new | data collection from scripted games (every script labels every state), the supervised fit, the relabelling rounds (the network flies, the scripts label), the per-skill error report | not used by any existing driver | `tests/test_ste_ls1_distil.py` |
-| `source/svg_training/ste/skills.py` | changed, about 60 lines | `[learner] skill_source = "scripts" \| "net"` and the skill network file per team (for example `skill_net = { guard = "<file>", strike = "<file>" }`); the one factory every driver uses (`two_level_dispatch`, 12 calls in 9 files, counted 25 Nov) returns the net-backed dispatch when asked; checkpoints record which skill source they were trained on, and a set of heads is refused on another skill source | default `"scripts"`: today's dispatch, checked bit for bit | `tests/test_ste_ls1_dispatch.py` plus the existing `test_ste_l3_skills.py`, `test_ste_l3_two_level.py` |
-| `source/svg_training/ste/export.py`, `scripts/ste_l6_export.py` | changed, about 80 lines | a new export type for the skill network (ONNX, schema `ste-check-skillnet-0`, golden rows, reload check); a team's folder holds its heads and its skill network | existing export types unchanged | `tests/test_ste_ls1_export.py` plus `test_ste_l3_export.py` |
+| `source/svg_training/ste/skill_net.py` | new | the skill network (one per team; inputs: what the drone sees, its slot, the skill code; output: a velocity). Inputs no script reads are set to zero (yaw, time left, team flag); the input scale is clamped where an input never varies; the output is a clipped linear layer, not tanh (two scripts command exactly ±1); the forward pass runs without gradients when it flies. Save and load with refusals: wrong team, wrong skill list or order, wrong team size, scripts edited since the fit, **and a different game file** (the scripts read the keep-out distances, the wall margin, the height band and the team speed from the game file). The net-backed dispatch that the two-level heads drive | not used unless the setting says so | `tests/test_ste_ls1_skill_net.py`, `test_ste_ls1_dispatch.py` (a drone that is out gets a zero command on both paths, all codes and one code) |
+| `source/svg_training/ste/cells.py` (name PROPOSED) | new | the cells of the equivalence read for either team: one code on every drone, and the mixed combinations with a scripted arm that flies the same combination. Today's helpers are Strike-only (`scripts/ste_l3_run0_ceiling.py:69, 99-128, 232-245`) | the ceiling script keeps its own helpers | `tests/test_ste_ls1_cells.py` |
+| `source/svg_training/ste/distil.py` | new | data collection, the supervised fit, the relabelling rounds, the report. **Data mix (review):** at least half the games fly one code for the whole game (each of the team's codes, as the gate's fixed-choice cells do), the rest fixed per-drone mixes and the random redraw; rows with a team-mate absent are oversampled (PROPOSED 20 % or more); rows are kept in proportion to the network's error, with a floor near the scripts' switch points. **Report:** error per skill and per active channel, the largest output on channels a skill never uses, by number of live drones and by how long the code was held, and the tick-to-tick change of the command beside the scripts' | not used by any existing driver | `tests/test_ste_ls1_distil.py` |
+| `source/svg_training/ste/skills.py` | changed | `[learner] skill_source = "scripts" \| "net"` and the skill network file per team with its sha256 in the gate file (the file kept at a path that exists in every worktree); the factory `two_level_dispatch` (12 calls in 9 files, verified) returns the net-backed dispatch when asked. `skills_meta` and `learner_table` **stay byte for byte as today for scripts** and gain the skill source and the network's sha256 only for a network: existing checkpoints, exports and pilots keep loading, and a pilot or a set of heads made on one skill source is refused on the other. The single-head modes of slice 1 refuse `"net"` | default `"scripts"`: today's dispatch, checked bit for bit; a test pins the literal keys of today's dictionaries and loads a dictionary saved before the change | `tests/test_ste_ls1_dispatch.py` plus the existing `test_ste_l3_skills.py`, `test_ste_l3_two_level.py`, `test_ste_l3_pipeline_gates.py`, `test_ste_l3_driver.py` |
+| `scripts/ste_exploit_l012.py` (the training driver) | **changed (review, blocker)** | under `skill_source = "net"` the control "the untrained team equals its first skill" compares against a twin that flies the same code **on the skill network**, not the script. As written today it compares against the script (`:380-388`, `:921-933`) and allows at most 20 games of 1,000 to differ on the GPU (`skills_gates.toml:86-87`): a copy differs by more, the control fails, and every head-training job would end with exit 6 before training | the scripts route's controls unchanged | `tests/test_ste_ls1_driver.py` plus `test_ste_l3_driver.py`, `test_ste_l3_run0.py` |
+| `source/svg_training/ste/export.py`, `scripts/ste_l6_export.py` | changed | the skill network as an ONNX graph (inputs `obs [B, 71]`, `slot [B]`, `z [B]`; output `command [B, 4]`; the input scale inside the graph; a test graph of this shape exported and reloaded on 25 Nov). A team's folder holds its heads and its skill network, with a `[skill_net]` section in `interface.toml`. **The reload check gets a branch** for it: today it rebuilds the scripts and compares commands (`export.py:302-306`), which refuses a route 3 team. The variant is no longer fixed to "base" (`export.py:86, 98, 161`), so a second seed exports with its own seed | existing export types and the four exports of the pipeline check reload as before | `tests/test_ste_ls1_export.py` plus `test_ste_l3_export.py`, `test_ste_l6_export.py` |
 | `scripts/ste_ls1_distil.py` | new | the distillation driver under the run contract (resume, cap, exit codes), launched through `ste_job.py`; 2-D clips with the height panel of network-flown games | — | in `test_ste_ls1_distil.py` |
-| `scripts/ste_ls1_equivalence.py` | new | the gate read: controls first, then the copy against the scripts, cell by cell; verdict DISTILLED / NOT DISTILLED / INCONCLUSIVE | — | `tests/test_ste_ls1_equivalence.py` |
-| `scripts/ste_ls1_noise_floor.py` | new | scripts against scripts, no network: each cell of the gate read is played twice on the same starts, once as written and once with a small bounded error added to the team's commands (PROPOSED sizes 0.01, 0.02, 0.05, 0.1 in command units); reports how many of 1,000 games change per cell | — | `tests/test_ste_ls1_noise_floor.py` |
-| the 3-D clips of an LS1 team | new | `scripts/ste_l5_clips3d.py` draws only a finished training run (`results.json`, `agent_final.pt`, `eval_info.npz`), so it cannot draw a skill network flown on a fixed choice. Either a small `scripts/ste_ls1_clips.py` that feeds the same renderer, or one more input type in the clip script: the design review chooses. The runs of LS1.4 are ordinary training runs: the automatic post-run hook draws them | the existing clip script and its hook behave as today | its own test file |
-| `configs/ste_ls1/distil_gates.toml` | new | sizes, rounds, network size, limits, controls, seed; hashed before any run, after the owner has set the limits (R38) | — | its own load test |
-| `configs/ste_ls1/heads_gates.toml` | **new in v3** | the gate file of LS1.4: the skills gate file of the pipeline check (`configs/ste_l3/skills_gates.toml`) with `skill_source = "net"`, the two skill network files, the seeds, and the reading rule against route 2 | — | its own load test, and a test that it differs from the skills gate file in the named keys only |
-| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the task table `TASK_IDS` has no LS1 task and a budget section's name must spell its phases (`ste/config.py:37-48, 181-212`), so today the launcher refuses `--task LS1.1`. PROPOSED: one budget section for route 3 holding the LS1 tasks, with the number of R39; the design review checks the mechanics | every existing task and cap unchanged | `tests/test_ste_config.py` (it ties the file to PLAN.md) |
+| `scripts/ste_ls1_equivalence.py` | new | the gate read (section 5): controls first, then the copy against the scripts on the same starts; per game arrays saved, so that games can be picked for clips; verdict DISTILLED / NOT DISTILLED / INCONCLUSIVE | — | `tests/test_ste_ls1_equivalence.py` |
+| `scripts/ste_ls1_calibration.py` (v2's noise-floor read) | new | scripts against changed scripts, no network, on the gate read's cells: random error on the commands (0.01 to 0.1), and systematic changes (commands scaled by 0.95, turned by 3 degrees, a switch angle moved; the changed scripts are subclasses in their own file, the teacher file is not edited). It shows which sizes of error the gate lets through and which it stops | — | `tests/test_ste_ls1_calibration.py` |
+| `scripts/ste_ls1_clips.py` | new | 3-D clips of the copy beside the scripts on the same start: the existing capture (`viz/replay3d.capture_trained`) called once per arm, then the existing renderer. `scripts/ste_l5_clips3d.py` draws only a finished training run and stays as it is; the runs of LS1.4 are ordinary training runs and the post-run hook draws them | the clip script and its hook behave as today | `tests/test_ste_ls1_clips.py` |
+| `scripts/ste_ls1_read.py` | **new (review)** | the read of LS1.4: route 3 against route 2, seed by seed and cell by cell, by the rule of section 6; the scores of route 3 teams against players that were in no pool. The L6 reader knows two routes only (`scripts/ste_l6_read.py:54-61`) and the score-matrix scripts refuse a skills gate file | — | `tests/test_ste_ls1_read.py` |
+| `configs/ste_ls1/distil_gates.toml` | new | sizes, rounds, network size, the limits the owner sets (R38), controls, seed, the game file's sha256; hashed before any run | — | its own load test (the limits are read from the file, not typed into the test) |
+| `configs/ste_ls1/heads_gates.toml` | new | the gate file of LS1.4's route 3 arm: the skills gate file of the pipeline check with `skill_source = "net"`, the two skill network files, two seeds as two variants, the reading rule. Route 2's recipe and game-steps are pinned in it (section 6) | — | a test that it differs from `configs/ste_l3/skills_gates.toml` in the named keys only |
+| `configs/ste_ls1/skills_seed2_gates.toml` | **new (review)** | route 2's second seed. A variant cannot be added to `configs/ste_l3/skills_gates.toml`: its sha256 is pinned in six run folders and in `tests/test_ste_l3_pipeline_gates.py`. A new gate file needs its own run 0 (`ste/exploit.py:933-939`) | — | as above |
+| `source/svg_training/ste/config.py`, `configs/ste_learning.toml`, `ste/budget.py`, `scripts/ste_job.py`, `ste_learning/PLAN.md` §9, `tests/test_ste_config.py` | changed | the route's tasks and hours (the exact list is in section 9, B6). `TASK_IDS` gains the LS1 tasks; a section `[budget_ls1]` after the L3–L6 one, every task with a cap entry, CPU tasks at 0.0. `ste_job.py status` prints only the section "in work" (`ste/budget.py:223-229`): it also prints route 3's hours, as R39's reading promises | every existing task, cap and status line unchanged | `tests/test_ste_config.py` (its section set at line 90 and the tuple at line 107 name three sections today) |
 
-**Not touched:** the game engine and its rules, the safety filter, the scripts (they are the teachers; their sha256 is
-pinned in the skill network file), the scoring, the run contract, the GPU-hour ledger, the job launcher, the post-run
-3-D clip hook, the two-level learner and its PPO step, every existing gate file, AirStack, Isaac Lab. The opponent
-pool is not touched in LS1 and LS1.4; self-play changes it.
+**Not touched:** the game engine and its rules, the safety filter, the scripts (they are the teachers; **the file
+`opponents/scripted.py` is frozen from the first distillation on**: its sha256 is pinned in every skill network, so
+any edit, a bug fix included, means distilling again), the opponent pool, the scoring, the run contract, the GPU-hour
+ledger, the two-level learner and its PPO step, the post-run 3-D clip hook, every existing gate file, AirStack, Isaac
+Lab.
 
 ## 4. How the work runs
 
 ```
-design review of this file and the plan (two reviewers, R22) -> the lead revises this file
+design review of this file and the plan (two reviewers, R22): DONE 25 Nov 2026, folded in
   -> the owner reads the rulings and this file, and gives the word for the build
   -> design check (ste-architect, read-only)
   -> build in its own worktree, tests first (ste-software-engineer, Opus)
   -> QC review of the build (ste-test-qc-engineer, Sonnet)
   -> lead merges to development (fast-forward); full test suite once per code merge, in the background
-  -> noise-floor read (CPU) -> the lead advises, THE OWNER SETS THE LIMITS (R38)
+  -> calibration read (CPU) -> the lead advises, THE OWNER SETS THE LIMITS AND MARGINS (R38)
   -> gate file written and hashed (lead) BEFORE any run
   -> job launched through scripts/ste_job.py (budget check, heartbeat, exit code, clips)
   -> verdict read: controls first, then the result
@@ -106,15 +110,16 @@ design review of this file and the plan (two reviewers, R22) -> the lead revises
 The Fable 5.2 advisor is asked before the build starts, before each gate is hashed and before a stage is reported
 done. One fix at a time if something fails. Reviewers and other checking agents stay on Sonnet 5.5.
 
-**Build order:** three merges. No merge while the full suite or a run is going.
+**Build order:** four merges. No merge while the full suite or a run is going.
 
-| Merge | Plan tasks | Content |
+| Merge | Content | Lets run |
 |---|---|---|
-| M1 | 1, 2 | skill network, save/load, net-backed dispatch, the setting (default off); the LS1 tasks in the budget table; the noise-floor script |
-| M2 | 3, 4, 5 | distillation, driver, gate file, equivalence read |
-| M3 | 6 | export of the skill network and of a route 3 team; the 3-D clip path for an LS1 team; the LS1.4 gate file |
+| M1 | skill network, save/load, net-backed dispatch, the setting (default off), the meta rules; the LS1 tasks in the budget table and the status line; the cell module; the calibration script | the calibration read (LS1.5) |
+| M2 | distillation, its driver, the distillation gate file, the equivalence read | LS1.0, LS1.1, LS1.2 |
+| M3 | export of the skill network and the reload branch; the LS1 clip script | LS1.3, LS1.6 |
+| M4 | the training driver's control under a network; the two gate files of LS1.4; the LS1.4 reader and the scorer against players of no pool | LS1.4 |
 
-## 5. The jobs
+## 5. The jobs of LS1 Distil
 
 Machine: whichever is in use (owner rule); the RTX 5090 on weekdays. Every GPU job goes through the launcher, for
 example:
@@ -129,120 +134,188 @@ scripts/ste_job.py launch --task LS1.1 --name ls1_distil_guard --run-dir runs/<d
 `--min-s` is the shortest time a real finish can take; a finish under it is flagged ENDED_EARLY. It is set from the
 timing of the smoke (LS1.0). "Asked" is the hours a job states at launch; a job is stopped at its own ask.
 
-### LS1 Distil, in the order the jobs run
-
-| Job | Plain name | Where | Command (driver, arguments) | Asked GPU-h | Needs | Gives | Owner asked |
+| Job | Plain name | Where | What runs | Asked GPU-h | Needs | Gives | Owner asked |
 |---|---|---|---|---|---|---|---|
-| S1 | Full test suite after each code merge (3 times) | CPU, background | `pytest` (full suite, about 40 min each) | 0 | each merge | pass or fail | no |
-| LS1.5 | Noise-floor read | CPU | `ste_ls1_noise_floor.py` (scripts only, the gate read's cells, T44's starts, 1,000 games each, four error sizes) | 0 | M1 | per cell and per error size: games changed, difference in wins; the lead's advice on the limits | **the owner sets the limits (R38)** |
-| LS1.0 | Smoke of the distillation and the read | CPU | `ste_ls1_distil.py` with 16 games, 2 rounds; `ste_ls1_equivalence.py` on 24 starts | 0 | M2 | the plumbing works end to end; timings for `--min-s` and for the read on the CPU | no |
-| — | Gate file written and hashed | — | `configs/ste_ls1/distil_gates.toml` with the owner's limits; QC reads it | 0 | LS1.5, the owner's limits | the hash every later job names | no |
-| LS1.1-G | Distil the Guard team's 5 skills | GPU | `ste_ls1_distil.py --side guard` (4,096 games, 4 rounds of 600 ticks, fit after each) | 0.4 | LS1.0, gate hashed | `skill_net_guard.pt`, fit report per skill, 4 clips | no |
-| LS1.1-S | Distil the Strike team's 6 skills | GPU, side by side with LS1.1-G | `ste_ls1_distil.py --side strike` | 0.4 | as above | `skill_net_strike.pt`, fit report, clips | no |
-| LS1.2-G | Equivalence read, Guard | CPU | `ste_ls1_equivalence.py --side guard`: controls, then 30 fixed-choice cells (5 codes against the 6 Strike scripts) and 120 mixed cells (20 combinations against the 6), 1,000 games each, the copy and the scripts on the same starts | 0 | LS1.1-G | verdict DISTILLED / NOT DISTILLED / INCONCLUSIVE | no |
-| LS1.2-S | Equivalence read, Strike | CPU | `ste_ls1_equivalence.py --side strike`: 30 fixed-choice cells (6 codes against the 5 Guard scripts) and 100 mixed cells | 0 | LS1.1-S | verdict | no |
+| S1 | Full test suite after each code merge (4 times) | CPU, background | `pytest` (full suite, about 40 min each) | 0 | each merge | pass or fail | no |
+| LS1.5 | Calibration read | CPU | `ste_ls1_calibration.py`: scripts against changed scripts on the gate read's cells, T44's starts, 1,000 games each | 0 | M1 | which error sizes the gate lets through and which it stops; the lead's advice | **the owner sets the limits and margins (R38)** |
+| LS1.0 | Smoke of the distillation and the read | CPU | `ste_ls1_distil.py` with 16 games, 2 rounds; `ste_ls1_equivalence.py` on 24 starts | 0 | M2 | the plumbing works; timings for `--min-s`, for the read on the CPU and the network's game-steps per second | no |
+| — | Gate file written and hashed | — | `configs/ste_ls1/distil_gates.toml` with the owner's limits; QC reads it | 0 | LS1.5, the limits | the hash every later job names | no |
+| LS1.1-G | Distil the Guard team's 5 skills | GPU | `ste_ls1_distil.py --side guard` (4,096 games, 4 rounds of 600 ticks, fit after each) | 0.4 | LS1.0, gate hashed | `skill_net_guard.pt`, the fit report, 4 clips | no |
+| LS1.1-S | Distil the Strike team's 6 skills | GPU, side by side with LS1.1-G | `ste_ls1_distil.py --side strike` | 0.4 | as above | `skill_net_strike.pt`, the fit report, clips | no |
+| LS1.2-G | Equivalence read, Guard | CPU | `ste_ls1_equivalence.py --side guard`: controls, then 30 fixed-choice cells (5 codes against the 6 Strike scripts) and 120 mixed cells (20 combinations against the 6), 1,000 games each | 0 | LS1.1-G | DISTILLED / NOT DISTILLED / INCONCLUSIVE | no |
+| LS1.2-S | Equivalence read, Strike | CPU | `ste_ls1_equivalence.py --side strike`: 30 fixed-choice cells (6 codes against the 5 Guard scripts) and 100 mixed cells; `guard_mark_inside`, which the network never saw, as an extra opponent (INFO) | 0 | LS1.1-S | verdict | no |
 | LS1.3 | Export and reload check of both skill networks | CPU | `ste_l6_export.py` with the skill-network type; reload in a fresh process | 0 | DISTILLED | ONNX files, `interface.toml`, golden rows | no |
-| LS1.6 | 3-D clips of key games | GPU | 3 to 6 games per side, the copy beside the scripts on the same start, top view and 3-D view | 0.1 | LS1.2, M3 | MP4 and GIF for the record | no |
+| LS1.6 | 3-D clips of key games | GPU | `ste_ls1_clips.py`: 3 to 6 games per side, the copy beside the scripts on the same start | 0.1 | LS1.2, M3 | MP4 and GIF for the record | no |
 | R1 | Record, ledger rows, two reviewers | CPU | `records/<date>_ste_ls1_distil_record.md` | 0 | LS1.2, LS1.6 | the read for the owner | — |
 
-**Why the equivalence read is on the CPU.** Its positive control is "the script team, through the same scoring path,
-differs in 0 games from T44". T44's games are equal game for game only in a CPU replay (`ste/exploit.py:57`). If the
-smoke shows the CPU read is too slow, the result cells (not the controls) move to the GPU, announced first.
+**The gate read, as revised by the review.** The copy and the scripts play the same 1,000 starts per cell, so the
+read is paired: per cell it reports the games the copy lost that the scripts won (b), the games it won that the
+scripts lost (c), and the games that changed (b + c). Two copies of one policy change few games (in the pipeline
+check's GPU replay, 0 of 1,000 in 11 of 17 cells and 2 to 5 in the mixed cells), so a limit such as "within 30 wins"
+is a size of effect the owner accepts, not an allowance for chance. What the gate reads:
+
+| Read | What | Limit |
+|---|---|---|
+| Command error | per skill and per active channel, on states the network itself reached; the largest output on channels the skill never uses; for the skill whose command is exactly zero (parked at the centre in 3v3) the largest output | the owner's (PROPOSED starting points: 0.05 per active channel; 0.005 for the zero-command skill) |
+| Games changed | b + c per cell | the owner's, from the calibration read |
+| Net difference | b − c per cell with its interval, corrected for the number of cells; the pooled row (the mean of the cell rates: "within 15 wins" is 0.015 there) | the owner's margin, as a size of effect (PROPOSED starting point 0.03 per cell) |
+| Time to the end | the difference in the tick each game ended, per cell (more sensitive than win or loss) | reported; a limit if the calibration read supports one |
+| Flight paths | the distance between the copy's and the scripts' paths from the same start after 1, 3 and 10 s | reported |
+
+The 30 fixed-choice cells per side have T44 as their reference. The mixed cells have none: their scripted arm is
+played on the same starts by the cell module.
+
+**Controls, read before any result.** Positive 1: the script team through the same scoring path differs in 0 games
+from T44 (CPU; T44's games are equal game for game only there, `ste/exploit.py:57`). Positive 2 (review): a stand-in
+network that returns the scripts' own commands through the new slot and code path differs in 0 games: it proves the
+new path, which positive 1 does not touch. Negative, gross: an unfitted network and a network with its codes permuted
+must miss (the permutation is first shown to miss with the scripts themselves, and "at least N cells miss" is fixed
+from that). Negative, near miss (review): scripts with a 0.05 systematic bias, a 3-degree turn and a moved switch must
+FAIL; scripts with random error 0.02 must PASS. Without the near-miss controls the gate is only known to stop a
+network that learned nothing.
+
+**CPU time of the read (estimate from measurements):** about 50 to 75 minutes for both sides on an idle machine,
+about double beside a GPU job or the test suite (measured 25 Nov: 2.1 to 2.3 ms per tick for a 3 x 256 network on
+3,000 rows; the existing CPU reads took 2 to 4.5 s per 1,000-game cell). If it is too slow, the result cells (not
+the controls) move to the GPU, announced first.
 
 **Stop rules of LS1 (written into the gate file):**
 
 - A control fails: INCONCLUSIVE; the cause is found and fixed on the CPU, and the run is repeated once, announced
   with its cost (as R34 allows for bug re-runs).
-- NOT DISTILLED: no limit is moved. One announced fix round is allowed (more relabelling rounds or a larger network);
-  if it still fails, LS1 stops and the record says which skills do not copy and why.
+- NOT DISTILLED: no limit is moved. One announced fix round is allowed: the data mix, more relabelling rounds, a
+  larger network or added inputs (the drone's and its team-mates' bearing and distance from the zone, which several
+  scripts compute; left out of the first fit). If it still fails, LS1 stops and the record says which skills do not
+  copy and why.
 - DISTILLED on one side only: that side may go on; the other side is reported.
 
-### LS1.4 Head training on the skill network (R40), after DISTILLED on both sides
+## 6. The jobs of LS1.4 Head training on the skill network (R40), after DISTILLED on both sides
 
-The same recipe, game-steps and opponent pool as the skills route's runs of the pipeline check (L3.3, L3.5, L5.2), with
-the skill network flying in place of the scripts. Measured GPU-hours of those runs are in the
-[pipeline record](../../records/2026-11-25_ste_l3_l6_pipeline_record.md): pilot 0.055, run 0 0.284, Guard 0.277,
-Strike 0.284.
+The recipe, game-steps and opponent pool of the skills route's runs of the pipeline check (L3.3, L3.5, L5.2), with the
+skill network flying in place of the scripts. Measured GPU-hours of those runs
+([pipeline record](../../records/2026-11-25_ste_l3_l6_pipeline_record.md)): pilot 0.055, run 0 0.284, Guard 0.277,
+Strike 0.284, 3-D clips 0.016 to 0.043 per run.
 
 | Job | Plain name | Where | Asked GPU-h | Needs | Gives |
 |---|---|---|---|---|---|
-| — | Gate file and reading rule written and hashed | — | 0 | LS1 DISTILLED, M3 | `configs/ste_ls1/heads_gates.toml` |
-| LS1.4-P | Skills pilot on the skill network | GPU | 0.1 | gate hashed | rates and controls, as L3.3 |
-| LS1.4-0 | Run 0: Strike against the parked Guard (the learner's positive control) | GPU | 0.4 | LS1.4-P | PASS or FAIL against the mark 0.554; needed before a Strike run |
-| LS1.4-G1, -G2 | Head training, Guard, two seeds | GPU, side by side | 0.4 each | LS1.4-P | two Guard teams of route 3, scored against every Strike script; 3-D clips by the post-run hook |
-| LS1.4-S1, -S2 | Head training, Strike, two seeds | GPU, side by side | 0.4 each | LS1.4-0 | two Strike teams of route 3, scored against every Guard script; clips |
-| LS1.4-R | A second seed of route 2 (the scripted arm), Guard and Strike | GPU | 0.4 each | — | the comparison has two seeds on both arms |
-| LS1.4-X | Export and reload of the route 3 teams (heads and skill network per team) | CPU | 0 | the runs | export folders |
-| R2 | Record, ledger rows, two reviewers | CPU | 0 | all of the above | the read for the owner |
+| — | Both gate files and the reading rule written and hashed | — | 0 | LS1 DISTILLED, M4, the owner's margin | `heads_gates.toml`, `skills_seed2_gates.toml` |
+| LS1.4-P | Skills pilot on the skill network (covers both sides) | GPU | 0.1 | gate hashed | rates and controls. It is read as a check: if its rule would choose another Strike recipe or another number of game-steps than route 2's, nothing is launched and it comes back |
+| LS1.4-0 | Run 0 on the skill network: Strike against the parked Guard | GPU | 0.4 | LS1.4-P | PASS or FAIL against the mark 0.554 (the mark is the scripts' ceiling less 0.05; using it for the network is written into the gate file as a choice). One run 0 serves both Strike seeds |
+| LS1.4-G1, -G2 | Head training on the network, Guard, two seeds | GPU, side by side | 0.4 each | LS1.4-P | two Guard teams of route 3, scored against every Strike script; clips by the post-run hook (0.1 asked each) |
+| LS1.4-S1, -S2 | Head training on the network, Strike, two seeds | GPU, side by side | 0.4 each | LS1.4-0 | two Strike teams of route 3, scored against every Guard script; clips |
+| LS1.4-R0 | Run 0 of route 2's second-seed gate file | GPU | 0.4 | — | needed before its Strike run (review) |
+| LS1.4-RG, -RS | A second seed of route 2 (the scripted arm), Guard and Strike | GPU | 0.4 each | LS1.4-R0 | two seeds on both arms; clips |
+| LS1.4-X | Export and reload of the route 3 teams (heads and skill network per team) | CPU | 0 | the runs, M3 | export folders |
+| LS1.4-H | Scores against players of no pool (INFO) | CPU or GPU | 0 | the runs, M4 | each route 3 team against the trained teams of route 1 (the velocity Guard and Strike teams of L5.1) |
+| R2 | The read (`ste_ls1_read.py`), record, ledger rows, two reviewers | CPU | 0 | all of the above | the read for the owner |
 
-Asked in total: 2.9 GPU-h; expected about 2.0 (estimate from the measured runs: one pilot, one run 0 and six runs
-of about 0.28 each).
+Asked in total: 4.0 GPU-h (eight training jobs at 0.4, the pilot 0.1, six clip jobs at 0.1, 0.1 spare); expected
+about 2.5 (estimate from the measured runs). The task cap of LS1.4 in the settings file is 4.0.
 
 **What LS1.4 can and cannot show.** The skill network imitates the scripts, so heads trained on it are expected to
-score about as route 2's (in the cell of the gate file's named opponent: Guard 813 of 1,000 against strike_straight,
-Strike 176 of 1,000 against guard_mark_edge; observed in the training simulator, one seed). "About the same" is the success of this step: it shows that the copy can carry training. A new
-strategy is not expected before LS2. One seed against one seed cannot show "about the same": the scripted run itself
-read between 461 and 669 of 1,000 on its way to 644. Hence two seeds per arm, and a reading rule written before the
-runs (PROPOSED: per cell and on the pooled row, route 3 "level with route 2" when its two seeds lie inside or above
-the spread of route 2's two seeds widened by the 95 % interval of one read; INFO, not a gate of record). The design
-review checks this rule.
+score about as route 2's. That is the success of this step: it shows that the copy can carry training. A new
+strategy is not expected before LS2. Three limits on the reading, from the pipeline record:
 
-**Held-out read in LS1.4 (INFO).** Each route 3 team is also scored against players that were in no training pool:
-the trained teams of route 1 (the velocity Guard and Strike teams of L5.1, T77 and T80) and, for the Strike teams,
-`guard_mark_inside`.
+- **The Strike run of record of route 2 did not learn** (176 of 1,000 against guard_mark_edge, the untrained team
+  192; its driver word is INCONCLUSIVE). Matching it shows nothing. The Strike read is therefore **run 0** (route 2:
+  644 of 1,000 against the parked Guard, the untrained team 466), with the runs of record beside it as INFO.
+- **The Guard run of record is weak evidence too:** 813 against 808 for the best single script.
+- **The trained heads use about three of the eleven codes** (Strike: flank and low; Guard: mark the edge). LS1.4 says
+  nothing about the other codes; the equivalence read (LS1.2) is their only check.
 
-## 6. The later stages (outlines; each gets its own design note before code)
+**Reading rule, written before the runs (PROPOSED; the owner sets the margin with the LS1 limits).** A seed's score is
+the mean of its last three reads (a single read can land on a dip: run 0 read 461 once between 633 and 620). Both arms
+are scored on the same starts with the same pool draws and compared start by start. With a margin Δ fixed beforehand
+(PROPOSED 0.04 on the pooled row, 0.08 per cell): **"no drop beyond Δ"** when the mean of route 3's seeds is at least
+route 2's mean less Δ and each route 3 seed is at least route 2's lower seed less Δ; **"below"** when route 3's mean
+is under route 2's by more than 2Δ; otherwise INCONCLUSIVE, and a third seed per arm is announced (0.4 GPU-h each).
+Two seeds never support the word "level". The share of each code chosen is compared with route 2's as INFO.
+
+## 7. The later stages (outlines; each gets its own design note before code)
 
 Order by R41: LS2 → self-play → LS3.
 
 | Stage | What it adds | Open questions for its note |
 |---|---|---|
-| **LS2 Fine-tune** | the skill network trained by the game reward at one command per tick, with a tie that keeps each code near its script, weakened step by step; skills and heads trained in turns | the exploration noise of the skill network at 20 Hz; the tie's schedule; the control without a tie (expected to lose the codes); whether it is built on today's per-slot heads or on the shared actor of learner v2 |
-| **Self-play** (LS4 League on the route page) | a pool entry that loads a saved team, so a team trains against past and present trained teams as well as the scripts; saved exploits (a Strike team trained against a frozen Guard team, and the reverse) kept as permanent pool entries | whether it can start on the heads of LS1.4 before LS2 (the design review's first question); how turns are taken and when a team is added to the pool; how a cycle (A beats B beats C beats A) is detected; the cost per turn |
-| **LS3 Free codes** | skill codes with no script, rewarded for being distinct and useful | whether it is needed at all once self-play has run; the diversity reward |
+| **Self-play, part 1: the pool entry and a pilot** (right after LS1.4) | a pool entry that loads a saved team (heads and skill network, frozen), so a team can train against trained teams as well as the scripts. The entry does not depend on LS2 and stays valid after it. A pilot on the heads of LS1.4 gives three measurements | built while LS1 runs (other files); its design note first |
+| **LS2 Fine-tune** | the skill network trained by the game reward at one command per tick, with a tie that keeps each code near its script, weakened step by step; skills and heads trained in turns | the exploration noise of the skill network at 20 Hz against the tie (the learner's usual noise is about four times the copy's error limit); the tie's schedule; the control without a tie (expected to lose the codes); today's per-slot heads or the shared actor of learner v2 |
+| **Self-play, part 2: the stage** | teams trained in turns against past and present teams; saved exploits (a Strike team trained against a frozen Guard team, and the reverse) kept as permanent pool entries | how turns are taken and when a team joins the pool; how a cycle (A beats B beats C beats A) is detected; the cost per turn |
+| **LS3 Free codes** | skill codes with no script, rewarded for being distinct and useful | whether it is needed at all once self-play has run |
 | **Robustness suite** | held-out opponents, drone loss, filter mismatch (PLAN §1) | the shared actor and drawn team sizes; tier 2 |
 
-**The held-out set, PROPOSED, to be fixed before self-play is designed:** (a) the trained teams of route 1 (they share
-no skill with route 3); (b) `guard_mark_inside`; (c) one Strike script and one Guard script taken out of the
-self-play training pools (which ones: the design review; LS1.4 keeps the full pools, so that it compares with route
-2); (d) at the end, a new exploiter trained against the frozen final team: the strongest test, and the last one.
+**When the self-play stage starts (review).** Heads that only choose among fixed, imitated skills have little room:
+route 2's teams sit close to their best single script and choose almost one code per side. So the stage starts before
+LS2 only if the pilot shows room; otherwise LS2 runs first. The three measurements, with their marks fixed in the
+pilot's note: (1) how varied the LS1.4 teams' choices are per opponent (PROPOSED mark: above 1 bit in several cells);
+(2) how much a fresh exploiter gains against a frozen LS1.4 team over the best script (PROPOSED mark: more than the
+margin Δ of section 6); (3) the gap to the best fixed mix of scripts on the same starts.
 
-## 7. What the owner is asked
+**The held-out set (review).** A script taken out of a training pool is not held out when the opposing trained teams
+can still fly it as one of their own skills. So: **two new scripts per side, written before self-play is designed, in
+their own file outside `opponents/scripted.py`** (the strategy factory loads `package.module:ClassName`,
+`scripted.py:217-228`; editing the teacher file would invalidate every skill network). They are written by an agent
+that has not seen the trained teams, and are never used in training. Beside them: the trained teams of route 1
+(unseen players, though trained in the same game); at the end, a new exploiter trained against the frozen final
+team, the strongest test.
+
+## 8. What the owner is asked
 
 | # | Question | State |
 |---|---|---|
-| 1 | The lead's reading of R39 (row R39 of section 1): all stages; the 5 GPU-h announce rule; the 200 in the settings file | **open.** Until confirmed, GPU launches stay inside R36's 1.0 GPU-h (the distillation and its clips) |
-| 2 | The LS1 pass limits | the owner sets them after job LS1.5 (R38) |
-| 3 | The word for the build | after the design review's findings and this file have been read |
-| 4 | The held-out set (section 6) | proposed; asked with the self-play note |
-| 5 | The route page [LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md), its figures and the slides still show the order LS1, LS2, LS3, LS4 and "LS1 budget about 1 GPU-hour" | redraw them for R39 to R41: yes or no. Its "Where it stands" table was already brought up to R36 to R38 on 25 Nov (`a133ba25`) |
+| 1 | The word for the build (merges M1 to M4, then the jobs of sections 5 and 6) | **asked now** |
+| 2 | The lead's reading of R39 (row R39 of section 1): all stages; the 5 GPU-h announce rule; 200 in the settings file; a task cap per job group kept as a safety stop | **open.** Until confirmed, GPU launches stay inside R36's 1.0 GPU-h (the distillation and its clips) |
+| 3 | The LS1 limits and the LS1.4 margin | the owner sets them after job LS1.5 (R38); the lead brings the calibration read, options and a recommendation |
+| 4 | Self-play: the pool entry built early and a pilot after LS1.4; the full stage before LS2 only if the pilot's three measurements show room | the lead's recommendation after the review: yes or no |
+| 5 | Two new held-out scripts per side, written before self-play is designed | proposed; asked with the self-play note |
+| 6 | The route page [LEARNED_SKILLS_ROUTE.md](../LEARNED_SKILLS_ROUTE.md), its figures and the slides still show the order LS1, LS2, LS3, LS4 and "LS1 budget about 1 GPU-hour" | redraw them for R39 to R41: yes or no. Its "Where it stands" table was already brought up to R36 to R38 on 25 Nov (`a133ba25`) |
 
-What runs without asking once the build has the owner's word: the builds, the CPU jobs, the GPU jobs as listed here,
-the records. What always comes back: the limits (R38), a failed gate, a single job above 5 GPU-h (announced), every
-later stage's design note.
+What runs without asking once the build has the owner's word: the builds, the CPU jobs, the GPU jobs as listed here
+(inside R36's 1.0 until question 2 is answered), the records. What always comes back: the limits and margins (R38), a
+failed gate, a pilot that disagrees with route 2's recipe, a single job above 5 GPU-h (announced), every later
+stage's design note.
 
-## 8. What each version changed
+## 9. The design review (25 Nov 2026)
 
-**v3 (R39 to R41).** The aim is a useful policy (section 2 says what that asks beyond route 3). No cap: jobs state
-their hours, section 1 row R39. LS1.4 is the full head training on both sides with two seeds per arm, in place of v2's
-optional run 0. Self-play before LS3. The held-out set is named as a decision. Corrected from what the lead told the
-owner on 25 Nov: a saved team cannot be a training opponent with today's code (the pool and the drivers take script
-names only), so self-play is a new build.
+Two independent reviewers, read-only, given the files and not the lead's conclusions. A read every line of
+`opponents/scripted.py`; B traced every call site and ran two small CPU checks (the budget loader with an LS1 section
+in a scratch copy; an ONNX export of a test network). The lead checked their file references by grep before folding
+them in. Neither reviewer ran a test suite or a GPU job.
 
-**v2 (checked against the code).** "Checked" names what was read.
+| # | Finding | Severity | What changed here |
+|---|---|---|---|
+| B1 | The driver's control "untrained team equals its first skill" compares with the script and fails under a network: every head-training job would end with exit 6 (`scripts/ste_exploit_l012.py:380-388, 921-933`; `skills_gates.toml:85-87`) | blocker | the driver is in the change table; merge M4 |
+| B2 | Adding a key to `skills_meta` for scripts refuses all six checkpoints and four exports of the pipeline check (whole-dictionary equality: `exploit_train.py:411, 455`; `export.py:304-306`) | major | the dictionary is unchanged for scripts; keys added for a network only |
+| B3 | A pilot made on scripts would be accepted for a network gate file (`ste_exploit_l012.py:236-249` compares the `[learner]` table only); the gate file is filled from the pilot, which may choose another Strike recipe | major | `learner_table` carries the skill source for a network; route 2's recipe pinned; a disagreeing pilot comes back |
+| B4 | Route 2's second seed needs a new gate file and its own run 0 | major | `skills_seed2_gates.toml`, job LS1.4-R0 |
+| B5 | The reload check refuses a route 3 team; the L6 reader and the score-matrix scripts cannot read route 3; no script read LS1.4 | major | the reload branch, `ste_ls1_read.py`, merge M4 |
+| B6 | Budget: `TASK_IDS["LS1"]`; `[budget_ls1]` placed after the L3–L6 section with every task capped (a missing key is refused, `config.py:193`); the name must spell the phases (`config.py:220-222`); `tests/test_ste_config.py:90, 107`; each value line labelled; PLAN §9 a documentation row. Verified in a scratch copy: with these, `check_launch("LS1.1", 0.4)` is accepted while the section "in work" stays `budget_l1_l2`. A task cap still binds each launch, and `status` shows only the section in work | major | section 3's last row; R39's row in section 1 |
+| B7 | The post-run clips ask 0.1 GPU-h per run against the run's task (`ste/post_run.py:71`) | major | LS1.4 asks 4.0 |
+| B8 | Merge M1 could not stand alone (the calibration read needs the cells of a later task); the mixed-cell helpers are Strike-only | major | the cell module, in M1 |
+| B9 | T44 backs only the 30 fixed-choice cells per side; the mixed cells need a scripted arm on the same starts; the CPU read is about 50 to 75 minutes; the network must fly without gradients | major | section 5 |
+| B10, B11 | The export fixes the variant to "base"; plan details that do not match the code (the plan's tests name helpers that do not exist; `learner_spec` drops new fields unless they are passed on, `skills.py:105`; the limits typed into a test contradict R38) | minor | section 3; the plan's tests are rewritten by the builder against the real signatures |
+| A1 | The data would hardly contain whole games on one team strategy, which is what the gate plays; relabelling does not repair that | major | the data mix, sampling and report of `distil.py`; the fix round may change the data |
+| A2 | The read is paired, so the chance figure of v2 (22 wins) was the wrong ruler; random error on commands averages out while a network's error is systematic; the net difference hides errors that cancel | major | the gate read of section 5; job LS1.5 is a calibration with systematic changes |
+| A3 | The LS1.4 rule of the first v3 could not be defended with two seeds, and the Strike cell it compared did not learn | major | the reading rule and the Strike read of section 6 |
+| A4 | The controls could not show that the gate sees a near miss, and the positive control did not touch the new code path | major | controls of section 5 |
+| A5 | Confirmed: all eleven skills keep no memory and use only the drone's own row and its slot; the slot input is needed (after a loss two drones can have the same observation). Not in the plan: the scripts read constants of the game file; three inputs no script reads; inputs that never vary; one skill's command is exactly zero; error averaged over channels a skill never uses | major | `skill_net.py` and the command-error read |
+| A6 | Switch points blur under a squared-error fit; two scripts command exactly ±1, which tanh cannot reach; the scripts' branches for a lost team-mate are rare in the data | minor to major | clipped linear output; oversampling; error by number of live drones |
+| A7 | `guard_mark_inside` is a weak held-out; a script withheld from a pool is not held out; adding scripts to the teacher file breaks the pin | major | the held-out set of section 7; the teacher file frozen |
+| A8 | Self-play on fixed skills has little room; the pool entry does not depend on LS2 | decision | section 7, question 4 of section 8 |
+| A9 | Same starts and pool draws on both arms; the command's tick-to-tick change; the absent-drone test on the one-code path; the network's speed measured in the smoke | minor | sections 3, 5 and 6 |
 
-| # | Correction | Checked |
-|---|---|---|
-| 1 | The launcher would refuse `--task LS1.1`: the LS1 tasks need the task table, the settings file, PLAN §9 and their test | `ste/config.py:37-48, 107-113, 181-212`; `ste/budget.py:232-258` |
-| 2 | The 3-D clip script cannot draw an LS1 team; a clip path is added (job LS1.6) | `scripts/ste_l5_clips3d.py:94, 134-170`; `ste/post_run.py:70-84` |
-| 3 | The equivalence read moves to the CPU: its positive control against T44 can only be read there | `ste/exploit.py:57` |
-| 4 | A noise-floor read (job LS1.5) before the limits are set: "every cell within 30 wins of 1,000" over 130 to 150 cells may fail by chance alone | two independent samples of 1,000 games at a rate near one half differ by about 22 wins (one standard deviation) |
-| 5 | The cell count of the equivalence read: 150 for Guard, 130 for Strike (the plan's section 8 costed 50 per side) | plan section 4; `configs/ste_l3/skills_gates.toml:45-46` |
-| 6 | `--min-s` comes from the smoke's timing | `scripts/ste_job.py` (`wait`: ENDED_EARLY under `--min-s`) |
-| 7 | The skill network file is named per team | plan section 3 |
-| 8 | Heads trained on the scripts are refused on a skill network by the plan's own load rule; settled in v3 by R40 (the heads are trained on the skill network) | plan Task 2 (`skills_meta`); `ste/export.py:302` |
+Not checked by either reviewer: the GPU speed of a network-backed run; whether the post-run clips of a network team
+replay game for game (the clip script requires it); the full test suite.
 
-Confirmed, not changed: the scripts keep no memory between ticks, and each drone's command is computed from its own
-row of the observation and its slot in the team (`opponents/scripted.py:58-63, 88-103, 252-262, 320-330, 408-460`;
-excerpts read, not every line: a point for the design review); the only script with a random draw is the `random`
-player (`scripted.py:78-82`), which is not a skill; `two_level_dispatch` has 12 calls in 9 files, as the plan says.
+## 10. What each version changed
+
+**v3 (R39 to R41, then the review).** The aim is a useful policy. No cap: jobs state their hours. LS1.4 is the full
+head training on both sides with two seeds per arm. Self-play before LS3. Corrected from what the lead told the owner
+on 25 Nov: a saved team cannot be a training opponent with today's code, so self-play is a new build; and LS1 with
+LS1.4 is four merges, not "minor edits" throughout.
+
+**v2 (checked against the code).** The LS1 tasks in the budget table; a clip path for an LS1 team; the equivalence
+read on the CPU (its control against T44 is exact only there, `ste/exploit.py:57`); a read before the limits are set
+(its reasoning corrected by A2); the cell count of the read (150 for Guard, 130 for Strike; the plan costed 50 per
+side); `--min-s` from the smoke; the skill network file per team; heads trained on scripts refused on a network
+(settled by R40). Confirmed then and again by reviewer A: the scripts keep no memory; `two_level_dispatch` has 12
+calls in 9 files.

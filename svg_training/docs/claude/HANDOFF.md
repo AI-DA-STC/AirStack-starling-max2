@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~14:00, on the home RTX 5090 (afternoon: route 3 rulings R36–R41, execution workflow v3, its design review started; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 25 November 2026 ~14:00, on the home RTX 5090 (afternoon: route 3 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -29,13 +29,19 @@ note disagree, this file wins.
   skill network file is per team. Where the workflow and the plan (LEARNED_SKILLS_BRIDGE_PLAN.md) differ, the
   workflow wins. Corrected from what the owner was told: a saved team cannot be a training opponent with today's code
   (`ste/pool.py` takes script names only), so self-play is a new build.
-- **Order of work:** the two-reviewer design review of the workflow and the plan (started ~14:00) → the lead folds the
-  findings into v3 and gives the owner the list of rulings and v3 → **the owner's word for the build** → M1 → the
-  noise-floor read → the owner sets the limits → gate hashed → the runs. No code and no run before that word.
+- **Design review DONE (~14:30, two Sonnet reviewers, read-only; the lead checked their file references):** one
+  blocker and fourteen further findings, all folded into v3 (its section 9). The blocker: the training driver's control
+  "untrained team equals its first skill" compares with the script, so under a skill network every head-training job
+  would end with exit 6 (`scripts/ste_exploit_l012.py:380-388, 921-933`); the driver is now in the change table (M4).
+  Also: `skills_meta` and `learner_table` must stay byte for byte for scripts; the reload check needs a branch for a
+  route 3 team; the gate read is paired (games changed, not only net wins) with near-miss controls; the LS1.4 rule is
+  "no drop beyond a margin", Strike read on run 0; `opponents/scripted.py` is frozen from the first distillation on.
+- **Order of work:** **the owner's word for the build** → M1 → the calibration read (LS1.5) → the owner sets the limits
+  and margins → gate hashed → M2, M3 → LS1 runs → M4 → LS1.4 runs. No code and no run before that word.
 - **Nothing built, nothing run, 0 GPU-h.** Documents only; the short document check ran, not the full suite.
 - **Not changed, waiting on the owner's yes:** the reader page LEARNED_SKILLS_ROUTE.md, its figures and the slides
   still show the order LS1, LS2, LS3, LS4 (its "Where it stands" table was brought up to R36–R38 in `a133ba25`).
-- **Main track:** route 3, stage LS1, design review · **Side track:** none. The learner v2 note follows (R37).
+- **Main track:** route 3, stage LS1, design review done, waiting on the owner's word for the build · **Side track:** none. The learner v2 note follows (R37).
 - **Waiting on the owner:** the confirmation of the reading of R39; then the word for the build; later the LS1
   limits (R38) and the held-out set. Unchanged: NEAR-962, the Crazyflie commanded gaps.
 
@@ -1003,7 +1009,7 @@ agents and skills for the work. Since then S0, S1 and S2 have been built and run
 
 ## 4. Current state
 
-**25 November 2026 ~14:00:** STE track: L0–L3 done, the L3–L6 pipeline check done (both routes PIPELINE WORKS, T73–T89); route 3 (the learned-skills route) adopted (R35), no GPU-hour cap and the aim a useful policy (R39), the heads trained on the skill network (R40), self-play before LS3 (R41): the workflow v3 is in its design review; the build waits on the owner's word; nothing built or run. The newest §0 entry is the current state; the table below is older.
+**25 November 2026 ~14:00:** STE track: L0–L3 done, the L3–L6 pipeline check done (both routes PIPELINE WORKS, T73–T89); route 3 (the learned-skills route) adopted (R35), no GPU-hour cap and the aim a useful policy (R39), the heads trained on the skill network (R40), self-play before LS3 (R41): the workflow v3 has had its design review (folded in); the build waits on the owner's word; nothing built or run. The newest §0 entry is the current state; the table below is older.
 
 **State on 18 November 2026** (details in §0 and the results pages):
 

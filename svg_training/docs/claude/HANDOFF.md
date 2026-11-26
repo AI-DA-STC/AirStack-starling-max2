@@ -4,13 +4,39 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 25 November 2026 ~17:00, on the home RTX 5090 (LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 26 November 2026 ~10:00, on the home RTX 5090 (M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 26 November 2026 ~10:00 — RTX 5090: M1–M3 MERGED, LIMITS SET (R48), LS1.1 DISTILLATION RUNNING ON THE GPU (read this first)
+
+- **Merged into `development`** (each task built by an Opus builder tests-first, checked by a Sonnet QC; full suite
+  on each rebased tip before its merge): M1 skill network, setting, budget `[budget_ls]`, cells, calibration code
+  (3,085 passed); M2 distillation, its driver, the copy check (3,200 passed); M3 export and reload of the skill
+  network and a route 3 team, LS1 clips (3,266 passed); the gate fill (3,268 passed, 0 failed). With M1's and M3's
+  code the pipeline check's six checkpoints, four exports, pilot and run-0 files load unchanged (lead's check).
+  `test_dependencies` had been broken on `development` since the deck script (`402a66ab`, a docs-only merge): fixed.
+- **Calibration LS1.5** (T90, CPU, 0 GPU-h): every control PASS in 949 batches; the options page
+  `ste_learning/drafts/LS1_LIMIT_OPTIONS.md` (two reviewers). Two stops and a reboot during it: the CPU was
+  oversubscribed (two 16-thread jobs plus a QC suite), stopped and resumed at 10 then 8 threads; the owner's pause
+  ~22:00; the PC rebooted overnight; every resume from saved batches.
+- **Owner R46–R48:** a run 0 per Strike seed (M4-T1b built); the shorter stop rules; **the recommended limits
+  accepted and a top-up calibration** (T91: field 1.5 m, flank 0.9 m). Gate file `configs/ste_ls1/distil_gates.toml`
+  sha256 `5cce1245…6bb`. The smoke rule changed: a `--smoke` read never gives a verdict (filled file or not); an
+  end-to-end test outside `--smoke` with real controls was added.
+- **Label tolerance on CUDA** (probe, ~13 s GPU, charged to LS1.1): largest difference 0.0 over 2.96 M labels.
+- **Running:** LS1.1 distillation, both teams on the GPU (`runs/2026-11-26_ste_ls11_distil_{guard,strike}`, asks
+  0.4 GPU-h each, 6 CPU threads each), launched ~09:55. A known-answer check of the near-miss controls C6/C7 at the
+  owner's values (CPU) and the records T91 (top-up) and T92 (smokes, probe) are being written beside it.
+- **M4** (head training on the network) building on `~/AirStack-starling-max2-ls1m4`, branch `ls1-m4`, cut before the
+  gate fill: rebase it and run its suite on the rebased tip; **do not merge it while LS1.1 or the LS1.2 read runs**
+  (the read takes hours on the CPU).
+- **Next:** LS1.2 copy check per team (CPU), the verdict per team against the owner's limits; then LS1.4.
+- **Main track:** route 3, LS1.1 · **Side track:** none.
 
 ### 25 November 2026 ~17:00 — RTX 5090: LS1 TASK PLAN MERGED; MERGE M1 BUILDING (read this first)
 

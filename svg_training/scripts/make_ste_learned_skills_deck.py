@@ -13,7 +13,7 @@ Usage, from ``svg_training/``:
     python3 scripts/make_ste_learned_skills_deck.py --png      # the .pptx and the PNG renders
 
 The content follows ``ste_learning/LEARNED_SKILLS_ROUTE.md`` and ``ste_learning/drafts/LS_EXECUTION_WORKFLOW.md`` (v3,
-rulings R39 to R45). Slides 8 and 9 (what a useful policy still needs; where it stands) are not rendered to PNG: the page
+rulings R39 to R45); LS1's stop (R49, 26 Nov 2026) and its redesign follow ``ste_learning/drafts/LS1_REDESIGN.md``. Slides 8 and 9 (what a useful policy still needs; where it stands) are not rendered to PNG: the page
 carries them as tables.
 """
 import argparse
@@ -70,16 +70,19 @@ def slide_title(prs):
     for r in sub.text_frame.paragraphs[0].runs:
         set_run(r, 22, False, LIGHT)
     note(s, 0.8, 6.3, 11.7, 0.5,
-         "Third route of the STE learning track · adopted 25 November 2026 · build approved: nothing built, trained or flown yet",
+         "Third route of the STE learning track · adopted 25 November 2026 · LS1 stopped 26 November 2026, redesign in "
+         "trials · nothing flown",
          size=14, color=LIGHT)
     s.notes_slide.notes_text_frame.text = (
         "The STE learning track trains Guard and Strike drone teams for the area-denial game. It has two routes "
         "today: pure RL and the skills route. This deck shows the third route, adopted on 25 November 2026: the "
         "drones learn their own skills and their own team strategy, starting from the hand-written ones. A skill "
-        "network is one learned network per team that flies any skill from a skill code; PPO is the "
+        "network is the learned part that flies any skill from a skill code (first design: one per team; redesign: "
+        "one small network per skill); PPO is the "
         "reinforcement-learning method; tier 1 is the fast training engine and tier 2 the Isaac Lab drone. The aim is "
-        "a policy that is useful on the drones, not a pipeline check. The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The build was approved on 25 November 2026 and is in work; nothing has "
-        "been built, trained or flown yet.")
+        "a policy that is useful on the drones, not a pipeline check. The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The LS1 build was merged on 26 November 2026. Its first copy did not pass "
+        "the copy check on either team, so LS1 was stopped on 26 November 2026 (R49) and a redesign of the skill network "
+        "is planned as CPU trials, its first stage on hold. Nothing has been flown.")
 
 
 
@@ -118,7 +121,9 @@ def slide_architecture(prs):
     heads = node(s, P, 3.0, 2.55, 2.4, 1.0, [("Heads, every 0.6 s", {"bold": True}), "team strategy for all, or",
                                              "\"free\": each drone picks"], fill=LEARN, size=12, name="heads")
     net = node(s, P, 6.2, 2.55, 2.2, 1.0, [("Skill network", {"bold": True}), "flies the chosen skill:",
-                                           "a velocity every 0.05 s"], fill=LEARN, size=12, name="skill_net")
+                                           "a velocity every 0.05 s"], fill=LEARN, size=12, name="skill_net",
+               outline=GATE)
+    net.line.width = Pt(4)
     opp = node(s, DISK, 8.8, 1.62, 1.9, 0.72, [("Opponent team", {"bold": True}), "scripts; later: saved teams"],
                fill=HAND, size=11, name="opponents")
     filt = node(s, P, 8.8, 2.55, 1.9, 1.0, [("Safety filter", {"bold": True}), "keeps every pair", "of drones apart"],
@@ -140,7 +145,8 @@ def slide_architecture(prs):
                    fill=HAND, size=12, name="teacher scripts")
     learn = node(s, P, 3.0, 4.45, 5.4, 0.85,
                  [("Learning step", {"bold": True}),
-                  "LS1 copies the scripts; then heads, later skills: PPO"],
+                  "LS1 copies the scripts (stopped; redesign planned);",
+                  "then heads, later skills: PPO"],
                  fill=LEARN, size=12, name="learning step")
     out = node(s, P, 11.0, 4.45, 1.8, 0.85, [("Outcome", {"bold": True}), "reward"], fill=HAND, size=12,
                name="outcome")
@@ -163,11 +169,13 @@ def slide_architecture(prs):
     link(s, gate, RIGHT, strike, LEFT)
     note(s, 9.0, 5.6, 3.8, 0.95, ["Each export: network files + a settings file;",
                                   "any opponent can face it. Real flight needs",
-                                  "a separate approval. A proposed design:", "nothing built, trained or flown yet."],
+                                  "a separate approval. LS1 built, then stopped:",
+                                  "nothing exported or flown yet."],
          size=12, space_after=0)
     legend(s, 6.82)
-    note(s, 4.3, 6.78, 8.6, 0.32, "Blue: Guard team · red: Strike team · amber: gate · dashed: teaching, in training only",
-         size=12)
+    note(s, 4.3, 6.7, 8.6, 0.5, ["Blue: Guard team · red: Strike team · amber: gate · dashed: teaching, in training only",
+                                 "Amber outline: being redesigned (LS1 stopped 26 Nov 2026; one small network per skill; trials not started)"],
+         size=12, space_after=0)
     s.notes_slide.notes_text_frame.text = (
         "Read from top left to bottom right. The top band runs in every game, in training and after it. Each drone "
         "sees itself, its team-mates, the opponents, the zone and the clock. Every 0.6 seconds the heads decide: the "
@@ -183,7 +191,9 @@ def slide_architecture(prs):
         "saved teams as opponents, and LS3, last, adds new skill codes with no script. The bottom "
         "band is what comes out: when each team's gates pass, each team is exported on its own, heads plus skill "
         "network, and any opponent that obeys the game's rules can face it. Real flight needs a separate approval. "
-        "The build is approved and in work: nothing has been built, trained or flown yet.")
+        "The skill network has an amber outline: the first design, one network per team, did not pass LS1's copy check "
+        "on either team, LS1 was stopped on 26 November 2026 (R49), and a redesign with one small network per skill, "
+        "each in its own frame, is planned as CPU trials before any build; the trials have not started. Nothing has been exported or flown.")
 
 
 def slide_routes(prs):
@@ -244,60 +254,89 @@ def slide_stages(prs):
     s = new_slide(prs, "Five steps, each starting from the one before")
     w = 2.0
     xs = [0.45 + i * 2.5 for i in range(5)]
-    heads = [("LS1 Distil", "copy the scripts"), ("Head training", "heads on the skill network"),
+    heads = [("LS1 Distil", "copy the scripts: STOPPED"), ("Head training", "heads on the skill network"),
              ("LS2 Fine-tune", "improve the skills"), ("Self-play", "teams against teams"),
              ("LS3 Free codes", "last: an extension")]
     cards = [
-        ["Learned: a copy of every script, as codes of one skill network per team",
-         "Gate: same starts; games that change are counted; limits set from a calibration read",
-         "Asks 0.9 GPU-h"],
+        ["Tried: one skill network per team; 0.17 GPU-h of 0.9 asked",
+         "Copy check: NOT DISTILLED on both teams; every control passed",
+         "Stopped 26 Nov 2026 (R49); redesigned below"],
         ["Learned: the heads again, on the skill network; both teams",
-         "Expected: scores about as the skills route's; no new strategy",
+         "Expected: scores about as the skills route's",
+         "Built; waits for LS1 to pass on both teams",
          "Asks 4.0 GPU-h (job group LS1.4)"],
-        ["Learned: skills and heads, in turns",
-         "A tie keeps each code near its script, weakened step by step",
-         "Gate: to be written in its note; proposed: above the best fixed mix, each code still recognisable",
+        ["Learned: skills and heads, in turns; a tie keeps each code near its script",
+         "Gate: in its note; proposed: above the best fixed mix",
          "Hours: its own note"],
         ["Learned: choices against saved and present teams",
-         "Pool entry and pilot right after head training; full stage before LS2 only if the pilot shows room",
-         "Gate: in its note; read on opponents never trained against, held-out scripts too",
+         "Pilot right after head training",
+         "Gate: in its note; read on opponents never trained against",
          "Hours: its own note"],
-        ["Learned: skill codes with no script, rewarded for being distinct and useful",
-         "Gate: to be written in its note; proposed: new codes chosen; worst result up",
+        ["Learned: skill codes with no script",
+         "Gate: in its note; proposed: new codes chosen, worst result up",
          "Hours: its own note"],
     ]
     stages = []
-    for x, (t, sub), lines in zip(xs, heads, cards):
-        st = node(s, ALT, x, 1.4, w, 0.95, [(t, {"bold": True, "size": 14}), sub], fill=LEARN, size=11)
+    for i, (x, (t, sub), lines) in enumerate(zip(xs, heads, cards)):
+        st = node(s, ALT, x, 1.35, w, 0.95, [(t, {"bold": True, "size": 14}), sub], fill=LEARN, size=11,
+                  outline=GATE if i == 0 else None)
+        if i == 0:
+            st.line.width = Pt(4)
         stages.append(st)
-        card = node(s, ALT, x, 2.6, w, 3.2, "", fill=LIGHT, text_color=INK)
+        card = node(s, ALT, x, 2.5, w, 2.55, "", fill=LIGHT, text_color=INK)
         card.name = f"Card: {t}"
-        note(s, x + 0.1, 2.7, w - 0.2, 3.0, lines, size=12, space_after=6)
+        note(s, x + 0.1, 2.6, w - 0.2, 2.4, lines, size=11, space_after=5)
     for a, b in zip(stages, stages[1:]):
         mid = (a.left + a.width + b.left) / 2 / 914400
-        dm = node(s, D, mid - 0.2, 1.67, 0.4, 0.4, "", fill=GATE)
+        dm = node(s, D, mid - 0.2, 1.62, 0.4, 0.4, "", fill=GATE)
         link(s, a, RIGHT, dm, LEFT)
         link(s, dm, RIGHT, b, LEFT)
-    node(s, D, 0.6, 6.05, 0.32, 0.32, "", fill=GATE)
-    note(s, 1.05, 5.95, 11.8, 0.9,
-         ["Gate: pass marks written before the run. A step that fails stops the route there; every step before it is "
-          "still a usable result.",
-          "Hours are asks, not results; no cap, by decision (200 GPU-h in settings), each job stopped at its ask. LS1 and head "
-          "training are planned job by job."],
-         size=12, color=DARK, space_after=0)
+    # the LS1 redesign: CPU trials before any build
+    band(s, 0.45, 5.2, 12.45, 1.5, "LS1 redesign: one small network per skill, each in its own frame; CPU trials, no GPU",
+         label_bottom=True)
+    pw, px = 2.1, [0.6, 3.05, 5.5, 7.95, 10.4]
+    pilots = [
+        [("Stage 0: ON HOLD", {"bold": True}), "five checks, no training"],
+        [("Stage 1", {"bold": True}), "small fits, every skill", "of both teams"],
+        [("Stage 2", {"bold": True}), "students replay all 280", "test cells; two seeds"],
+        [("Build approval", {"bold": True}), "decided after the trials"],
+        [("LS1 again", {"bold": True}), "distil, then the copy check", "of record"],
+    ]
+    boxes = []
+    for i, (x, lines) in enumerate(zip(px, pilots)):
+        fill = GATE if i == 3 else PAPER
+        color = PAPER if i == 3 else INK
+        bx = node(s, ALT, x, 5.3, pw, 0.8, lines, fill=fill, text_color=color, size=11,
+                  outline=GATE if i == 0 else DARK, name=f"Pilot: {lines[0][0]}")
+        if i == 0:
+            bx.line.width = Pt(3)
+        boxes.append(bx)
+    for a, b in zip(boxes, boxes[1:]):
+        link(s, a, RIGHT, b, LEFT)
+    poly(s, [(0.45, 3.775), (0.3, 3.775), (0.3, 5.7), (0.6, 5.7)], dashed=True, name="LS1 to its redesign")
+    note(s, 0.45, 6.78, 12.4, 0.6,
+         ["Gate (amber diamond): pass marks written before the run; a step that fails stops the route there. Amber outline: "
+          "stopped or on hold. Solid amber box: a decision, not a trial. Dashed arrow: LS1's redesign.",
+          "Hours are asks, not results; no cap, by decision (200 GPU-h in settings). Trials: about 9 to 16.5 CPU-hours "
+          "one job at a time (estimate)."],
+         size=11, color=DARK, space_after=0)
     s.notes_slide.notes_text_frame.text = (
         "The order is LS1, head training, LS2, self-play, LS3. Each step starts from the behaviour of the one "
-        "before (for LS1, a copy within the gate's limits), so none starts from random flight. LS1 copies the hand-written scripts into one skill network per "
-        "team; its gate has the copy and the scripts play the same starts, counts the games that change and not "
-        "only the difference in wins, and takes its pass limits from a calibration read made before the run. Head "
-        "training, job group LS1.4, trains the heads again on the skill network, for both teams. The copy imitates "
-        "the scripts, so scores about as the skills route's are the expected outcome; a new strategy is not "
-        "expected before LS2. LS2 trains the skills with the game reward while a tie keeps each skill near its "
-        "script. Self-play is the stage called LS4 on earlier versions of the page. Its pool entry for saved teams "
-        "is built early and a pilot runs right after head training; the full stage starts before LS2 only if the "
-        "pilot's three measurements show room, otherwise after LS2. LS3, free skill codes, comes last. "
-        "The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. LS1 asks 0.9 and head training asks 4.0, two "
-        "seeds per arm, clips included, with a second seed of the skills route and a pilot. These are asks, not results; later steps bring their own estimates.")
+        "before, so none starts from random flight. LS1 copies the hand-written scripts into the skill network; its "
+        "gate has the copy and the scripts play the same starts and counts the games that change. The first design, "
+        "one skill network per team, was built and trained (0.17 of the 0.9 GPU-h asked). Its copy check found it NOT "
+        "DISTILLED on both teams while every control passed, so the result is real, and LS1 was stopped on 26 "
+        "November 2026 (R49). The lower band is the redesign: one small network per skill, each in the frame of its "
+        "drone's line to the zone, with exact zeros for the parked skill and unused controls. It is tried on the CPU "
+        "before any build. Stage 0 has five checks and no training, and is on hold. Stage 1 fits every skill of both "
+        "teams at small size. Stage 2 has the students replay all 280 test cells against the stored script games; "
+        "a design passes only with two training seeds. A pass is a go for the build, decided after the trials; LS1 "
+        "then runs again: distil, then the copy check of record. Head training, job group LS1.4, is built and waits "
+        "for LS1 to pass on both teams; it asks 4.0 GPU-h. LS2 trains the skills with the game reward while a tie "
+        "keeps each skill near its script. Self-play's pilot runs right after head training. LS3, free skill codes, "
+        "comes last. The route has no GPU-hour cap, by decision; the settings file carries 200 GPU-h because the "
+        "launcher needs a number, and each job is stopped at its own stated ask. The trials need about 9 to 16.5 "
+        "CPU-hours one job at a time, an estimate; they use no GPU.")
 
 
 def slide_decision(prs):
@@ -437,23 +476,25 @@ def slide_needs(prs):
 def slide_status(prs):
     s = new_slide(prs, "Where it stands")
     rows = [
-        ("The route", "adopted, 25 November 2026"),
-        ("GPU-hours", "none, by decision; settings carry 200 GPU-h; per-job asks"),
-        ("Design review", "independent, done 25 November 2026"),
-        ("The build", "approved 25 November 2026; in work"),
-        ("Code and runs", "none yet"),
-        ("Still to be set", "LS1 pass limits and the head-training margin, after the calibration read"),
+        ("The route", "adopted, 25 November 2026; no GPU-hour cap, by decision; per-job asks"),
+        ("The LS1 build", "merged 26 November 2026: skill network, distillation, copy check, export, head training"),
+        ("LS1", "first copy NOT DISTILLED on both teams; stopped 26 November 2026 (R49); 0.17 GPU-h used"),
+        ("Redesign", "one small network per skill, reviewed; CPU trials before any build; Stage 0 on hold"),
+        ("Head training", "built, not started: needs LS1 to pass on both teams"),
+        ("Later steps", "LS2, self-play and LS3 each wait for their own design note"),
     ]
     for i, (t, body) in enumerate(rows):
         y = 1.4 + i * 0.82
         node(s, ALT, 0.6, y, 3.2, 0.66, t, fill=LEARN, size=14)
         node(s, ALT, 3.9, y, 8.8, 0.66, body, fill=LIGHT, text_color=INK, size=14)
-    note(s, 0.6, 6.4, 12.1, 0.5, "Nothing has been built, trained or flown.", size=15, color=DARK, bold=True)
+    note(s, 0.6, 6.4, 12.1, 0.5, "Nothing has been exported or flown.", size=15, color=DARK, bold=True)
     s.notes_slide.notes_text_frame.text = (
-        "The route was adopted on 25 November 2026. "
-        "The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch. The independent design review is done, and the build was approved the same day and is in work. "
-        "There is no code and there are no runs yet. The LS1 pass limits and the head-training margin are set after "
-        "the calibration read, before any run. Nothing has been built, trained or flown.")
+        "The route was adopted on 25 November 2026 and has no GPU-hour cap, by decision; each job is stopped at its own "
+        "stated ask. The LS1 build was merged on 26 November 2026. The first copy, one skill network per team, used "
+        "0.17 GPU-h and was found NOT DISTILLED on both teams by the copy check, with every control passing; LS1 was "
+        "stopped the same day (R49). A redesign with one small network per skill is reviewed and is tried on the CPU "
+        "before any build; its first stage is on hold. Head training is built and waits for LS1 to pass on both "
+        "teams. Nothing has been exported or flown.")
 
 
 def render_pngs(deck: Path) -> None:

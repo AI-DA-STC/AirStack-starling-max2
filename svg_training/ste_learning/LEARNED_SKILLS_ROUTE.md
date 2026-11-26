@@ -7,7 +7,7 @@ Strike team tries to reach it. The *learned-skills route* is a way of training t
 individual skills and their own team strategy, starting from the hand-written ones. It was adopted as the track's third
 route on 25 November 2026 ([DISCUSSION, R35](DISCUSSION_2026-11-19_20.md)). Its aim is a policy that is useful on
 the drones, not a pipeline check. The route has no GPU-hour cap, by decision; the settings file still carries 200 GPU-h for it because the launcher needs a number, each job is stopped at its own stated ask, and a single job above 5 GPU-h is announced before launch.
-The build was approved on 25 November 2026 and is in work. Nothing of it has been built, trained or flown yet.
+The LS1 build was approved on 25 November 2026 and merged on 26 November 2026. Its first copy, one skill network per team, did not pass the copy check on either team ([LS1 record](../records/2026-11-26_ste_ls1_distil_read_record.md)), so LS1 was stopped on 26 November 2026 ([DISCUSSION, R49](DISCUSSION_2026-11-19_20.md)) and a redesign of the skill network is planned as CPU trials before any build; its first stage is on hold ([redesign note](drafts/LS1_REDESIGN.md)). Nothing has been exported or flown.
 
 Terms used on this page:
 
@@ -19,8 +19,9 @@ Terms used on this page:
 - *Head*: the part of a policy that makes one choice. The *team head* chooses a team strategy or "free"; under "free",
   each drone's *drone head* chooses its own skill.
 - *Skill code*: a number that names one skill; the skill network reads it as an input.
-- *Skill network*: one learned network per team that flies any skill: it reads what the drone sees, its slot in the team
-  and a skill code, and outputs a velocity.
+- *Skill network*: the learned part that flies any skill: it reads what the drone sees, its slot in the team and a
+  skill code, and outputs a velocity. The first design was one network per team; the redesign being tried has one small
+  network per skill.
 - *Safety filter*: the hand-written step that keeps every pair of drones apart, the opponents' too, whatever the
   policy asks.
 - *Tick*: one step of the game, 0.05 s.
@@ -41,12 +42,13 @@ Terms used on this page:
 
 ## Architecture at a glance
 
-![The whole route on one picture, in three bands. Every game: what each drone sees goes to the heads (every 0.6 s: a team strategy for all drones, or "free" and each drone picks), which pass a skill code to the skill network; the skill network also reads what the drone sees and which drone it is, every tick, and outputs a velocity; the safety filter, which also takes the opponent team, and the game step follow, and the next observation closes the loop. Training only: the game outcome becomes the reward of the learning step, which copies the teacher scripts in LS1 and is reinforcement learning in the head training and from LS2, and updates the heads and, from LS2, the skills. After training: when each team's gates pass, a Guard team export and a Strike team export, each heads plus skill network](figures/ls_architecture.png)
+![The whole route on one picture, in three bands. Every game: what each drone sees goes to the heads (every 0.6 s: a team strategy for all drones, or "free" and each drone picks), which pass a skill code to the skill network; the skill network also reads what the drone sees and which drone it is, every tick, and outputs a velocity; the safety filter, which also takes the opponent team, and the game step follow, and the next observation closes the loop. Training only: the game outcome becomes the reward of the learning step, which copies the teacher scripts in LS1 and is reinforcement learning in the head training and from LS2, and updates the heads and, from LS2, the skills. After training: when each team's gates pass, a Guard team export and a Strike team export, each heads plus skill network. The skill network has an amber outline: being redesigned after LS1 stopped on 26 November 2026, one small network per skill, trials not started](figures/ls_architecture.png)
 
 Read from top left to bottom right. The top band runs in every game, during training and after it; the middle band
 exists only in training; the bottom band is what comes out. Teal parts are learned, grey parts are hand-written and
 unchanged; the dashed arrow is teaching, used in training only. The learning step is a supervised copy of the
-scripts in LS1, then reinforcement learning (PPO, see Terms) on the heads and, from LS2, on the skills.
+scripts in LS1, then reinforcement learning (PPO, see Terms) on the heads and, from LS2, on the skills. The amber
+outline marks the skill network: its first design did not pass LS1, and the trials of its redesign have not started.
 
 ## Three routes, one game
 
@@ -56,7 +58,7 @@ scripts in LS1, then reinforcement learning (PPO, see Terms) on the heads and, f
 |---|---|---|---|
 | Pure RL (velocity route) | the whole policy: it outputs a velocity | nothing in the policy | yes (L3) |
 | Skills route | when to use which script, and which drone uses which | every movement | yes (L3) |
-| Learned-skills route | the choices, then the skills, then new skills and team patterns | the scripts, only as teachers | no |
+| Learned-skills route | the choices, then the skills, then new skills and team patterns | the scripts, only as teachers | LS1 and head training built; LS1 stopped, redesign planned |
 
 All three share the game, the safety filter that keeps every pair of drones apart, the scoring and the export. They
 differ only in what turns a drone's view into a command.
@@ -76,18 +78,28 @@ stage starts from random flight.
 
 ## Five steps, in this order
 
-![Five step boxes, LS1 Distil, Head training, LS2 Fine-tune, Self-play and LS3 Free codes, joined by gate diamonds; under each a card with what is learned, its gate or expectation and its GPU-hour ask or a note that its own design note brings the hours](figures/ls_four_stages.png)
+![Five step boxes, LS1 Distil, Head training, LS2 Fine-tune, Self-play and LS3 Free codes, joined by gate diamonds; LS1 has an amber outline and reads STOPPED. Under each a card: LS1 tried one skill network per team, 0.17 of 0.9 GPU-h, its copy check NOT DISTILLED on both teams with every control passing, stopped 26 November 2026; head training built and waiting for LS1; the later steps with what is learned, their gate and a note that their own design note brings the hours. A lower band, the LS1 redesign (one small network per skill, each in its own frame, CPU trials, no GPU), runs Stage 0 (five checks, no training, on hold), Stage 1 (small fits of every skill of both teams), Stage 2 (the students replay all 280 test cells, two seeds), the build approval, and LS1 again (distil, then the copy check of record)](figures/ls_four_stages.png)
 
 The order is LS1, head training, LS2, self-play, LS3. Each step starts from the one before. The stage names LS1, LS2 and
 LS3 are unchanged; self-play is the stage called LS4 League on earlier versions of this page.
 
 | Step | What is learned | Starts from | Gate or expectation | GPU-hours |
 |---|---|---|---|---|
-| **LS1 Distil** | a copy of every script, as codes of one *skill network* per team | the scripts | the copy and the scripts play the same starts; the read counts the games that change, not only the difference in wins; the pass limits are set before the run from a calibration read | asks 0.9 |
+| **LS1 Distil** (stopped, 26 November 2026; redesign planned) | a copy of every script, as codes of the *skill network* (first design: one per team; redesign: one small network per skill) | the scripts | the copy and the scripts play the same starts; the read counts the games that change, not only the difference in wins; the pass limits are set before the run from a calibration read | asks 0.9 |
 | **Head training** (job group LS1.4) | the heads again, on the skill network, for both teams | LS1 | scores about as the skills route's are the expected outcome; no new strategy is expected | asks 4.0 (two seeds per arm, clips included, a second seed of the skills route and a pilot) |
 | **LS2 Fine-tune** | the skills and the heads, in turns, with a tie that keeps each code near its script, weakened step by step | head training | to be written in its design note; proposed: above the best fixed mix of scripts, each code still recognisable | its design note |
 | **Self-play** | which code each drone gets, against saved and present teams | LS2 or, if the pilot shows room, head training | to be written in its design note; read against opponents never trained against, including new held-out scripts | its design note |
 | **LS3 Free codes** (last, an extension) | skill codes with no script, rewarded for being distinct and useful | self-play | to be written in its design note; proposed: the new codes are chosen and raise the worst result | its design note |
+
+**LS1 stopped and its redesign (26 November 2026).** The first skill network, one per team, was trained (0.17 of the
+0.9 GPU-h asked) and played the scripts in the copy check: NOT DISTILLED on both teams, with every control passing
+([LS1 record](../records/2026-11-26_ste_ls1_distil_read_record.md)). LS1 was stopped there and the head training does not start
+([DISCUSSION, R49](DISCUSSION_2026-11-19_20.md)). The redesign gives each skill its own small network, reading the
+world in the frame of its drone's line to the zone, with exact zeros for the parked skill and unused controls
+([redesign note](drafts/LS1_REDESIGN.md)). It is to be tried on the CPU in three stages before any build: Stage 0, five
+checks with no training (on hold); Stage 1, small fits of every skill of both teams; Stage 2, the students replay all
+280 test cells against the stored script games, and a design passes only with two training seeds. The build is
+decided after the trials; LS1 then runs again, with its limits unchanged.
 
 A step that fails its gate stops the route there, and every step before it is still a usable result. After LS1 alone,
 each team's skill network exports as an ONNX file, with no port of the scripts into the flight software; a complete
@@ -101,8 +113,8 @@ it off the scripts' path.
 
 **LS1's gate.** The copy and the scripts play the same starts. The read counts the games that change between them, not
 only the difference in wins, because two copies of one behaviour change few games and a difference in wins can hide
-errors that cancel. The pass limits are not set yet: they are set before the run, from a calibration read of scripts
-against deliberately changed scripts.
+errors that cancel. The pass limits were set before the run, from a calibration read of scripts against deliberately
+changed scripts ([DISCUSSION, R48](DISCUSSION_2026-11-19_20.md)), and stay the same for the redesign.
 
 **What the head training can and cannot show.** The skill network imitates the scripts, so heads trained on it are
 expected to score about as the skills route's. That outcome shows that the copy can carry training. A new strategy is
@@ -170,7 +182,7 @@ check both, against the best fixed mix of scripts and against opponents never tr
 |---|---|---|
 | Robustness to attackers it did not train against | the self-play step | a new build: the opponent pool takes script names only, so a saved team cannot be a training opponent today; the pool entry for saved teams does not exist yet |
 | A held-out test | nothing today: every Strike script is in the training pool | proposed: new scripts, two per side, written for it, outside the teachers' file and before self-play is designed |
-| Holding the team plan when a drone is lost | partly: one skill network is shared by a team's drones and is fitted with a drone absent | a shared actor (one policy shared by a team's drones) and training at drawn team sizes |
+| Holding the team plan when a drone is lost | partly: in the first design one skill network is shared by a team's drones and is fitted with a drone absent; the redesign gives each skill its own network | a shared actor (one policy shared by a team's drones) and training at drawn team sizes |
 | Training on the Isaac Lab drone (tier 2) | no: the route trains on the fast engine (tier 1) | a separate task: a tier-2 score of the trained team, then tier-2 training |
 
 ## What changes in the code
@@ -183,7 +195,7 @@ each skill network records a fingerprint of them.
 
 | Piece | What it is | Used by |
 |---|---|---|
-| Skill network | one network per team: the drone's view, its slot and a skill code in, a velocity out; saved with refusals for a wrong team, skill list or game file | LS1 and every later step |
+| Skill network | one network per team: the drone's view, its slot and a skill code in, a velocity out; saved with refusals for a wrong team, skill list or game file (being redesigned: one small network per skill) | LS1 and every later step |
 | Distillation | data collection, the supervised fit and the relabelling rounds | LS1 |
 | Cell module | the games of the equivalence read, for either team | LS1 |
 | Calibration read | scripts against deliberately changed scripts, to set the pass limits | LS1 |
@@ -194,8 +206,9 @@ each skill network records a fingerprint of them.
 | Pool entry for saved teams | a saved team as a training opponent | self-play pilot (built early) and the self-play stage |
 | Skill-level learner | trains the skills by the game reward, with the tie to the scripts | LS2 (later) |
 
-Self-play and LS2 are new builds; LS1 and the head training change existing pipeline files. Nothing in this table is
-built yet.
+Self-play and LS2 are new builds; LS1 and the head training change existing pipeline files. The pieces used by LS1
+and the head training were merged on 26 November 2026; the pool entry for saved teams and the skill-level learner are
+not built.
 
 ## Where it stands
 
@@ -204,10 +217,14 @@ built yet.
 | The route | adopted, 25 November 2026 |
 | GPU-hour cap | none, by decision; settings carry 200 GPU-h; per-job asks |
 | Independent design review | done, 25 November 2026 |
-| The build | approved, 25 November 2026; in work |
-| LS1 pass limits and the head-training margin | not set; set before any run, after the calibration read |
+| The build | approved, 25 November 2026; LS1 and head-training pieces merged, 26 November 2026 |
+| LS1 pass limits | set from the calibration read before the run, 26 November 2026 ([DISCUSSION, R48](DISCUSSION_2026-11-19_20.md)) |
+| LS1 | first copy NOT DISTILLED on both teams; stopped, 26 November 2026 ([LS1 record](../records/2026-11-26_ste_ls1_distil_read_record.md); [R49](DISCUSSION_2026-11-19_20.md)) |
+| Skill network redesign | note reviewed; CPU trials before any build; Stage 0 on hold ([redesign note](drafts/LS1_REDESIGN.md)) |
+| Head training | built, not started: needs LS1 to pass on both teams |
+| Head-training margin | not set; set before its run |
 | Held-out test: two new scripts per side | proposed; still an open question, asked with the self-play note |
-| Code and runs | none yet |
+| Runs | LS1's distillation and copy check, 0.17 GPU-h; nothing exported or flown |
 | Execution workflow: what is added to the pipeline and which jobs run | third version, reviewed: [execution workflow](drafts/LS_EXECUTION_WORKFLOW.md) |
 
 Files: the workflow, [execution workflow](drafts/LS_EXECUTION_WORKFLOW.md), and the older task-level

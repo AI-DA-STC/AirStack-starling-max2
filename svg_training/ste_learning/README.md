@@ -129,8 +129,11 @@ Each result is reported as "observed in the training simulator" until it has flo
 
 Phase L3 built two ways of training a team: *pure RL*, where a network outputs the velocity, and the *skills route*,
 where learned heads choose which hand-written script flies. A third, the *learned-skills route*, was adopted on
-25 November 2026: the scripts are copied into one network per team, which is then trained, given skills no script has,
-and played in a league. It is a design, not yet built: [the learned-skills route](LEARNED_SKILLS_ROUTE.md).
+25 November 2026: the scripts are copied into a learned skill network, which is then trained, given skills no script
+has, and played in a league. Its first step, LS1, is built; the first copy (one network per team) did not pass its copy
+check on either team ([LS1 record](../records/2026-11-26_ste_ls1_distil_read_record.md)), so LS1 was stopped on
+26 November 2026 ([DISCUSSION, R49](DISCUSSION_2026-11-19_20.md)) and a redesign with one small network per skill is
+planned as CPU trials before any build. Nothing has been exported or flown: [the learned-skills route](LEARNED_SKILLS_ROUTE.md).
 
 ## Phase L0, done
 

@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 26 November 2026 ~14:30, on the home RTX 5090 (M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 26 November 2026 ~22:45, on the home RTX 5090 (route 3 flowcharts redrawn; Stage 0 on hold by the owner; before: ~14:30 M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -30,6 +30,13 @@ note disagree, this file wins.
 - LS1.2 ran with an uncommitted (likely docs-only) diff; launch any further run from a clean tree.
 - **Redesign note** `ste_learning/drafts/LS1_REDESIGN.md` (`c1bebc9a`), two reviewers; the rules added after review (4.3
   to 4.5, decisions 8 to 10) are draft and in a focused re-review. Scout evidence `records/evidence/2026-11-26_ste_ls1_redesign_scouts/`.
+- **~22:45: pilot rules fixed after the re-review (`6625cf82`). Owner: "pause on stage 0"**, so Stage 0 is ON HOLD;
+  do not start any pilot stage without the owner's go. Route 3 flowcharts redrawn on the owner's request
+  (`scripts/make_ste_learned_skills_deck.py --png`, system `python3` has python-pptx): `ls_four_stages.png` shows LS1
+  STOPPED and a lower band with the redesign trials (Stage 0 on hold, Stage 1, Stage 2, build approval, LS1 again);
+  `ls_architecture.png` gives the skill network an amber "being redesigned" outline. The route page, `ste_learning/README.md`'s
+  route paragraph and the deck's title and status slides follow. One review round (numbers: no finding; completeness:
+  1 blocker, 4 minor, fixed).
   Asked the owner for a go on Stage 0 only (no training, CPU). Stage 0c (blended switches) decides whether a learnable
   copy can pass; the later decisions wait for it.
 

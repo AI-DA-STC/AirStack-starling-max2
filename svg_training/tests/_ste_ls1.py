@@ -34,6 +34,11 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   the skill network takes it: (net, meta, path, sha256).
 * ``net_gates_file`` (task LS1-M3-T3): a net gate file (the skills gate file through ``net_gates_text``) written under
   ``tmp_path``, with a tiny network of each side saved beside it (OP-35: both sides), for a route 3 team's export.
+* ``smoke_two_level_text``, ``net_gate_file``, ``distilled_read`` (task LS1-M4-T2; M4-T3 and M4-T7 use them again): the
+  SMOKE gate file cut to variant base with the two-level table (optionally run 0's mark, a filled Strike recipe and
+  the LS1.4 heads gate file's shape: pool on, a second variant on the base reference cells, a run 0 per variant);
+  that text as a net gate file with tiny networks (``NET_SEED``) for the training driver; a fake LS1.2 read
+  (``results.json`` of ``scripts/ste_ls1_equivalence.py``) of one side's network.
 
 CPU only."""
 import copy
@@ -340,3 +345,104 @@ def net_gates_file(tmp_path, nets: dict | None = None, base=SKILLS_GATES, name="
     path = tmp_path / name
     path.write_text(net_gates_text(Path(base).read_text(), nets))
     return path, nets
+
+
+# ================================================================================ LS1-M4-T2: the driver's net gate file
+SMOKE_GATES = ROOT / "configs" / "ste_l012" / "smoke_gates.toml"
+SMOKE_TWO_LEVEL = TIER2_TWO_LEVEL      # the same text as tests/test_ste_l3_driver.py TWO_LEVEL (its lines 24-40)
+SMOKE_VARIANT_LINE = re.compile(r"(?m)^(tag_1p2|tag_1p4) = \{ game = .*\n")
+SMOKE_BASE_LINE = re.compile(r"(?m)^base = \{ game = .*$")
+SMOKE_ORDER = 'order = ["base", "tag_1p2", "tag_1p4"]'
+SMOKE_TIMING = 'timing_batches = [{ variant = "tag_1p2", side = "strike" }]'
+SMOKE_RUN0_SCRIPT = 'script = "strike_straight"'
+SMOKE_OVERRIDES = "side_overrides = { strike = {}, guard = {} }"
+NET_SEED = 6                           # the tiny networks' weights: picked (CPU probe, 26 Nov 2026) so that on both
+                                       # sides the untrained team's cell differs from the scripts' first-skill cell
+                                       # and from a twin of the second drone skill (seed 5: every Strike game unfinished)
+SECOND_VARIANT = "base_s2"             # the heads gate file's shape (LS1-M4-T4): a second seed of base, its own run 0
+SECOND_SEEDS = {"strike": 120401, "guard": 120402}   # not a seed of the smoke file (120001 to 120950)
+SECOND_RUN0_SEED = 120403
+POOL_SEED = 120404
+
+
+def _once(text: str, old: str, new: str) -> str:
+    assert text.count(old) == 1, f"{old!r} occurs {text.count(old)} times, not once"
+    return text.replace(old, new, 1)
+
+
+def smoke_two_level_text(reach_min: float | None = None, heads_shape: bool = False,
+                         strike_recipe: dict | None = None) -> str:
+    """The SMOKE gate file (configs/ste_l012/smoke_gates.toml) cut to variant base (``verdict.order`` and the pilot's
+    timing batch on base: a tiny network pins the base game's file and constants) plus the two-level table, scripts
+    route. ``reach_min``: ``[run0] skills_reach_min`` (a skills run 0 needs it; the loader then needs
+    ``SKILLS_RUN0_EVAL_GAMES`` patched to the smoke's 8 evaluation games). ``heads_shape``: the LS1.4 heads gate file's
+    shape (LS1-M4-T4): a second variant ``base_s2`` of the base game with ``reference_variant = "base"`` and its own
+    ``run0_seed``, ``[run0] per_variant = true`` and ``[pool]`` on. ``strike_recipe``: ``[trainer]
+    side_overrides.strike`` filled (from a pilot, as L0.12's FILL steps)."""
+    text = SMOKE_VARIANT_LINE.sub("", SMOKE_GATES.read_text())
+    assert not SMOKE_VARIANT_LINE.search(text) and len(SMOKE_BASE_LINE.findall(text)) == 1
+    variants = ["base"]
+    if heads_shape:
+        second = (f'{SECOND_VARIANT} = {{ game = "base", g_star = "guard_mark_edge", s_star = "strike_straight", '
+                  f'role = "second seed of base (test)", train_seed = {toml_value(SECOND_SEEDS)}, '
+                  f'extra_eval_opponents = {{ strike = [], guard = [] }}, reference_variant = "base", '
+                  f'run0_seed = {SECOND_RUN0_SEED} }}')
+        text = SMOKE_BASE_LINE.sub(lambda m: m.group(0) + "\n" + second, text, count=1)
+        text = _once(text, "[run0]\n", "[run0]\nper_variant = true\n")
+        variants.append(SECOND_VARIANT)
+    text = _once(text, SMOKE_ORDER, f"order = {toml_value(variants)}")
+    text = _once(text, SMOKE_TIMING, 'timing_batches = [{ variant = "base", side = "strike" }]')
+    if reach_min is not None:
+        text = _once(text, SMOKE_RUN0_SCRIPT, f"{SMOKE_RUN0_SCRIPT}\nskills_reach_min = {reach_min!r}")
+    if strike_recipe:
+        text = _once(text, SMOKE_OVERRIDES, f"side_overrides = {{ strike = {toml_value(strike_recipe)}, guard = {{}} }}")
+    text += SMOKE_TWO_LEVEL
+    if heads_shape:
+        text += f"\n[pool]\nenabled = true\nseed = {POOL_SEED}\n"
+    return text
+
+
+def net_gate_file(folder, *, nets: dict | None = None, net_seed: int = NET_SEED, reach_min: float | None = None,
+                  heads_shape: bool = False, strike_recipe: dict | None = None,
+                  name: str = "gates.toml") -> tuple[Path, dict]:
+    """A net gate file for the training driver (task LS1-M4-T2): ``smoke_two_level_text(...)`` through
+    ``net_gates_text`` (so it carries the ``[reading]`` block filled from ``STAND_IN``, ``unfilled()`` is empty and the
+    preflight passes), written as ``folder/name``. ``nets`` {side: (file, sha256)}; when None, a tiny network of each
+    side (``save_tiny_net``, weights from ``net_seed``, on the base game of the scripts version of the same text) is
+    saved under ``folder/nets`` first. The twin's code is fixed by the driver (``choice(FREE, first drone skill)``),
+    not by this file. Returns (the gate file's path, nets)."""
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    text = smoke_two_level_text(reach_min, heads_shape, strike_recipe)
+    if nets is None:
+        scripts = folder / "scripts_twin_gates.toml"
+        scripts.write_text(smoke_two_level_text())
+        gates = exploit.load_gates(scripts)
+        cfg = exploit.variant_cfg(gates, "base")
+        nets = {side: save_tiny_net(folder / "nets", side, cfg, gates=gates, seed=net_seed)
+                for side in ("guard", "strike")}
+    path = folder / name
+    path.write_text(net_gates_text(text, nets))
+    return path, nets
+
+
+def distilled_read(folder, side: str, net_sha256: str, *, verdict: str = "DISTILLED", of_record: bool = True,
+                   complete: bool = True) -> Path:
+    """A fake LS1.2 read of one side's network (``scripts/ste_ls1_equivalence.py`` results.json: exactly its
+    ``RESULT_KEYS``, ``complete`` last; one cell row of its ``CELL_KEYS`` carrying ``side``): ``verdict`` (default
+    DISTILLED), ``of_record`` and ``net_sha256`` as given; ``complete`` False leaves the key out (a read still being
+    written). Used by M4-T3 and M4-T7. Returns the results.json path."""
+    import ste_ls1_equivalence as eq          # scripts/ (the caller puts it on sys.path, as for the training driver)
+    cell = {k: None for k in eq.CELL_KEYS}
+    cell.update(side=side, arm="net")
+    res = {k: None for k in eq.RESULT_KEYS}
+    res.update(controls={}, cells=[cell], intervals={}, pooled={}, errors={}, failures=[], verdict=verdict,
+               reasons=[], of_record=bool(of_record), gates_sha256="synthetic (tests/_ste_ls1.py)",
+               net_sha256=net_sha256, skill_net_file=f"skill_net_{side}.pt", complete=True)
+    if not complete:
+        del res["complete"]
+    folder = Path(folder)
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / eq.RESULTS
+    path.write_text(json.dumps(res, indent=1) + "\n")
+    return path

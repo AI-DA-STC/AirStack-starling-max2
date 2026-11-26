@@ -8,13 +8,14 @@
 5. The checkpoint meta and the learner table differ only for a net; a reload across the two routes is refused.
 6. ``FILL_PREFIX`` is the gate files' mark.
 7. The tier-2 loader refuses a net (not wired).
-8. The training driver refuses a net until LS1-M4-T2 (deleted there).
+
+(Test 8, the training driver's refusal of a net, was deleted by LS1-M4-T2, which wires the net into the driver:
+tests/test_ste_ls1_driver.py.)
 
 Every net gate file is written by ``tests/_ste_ls1.net_gates_text``. CPU only; the networks are tiny and untrained."""
 import dataclasses
 import json
 import os
-import sys
 import tomllib
 
 import pytest
@@ -26,8 +27,6 @@ from _torch_threads import default_torch_threads  # noqa: F401  (autouse: CPU nu
 from svg_training.core.observations import ObsView
 from svg_training.ste import exploit, exploit_train, skill_net, skills, tier2_train
 
-sys.path.insert(0, str(ROOT / "scripts"))
-import ste_exploit_l012 as l012  # noqa: E402
 
 V = ObsView()
 SIDES = ("guard", "strike")
@@ -231,14 +230,3 @@ def test_tier2_loader_refuses_a_net(tmp_path):
     with pytest.raises(ValueError, match="not wired"):
         tier2_train.load_gates(write(tmp_path, text))
 
-
-# ================================================================================================ 8. the driver (M4-T2)
-@pytest.mark.parametrize("mode", ["run", "--pilot", "--run0"])
-def test_the_training_driver_refuses_a_net_until_m4(tmp_path, capsys, mode):
-    g = write(tmp_path, net_gates_text(SKILLS_GATES.read_text(), {side: ("a.pt", WRONG_SHA) for side in SIDES}))
-    run_dir = tmp_path / "run"
-    head = ["--variant", "base", "--side", "guard"] if mode == "run" else [mode]
-    code = l012.main(head + ["--gates", str(g), "--run-dir", str(run_dir), "--cap-h", "1"])
-    assert code == 2
-    assert "wired in M4" in capsys.readouterr().err
-    assert not run_dir.exists()

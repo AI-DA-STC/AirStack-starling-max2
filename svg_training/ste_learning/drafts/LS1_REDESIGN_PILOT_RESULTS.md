@@ -25,8 +25,9 @@ moved.
   inputs matter most: with raw inputs, flank's row error is 6 times worse and field's 7 times; strike_high copies well
   either way. The slow learning-rate finish helps strike_high and guard_field's state-dependent error, not flank or
   mirror. These are row-level reads, not closed-loop ones, and the raw-input arm changes the input and output frame
-  together. A shared trunk with one head per skill fitted worse at row level than a network per skill (it was not
-  replayed), so it does not qualify as the build's shape.
+  together. Neither shared shape (a shared trunk with one head per skill, or today's one network with the skill code)
+  fitted as well as a network per skill at row level, so neither qualifies and neither was replayed: the build stays
+  one network per skill.
 - **Two rulings are yours before any build (section 5):**
   - **decision 2**: sacrifice and converge need the scripts' switch distances (R3) as inputs. They are distances, not
     the scripts' decisions; the thresholds stay learnable.
@@ -103,20 +104,23 @@ skills pass closed loop: the row marks are stricter than the read, as the note e
 matches B on a skill if its pooled R5 and R7 are each at most max(1.2 × B's, B's + 0.002) and it meets r2 and r3
 wherever B does; counted only where B's R7 ≤ 0.030 (it is on all four skills).
 
-| Skill | B (R5 / R7) | C-in: raw inputs, world frame | C-lr: constant lr | C-head: shared trunk, head per skill |
-|---|---|---|---|---|
-| strike_high | 0.0009 / 0.0009 | 0.0025 / 0.0025: **matches** (inside the 0.002 floor) | 0.0048 / 0.0049: misses | 0.0084 / 0.0084: misses |
-| strike_flank | 0.013 / 0.024 | 0.139 / 0.152: misses (not eligible) | 0.014 / 0.024: matches | 0.017 / 0.032: misses (ratio 1.3, marginal) |
-| guard_mirror | 0.024 / 0.024 | 0.046 / 0.046: misses | 0.019 / 0.019: matches | 0.022 / 0.022: matches |
-| guard_field | 0.0021 / 0.019 | 0.121 / 0.138: misses (not eligible) | 0.0048 / 0.020: misses (R5 about 2 times) | 0.0069 / 0.020: misses (R5 about 3 times) |
+| Skill | B (R5 / R7) | C-in: raw inputs, world frame | C-lr: constant lr | C-head: shared trunk, head per skill | C-one: one network, skill code |
+|---|---|---|---|---|---|
+| strike_high | 0.0009 / 0.0009 | 0.0025 / 0.0025: **matches** (inside the 0.002 floor) | 0.0048 / 0.0049: misses | 0.0084 / 0.0084: misses | 0.0115 / 0.0116: misses |
+| strike_flank | 0.013 / 0.024 | 0.139 / 0.152: misses (not eligible) | 0.014 / 0.024: matches | 0.017 / 0.032: misses (ratio 1.3, marginal) | 0.021 / 0.041: misses (ratio 1.6 to 1.7) |
+| guard_mirror | 0.024 / 0.024 | 0.046 / 0.046: misses | 0.019 / 0.019: matches | 0.022 / 0.022: matches | 0.033 / 0.033: misses (ratio 1.3) |
+| guard_field | 0.0021 / 0.019 | 0.121 / 0.138: misses (not eligible) | 0.0048 / 0.020: misses (R5 about 2 times) | 0.0069 / 0.020: misses (R5 about 3 times) | 0.0096 / 0.022: misses (R5 about 5 times) |
 
 Pre-declared consequences (4.3):
 - C-in matches B on both skills of neither team (Strike: matches on high, misses on flank), so the own-frame inputs are
   not reported as unneeded; the frames are confounded in this arm (input and output change together).
 - C-lr matches B on both skills of neither team (Strike: misses on high; Guard: misses on field), so the decaying
   schedule is not reported as unneeded; its misses on high and field are support for it.
-- C-head misses on both Strike skills and on guard_field: it qualifies on neither team. C-one (one shared network with
-  the skill code, today's shape) is still fitting (section 4). S-shared plays only where one of them qualifies.
+- C-head misses on both Strike skills and on guard_field: it qualifies on neither team.
+- C-one (one shared network with the skill code, today's shape) misses on all four skills: it qualifies on neither
+  team. On the skills outside the comparison its screens are also worse than C-head's (sacrifice 0.094, converge 0.118
+  at R1 + R2, against 0.083 and 0.103).
+- **S-shared does not play on either team: the build's shape is one network per skill**, as the pilot flew it.
 
 **Forward time** (the plan's Stage 1 measurement): the passing assemblies, features included, every code for every
 drone row, 6 threads, measured while 4 to 5 other pilot jobs shared the CPU: Guard 83 ms per 3,000 rows and 889 ms per
@@ -157,14 +161,14 @@ investigation is due (the mark is more than 3 in any cell).
 **Team results (4.4, the worse of two seeds):** Guard **PASS**, deciding assembly S1. Strike **PASS**, deciding
 assembly S2. **The pilot's result: PASS** (both teams).
 
-## 4. Still running at the time of writing
+## 4. Finished after the first draft
 
-- C-one (one shared network per team, today's shape): qualification for S-shared. It runs far slower than the note's
-  estimate (about 0.45 s a step with other jobs on the CPU, so about 5 h for 40,000 steps against 40 to 80 min). It can
-  only choose the build's shape; it never changes either team's result.
-- (Done after the first draft: the pre-declared Stage 1 fits the ladder did not need, reported only, are in the
-  section 2 table: R3 for flank and field gives no gain over R1 + R2; R4 for mark_edge, mirror and parked_ring copies
-  almost exactly, 0.0007 to 0.0016.)
+- The pre-declared Stage 1 fits the ladder did not need, reported only, are in the section 2 table: R3 for flank and
+  field gives no gain over R1 + R2; R4 for mark_edge, mirror and parked_ring copies almost exactly, 0.0007 to 0.0016.
+- C-one (one shared network per team, today's shape) finished: Strike 9,990 s, Guard 8,666 s (2.8 h and 2.4 h against
+  the note's 40 to 80 min; likely because it labels every row with every code, on average 0.22 to 0.25 s a step with other jobs on the CPU).
+  It misses B on all four counted skills (section 2), so it qualifies on neither team and S-shared does not play.
+  Nothing is still running; the pilot is complete.
 
 ## 5. What this asks of the owner (4.5 and section 7 of the redesign note)
 
@@ -182,7 +186,8 @@ CPU only, 0 GPU-hours, on the RTX 5090 machine's CPU. Stage 0 to the last decidi
 04:40 on 27 Nov 2026, up to 4 jobs at 6 threads side by side; after 04:40 the dispatcher's job count missed two jobs
 (the onnxruntime arms), so up to 6 ran at once until it was fixed at about 05:30. Fits that ran before 04:40 took 7 to
 12 min each (55 to 97 steps per second); fits that overlapped more jobs ran slower (21 to 23 min). A full replay took
-21 to 25 min per team (screen 9 to 13 min). The scratch code was written while the jobs ran.
+21 to 25 min per team (screen 9 to 13 min). The two C-one fits started at 04:36 and 04:37 and ended at 07:22
+(Strike) and 07:02 (Guard). The scratch code was written while the jobs ran.
 
 ## 7. Method notes and limits
 

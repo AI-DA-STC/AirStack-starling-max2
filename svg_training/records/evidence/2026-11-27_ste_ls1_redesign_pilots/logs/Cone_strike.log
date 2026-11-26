@@ -1,3 +1,16 @@
 [Cone_strike] C-one strike: 2000000 rows, steps 40000, seed 150003
 [Cone_strike] step 5000: loss 9.507e-02 (2606 s)
 [Cone_strike] step 10000: loss 6.069e-02 (4486 s)
+[Cone_strike] step 15000: loss 4.752e-02 (5517 s)
+[Cone_strike] step 20000: loss 3.637e-02 (6453 s)
+[Cone_strike] step 25000: loss 3.282e-02 (7390 s)
+[Cone_strike] step 30000: loss 2.754e-02 (8320 s)
+[Cone_strike] step 35000: loss 3.090e-02 (9172 s)
+[Cone_strike] step 40000: loss 2.730e-02 (9953 s)
+[Cone_strike] strike_straight: screen 0.0061; round 0 r5 [0.006, 0.006] r7 [0.006, 0.006]
+[Cone_strike] strike_flank: screen 0.0412; round 0 r5 [0.0192, 0.0212] r7 [0.0456, 0.0421]
+[Cone_strike] strike_high: screen 0.0116; round 0 r5 [0.0112, 0.011, 0.0113] r7 [0.0112, 0.011, 0.0114]
+[Cone_strike] strike_low: screen 0.0136; round 0 r5 [0.0118, 0.0117, 0.012] r7 [0.0118, 0.0117, 0.012]
+[Cone_strike] strike_sacrifice: screen 0.0939; round 0 r5 [0.0784, 0.0814] r7 [0.083, 0.0852]
+[Cone_strike] strike_converge: screen 0.1183; round 0 r5 [0.0913, 0.0903] r7 [0.1077, 0.1077]
+[Cone_strike] done in 9990 s

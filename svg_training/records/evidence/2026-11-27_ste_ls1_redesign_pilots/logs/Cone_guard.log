@@ -1,3 +1,14 @@
 [Cone_guard] C-one guard: 2000000 rows, steps 40000, seed 150003
 [Cone_guard] step 5000: loss 4.183e-02 (2185 s)
 [Cone_guard] step 10000: loss 1.633e-02 (3920 s)
+[Cone_guard] step 15000: loss 1.016e-02 (4928 s)
+[Cone_guard] step 20000: loss 6.500e-03 (5672 s)
+[Cone_guard] step 25000: loss 4.507e-03 (6415 s)
+[Cone_guard] step 30000: loss 3.581e-03 (7159 s)
+[Cone_guard] step 35000: loss 3.340e-03 (7901 s)
+[Cone_guard] step 40000: loss 3.715e-03 (8640 s)
+[Cone_guard] guard_parked_ring: screen 0.0206; round 0 r5 [0.0207, 0.0177] r7 [0.0207, 0.0177]
+[Cone_guard] guard_mark_edge: screen 0.0264; round 0 r5 [0.0177, 0.0172] r7 [0.0177, 0.0172]
+[Cone_guard] guard_mirror: screen 0.0326; round 0 r5 [0.0309, 0.0314] r7 [0.0309, 0.0314]
+[Cone_guard] guard_field: screen 0.0215; round 0 r5 [0.0091, 0.0092] r7 [0.0145, 0.0117]
+[Cone_guard] done in 8666 s

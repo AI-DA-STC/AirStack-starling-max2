@@ -15,7 +15,7 @@ for side, sks in (("strike", ["strike_high", "strike_flank"]), ("guard", ["guard
         B5, B7 = pooled(b, "r5_rmse_debiased"), pooled(b, "r7_rmse")
         counts = B7 <= 0.030
         for arm, m in (("C-in", load(f"Cin_{sk}")["marks"]), ("C-lr", load(f"Clr_{sk}")["marks"]),
-                       ("C-head", joint_marks(f"Chead_{side}", sk))):
+                       ("C-head", joint_marks(f"Chead_{side}", sk)), ("C-one", joint_marks(f"Cone_{side}", sk))):
             A5, A7 = pooled(m, "r5_rmse_debiased"), pooled(m, "r7_rmse")
             ok57 = A5 <= max(1.2 * B5, B5 + 0.002) and A7 <= max(1.2 * B7, B7 + 0.002)
             ok23 = True

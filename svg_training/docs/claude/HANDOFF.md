@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 27 November 2026 ~05:32, on the home RTX 5090 (R50 pilots PASS both teams at two seeds, owner decisions 2 and 8 next; before: ~01:50 owner ruled R50: overnight pilot trials approved, not started, waiting for the owner's account switch; before: 26 Nov ~22:45 route 3 flowcharts redrawn; before: ~14:30 M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 27 November 2026 ~07:25, on the home RTX 5090 (R50 pilots complete: PASS both teams at two seeds, C-one does not qualify, the build stays one network per skill; owner decisions 2 and 8 next; before: ~05:32 pilot PASS; before: ~01:50 owner ruled R50: overnight pilot trials approved, not started, waiting for the owner's account switch; before: 26 Nov ~22:45 route 3 flowcharts redrawn; before: ~14:30 M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -51,10 +51,11 @@ note disagree, this file wins.
   `ste_learning/drafts/LS1_REDESIGN_PILOT_RESULTS.md` (two reviewers); evidence
   `records/evidence/2026-11-27_ste_ls1_redesign_pilots/`; the fitted networks only in
   `runs/2026-11-27_ste_ls1r_pilots_scratch/nets/` (not in git). **Waiting on the owner: decisions 2 (R3 for sacrifice
-  and converge) and 8 (guard_field at R2)**, then the build (redesign note section 5). Still running then: C-one
-  (shape check only, about 5 h), the Strike onnxruntime arm, reported-only fits (N4 mark_edge/mirror/ring, A3
-  flank/field); add their results to the note when they land. The scratch jobs are run by `dispatch.sh` from the session
-  scratchpad (a reboot ends them; `runs/2026-11-27_ste_ls1r_pilots_scratch/` holds a copy every 10 min).
+  and converge) and 8 (guard_field at R2)**, then the build (redesign note section 5). Everything finished by
+  07:22 and is in the note: the Strike onnxruntime arm (0 games different), the reported-only fits, and C-one (one
+  network for all skills, today's shape: misses B on all four compared skills, so neither shared shape qualifies,
+  S-shared does not play, the build stays one network per skill). The scratch loops are stopped;
+  `runs/2026-11-27_ste_ls1r_pilots_scratch/` holds the final copy (code, logs, networks).
   Asked the owner for a go on Stage 0 only (no training, CPU). Stage 0c (blended switches) decides whether a learnable
   copy can pass; the later decisions wait for it.
 

@@ -1,10 +1,10 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-27 01:59 (+08:00) (event: R50 trials started; Stage 0a PASS)** · RTX 5090 · GPU 6 % / 49 W / 1.8 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-27 03:52 (+08:00) (event: both teams PASS at seed 1; seed 2 running)** · RTX 5090 · GPU 2 % / 37 W / 0.8 of 32 GB · 0 training processes (0 paused)
 
-**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); R50 pilot trials RUNNING (CPU only, up to 4 jobs): Stage 0a PASS; 0b to 0e and Stage 1 fits queued or running · **Side track:** none
+**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); R50 pilot trials RUNNING (CPU only): Stage 0 done; Stage 2 seed 1 PASS on both teams (Guard S1 at R1 + R2; Strike S2 with sacrifice and converge at R3); seed 2 running · **Side track:** none
 
-**Plain summary.** One network per team was trained to copy its hand-written skills (LS1.1, T93, 0.17 GPU-h) and played against the scripts in the copy check (LS1.2, T94, CPU). Every control passed, so the result is real: **NOT DISTILLED on both teams.** Strike's flank, sacrifice and converge are 4 to 7 times over the 0.05 command-error limit. Guard misses mirror narrowly, field by about 2 times, and the parked-at-centre skill (which must output zero) by about 7 times. The diagnosis says the network is under-trained, not misled. Its scratch trials show that even one skill alone in its own network stays 2 to 3 times over the limit with the levers the fix round may use. **The lead recommends stopping LS1 now** and re-scoping the next build. That build would use inputs in each drone's own frame (flank reached 0.045 alone with them), a network or output head per skill, a fit schedule, and an exact zero for the parked skills.
+**Plain summary.** The redesigned copy (one small network per skill, seeing the world from its own drone's line to the zone) was trained on the CPU and replayed against the stored script games of T94, every test cell. **Guard team: PASS** (worst cell 25 changed games of the 30 allowed, median 3; T94: 64). **Strike team: PASS on its second try** (first try failed on sacrifice and converge; with the scripts' switch distances as inputs, R3, the worst cell is 16, median 3; T94: 122). Each team now repeats with a second training seed; the result is the worse of the two. Flank, the move that failed worst, passes with own-frame inputs alone. R3 for sacrifice and converge needs your ruling before any build (decision 2). Scratch trials, not of record.
 
 ## Watch
 
@@ -48,7 +48,10 @@ The route 3 flowchart, redrawn 26 Nov: LS1 stopped, the redesign's CPU trials be
 | LS1.1-fix, LS1.2-fix | The one fix round the stop rules allow (R47) | NOT SPENT (owner R49) | — | — |
 | — | Redesign of the skill network: design note, pilot marks, two reviewers | DONE (`c1bebc9a`); rules fixed after the focused re-review (`6625cf82`) | none | [LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md) |
 | — | Route 3 flowcharts redrawn: LS1 stopped, the redesign trials (owner asked) | DONE, one review round (numbers: no finding; completeness: 1 blocker, 4 minor, all fixed) | none | [route page](../LEARNED_SKILLS_ROUTE.md) |
-| P0 | Stage 0 of the pilots: harness check, de-bias and mask replay, blended-switch replay, ONNX check (no training) | RUNNING: 0a PASS (the saved networks reproduce T94 cell for cell: 44, 122, 64; the script oracle 0 changed games); 0c field passes at 1 and 3 cm; 0b, 0c flank/sacrifice/converge, 0d, 0e running or queued | tier 1 (CPU) | about 1.5 to 2 h one at a time, 0 GPU-h; decides whether a learnable copy can pass at all |
+| P0 | Stage 0 of the pilots: harness check, de-bias and mask replay, blended-switch replay, ONNX check (no training) | DONE: 0a PASS (T94 reproduced cell for cell); 0c every switch skill passes at 3 cm or wider (flank widest 3 cm), R3 eligible for all four; 0d PASS after three code fixes (closed forms within 5e-5 on 0.8 M rows per team; ONNX parity on every skill and rung); 0b and 0e INFO (0e: Guard under 30, Strike 6 cells over 30) | tier 1 (CPU) | about 1.5 to 2 h one at a time, 0 GPU-h; decides whether a learnable copy can pass at all |
+
+| P1 | Stage 1: row-level fits (B, A3, A4, next rungs, control arms) | RUNNING: all B fits eligible; R3 cuts sacrifice 0.077 to 0.025 and converge 0.096 to 0.036; control arms: own-frame inputs matter on all four tested skills, the slow finish only on strike_high | tier 1 (CPU) | scratch |
+| P2 | Stage 2: closed-loop replay of every gated cell | seed 1: Guard S1 PASS (max 25, median 3, 1 over 20); Strike S1 FAIL (sacrifice and converge command error, one cell 31), S2 PASS (max 16, median 3, 0 over 20); seed 2 running | tier 1 (CPU) | scratch |
 
 GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
@@ -65,4 +68,4 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
 **Usage:** GPU 0.172 h on route 3 (LS1.1 and the probe). The redraw review: 2 Sonnet agents, 171k tokens, under 1 min. The diagnosis workflow: 5 agents, 859k tokens, 2.6 h (analyst, record writer, two reviewers, reviser). The M4 full suite took about 40 min of CPU. Advisor (Fable 5.2, advisor tool) once after the diagnosis. Checks: the docs check (13 PASS, 0 FAIL) and the document test set (151 passed, 2 skipped) for this docs-only commit.
 
-**Ready to push.** 46 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 47 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.

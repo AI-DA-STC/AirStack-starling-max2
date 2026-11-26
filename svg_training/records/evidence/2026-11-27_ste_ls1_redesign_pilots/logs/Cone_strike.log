@@ -1,2 +1,3 @@
 [Cone_strike] C-one strike: 2000000 rows, steps 40000, seed 150003
 [Cone_strike] step 5000: loss 9.507e-02 (2606 s)
+[Cone_strike] step 10000: loss 6.069e-02 (4486 s)

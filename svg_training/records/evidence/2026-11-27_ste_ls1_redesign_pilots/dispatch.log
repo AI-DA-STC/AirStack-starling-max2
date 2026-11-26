@@ -58,3 +58,5 @@
 05:16 start N4_guard_mark_edge.log s1fit.py N4_guard_mark_edge guard guard_mark_edge R4
 05:24 start N4_guard_mirror.log s1fit.py N4_guard_mirror guard guard_mirror R4
 05:36 start N4_guard_parked_ring.log s1fit.py N4_guard_parked_ring guard guard_parked_ring R4
+05:40 start A3_strike_flank.log s1fit.py A3_strike_flank strike strike_flank R3
+05:48 start A3_guard_field.log s1fit.py A3_guard_field guard guard_field R3

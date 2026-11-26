@@ -77,15 +77,15 @@ r7 is the total RMSE per active channel (largest shown); the eligibility screen 
 | Skill | Old network (LS1.1, own rows r0 / r3) | B: R1 + R2 | R3 | R4 (reported) |
 |---|---|---|---|---|
 | strike_straight | 0.014 | 0.0000 | — | — |
-| strike_flank | 0.21 / 0.25 | 0.028 / 0.023 | not run yet | 0.0001 |
+| strike_flank | 0.21 / 0.25 | 0.028 / 0.023 | 0.0248 (screen; no gain) | 0.0001 |
 | strike_high | 0.025 | 0.0009 / 0.0009 | 0.0002 (screen) | — |
 | strike_low | 0.023 / 0.024 | 0.0019 / 0.0028 | 0.0002 (screen) | — |
 | strike_sacrifice | 0.17 / 0.22 | 0.070 / 0.087 | **0.021 / 0.029** | 0.0004 |
 | strike_converge | 0.14 / 0.15 | 0.086 / 0.104 | **0.032 / 0.040** | 0.0011 |
-| guard_parked_ring | 0.038 / 0.043 | 0.010 / 0.011 | — | running |
+| guard_parked_ring | 0.038 / 0.043 | 0.010 / 0.011 | — | 0.0016 (screen) |
 | guard_mark_edge | 0.024 / 0.025 | 0.007 / 0.010 | — | 0.0007 (screen) |
-| guard_mirror | 0.037 / 0.038 | 0.023 / 0.025 | — | running |
-| guard_field | 0.074 / 0.107 | 0.011 / 0.025 | not run yet | 0.0003 (screen) |
+| guard_mirror | 0.037 / 0.038 | 0.023 / 0.025 | — | 0.0013 (screen) |
+| guard_field | 0.074 / 0.107 | 0.011 / 0.025 | 0.0194 (screen; no gain) | 0.0003 (screen) |
 | guard_parked_centre | 0.0068 | exactly 0 (mask) | — | — |
 
 The old network's column is 0b's "saved" own-row RMSE over 4 channels. Every B fit is eligible, so no Retry was
@@ -162,8 +162,9 @@ assembly S2. **The pilot's result: PASS** (both teams).
 - C-one (one shared network per team, today's shape): qualification for S-shared. It runs far slower than the note's
   estimate (about 0.45 s a step with other jobs on the CPU, so about 5 h for 40,000 steps against 40 to 80 min). It can
   only choose the build's shape; it never changes either team's result.
-- The pre-declared Stage 1 fits that the ladder did not need, reported only: R4 for mirror and parked_ring
-  (running; mark_edge done, 0.0007), R3 for flank and field (queued).
+- (Done after the first draft: the pre-declared Stage 1 fits the ladder did not need, reported only, are in the
+  section 2 table: R3 for flank and field gives no gain over R1 + R2; R4 for mark_edge, mirror and parked_ring copies
+  almost exactly, 0.0007 to 0.0016.)
 
 ## 5. What this asks of the owner (4.5 and section 7 of the redesign note)
 

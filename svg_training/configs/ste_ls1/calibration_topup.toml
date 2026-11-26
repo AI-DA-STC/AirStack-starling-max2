@@ -1,0 +1,74 @@
+# LS1.5 TOP-UP (owner ruling R48, 26 Nov 2026): a copy of calibration.toml with larger field and flank switch rungs,
+# played only on those arms' near-miss cells (--arms, --opponents, --mixed 0: of_record false by the script's rule).
+# Route 3, stage LS1, job LS1.5: the calibration read (task LS1-M1-T7; plan ste_learning/drafts/LS1_TASK_PLAN.md).
+# Driver: scripts/ste_ls1_calibration.py --calibration configs/ste_ls1/calibration.toml --side guard|strike
+#   --out runs/<date>_ste_ls1_calibration_<side> --expect-sha256 <this file's sha256>
+# launched as scripts/ste_job.py launch --task LS1.5 --gpu-h 0 (a CPU job: no cap unless --cap-h is given).
+# The scripts against changed scripts (opponents/perturbed.py; scripted.py untouched), no network, on the gate read's
+# cells (configs/ste_ls1/cells.toml) and T44's starts, at cells.toml [read] games_per_cell games per cell: which sizes of
+# command error change which games, read on the gate's own ruler (C7). No pass or fail: the owner sets the LS1 limits
+# from this read (R38). Every value here is PROPOSED (plan section 1 table and OP-10, or the builder's where marked),
+# not the owner's; the lead hashes this file before LS1.5 (plan section 7, lead step 1). No game count here (B-6).
+# Channels: 0 vx, 1 vy, 2 vz, 3 yaw rate.
+
+[noise]
+# i.i.d. uniform in [-size, size] per tick, drone and channel (OP-10: all four channels as the main ladder)
+sizes = [0.01, 0.02, 0.05, 0.1]
+channels = [0, 1, 2, 3]
+# one more noise arm on each skill's active channels only (M2-T3's rule on the scripts' own labels, read from the
+# identity arm of this read); size: the builder's, PROPOSED (a middle rung of the ladder above)
+active_only_arm = 0.05
+# the noise generators' seed block (C8: calibration noise 150101+): a member's seed is this plus its cell's index in
+# the side's full cell list x the team size plus its drone slot, the same for every noise arm (common random numbers)
+seed = 150101
+
+[bias]
+# a constant +size on every live drone and tick (the near miss of workflow section 5, review A F2)
+sizes = [0.01, 0.02, 0.05]
+channels = [0, 1]
+# the finer ladder, played only on the fixed cells of the zero-command skill (review round 1, C1; the skill whose labels
+# are all exactly 0, found from the identity arm: guard_parked_centre in 3v3), so the owner can set
+# cmd_zero_skill_max_abs from this read
+zero_skill_sizes = [0.0025, 0.005, 0.01]
+
+[scale]
+size = 0.95
+channels = [0, 1, 2]
+
+[turn]
+# xy turned by each angle (degrees): a ladder (the plan's 3 degrees, with a smaller and a larger rung, the builder's) so
+# the owner can read a near miss for near_miss.rotate_deg as from the bias, noise and switch ladders
+degrees = [1.5, 3.0, 6.0]
+
+[switch]
+# Moved switches, each value its own arm, in its player's unit (opponents/perturbed.py); today's values in
+# opponents/scripted.py: entry half-angle 30 degrees (0.5236 rad), gather angle 0.1 rad, field range 1.1 m, flank
+# margin 0.3 m. Sacrifice 35 and 40 degrees and converge 0.15 and 0.2 rad from the plan's "30 to 40 degrees" and
+# "0.1 to 0.2 rad"; field and flank rungs the builder's.
+sacrifice_entry_rad = [0.6109, 0.6981]
+converge_gather_rad = [0.15, 0.2]
+field_range_m = [1.5, 1.8]       # TOP-UP (owner R48, 26 Nov 2026): larger rungs on the near-miss cells (LS1_LIMIT_OPTIONS.md group E)
+flank_margin_m = [0.6, 0.9]       # TOP-UP (owner R48, 26 Nov 2026): larger rungs on the near-miss cells (LS1_LIMIT_OPTIONS.md group E)
+
+[run]
+# cells per game batch (one play_cells call per arm and chunk; a chunk never spans two opponents, since a batch runs to
+# its longest game): measured on the CPU of the home RTX 5090 workstation (16 threads, 1,000 games per cell, 25 Nov
+# 2026), a noise arm on Guard mixed cells took 2.5 s per cell alone and 1.1 s per cell 6 at a time against
+# strike_straight, 10.5 s and 6.2 s against strike_converge, then 5.2 s at 12 and 4.8 s at 20: 6 keeps most of the gain
+# and a short resume step. The identity arm on the fixed cells, 5 or 6 per batch: 1.9 s per cell for the Guard team,
+# 3.5 s for the Strike team, 5 s against guard_mark_inside. About 2,100 (Guard) and 2,300 (Strike) cell-plays: about 2
+# to 3 h per side on an idle CPU, double beside other work
+chunk_cells = 6
+device = "cpu"
+
+[intervals]
+# the calibration's intervals at the gate's z rule (C7, R2 RC-1): every cell at plain alpha and at adjusted_z(alpha, m),
+# m the side's gated cells; the pooled rows at plain alpha
+alpha = 0.05
+
+[source]
+skills_gates = "configs/ste_l3/skills_gates.toml"
+skills_gates_sha256 = "e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e"
+cells = "configs/ste_ls1/cells.toml"
+cells_sha256 = "464fa2db50ab78353604de25f0291e7ea0c3a16490d11425dd9190630ec221fd"
+scripted_sha256 = "b7ccafdeaa4b01c72f0ea9fa20a846e29556eaaa1c7223aee2191b76995bad3a"

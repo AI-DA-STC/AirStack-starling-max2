@@ -106,9 +106,9 @@ device = "cpu"
 # B-6); its game length, cap check and starts are the pinned skills gate file's [run] ticks_cap, cap_check_every_ticks
 # and its T44 reference's seed (CA-3). Per-cell intervals at adjusted_z(alpha, m), m the side's gated cells; the
 # pooled row at plain alpha (C7).
-alpha = 0.05                       # PROPOSED (OP-11), = calibration.toml [intervals] alpha; the owner confirms it (OQ-3)
-interval = "newcombe_hybrid"       # PROPOSED (OP-11): the only method built (ste/cells.py)
-correction = "bonferroni_per_side" # PROPOSED (OP-11): the only correction built (ste/cells.py)
+alpha = 0.05                       # FIXED (owner, R48, 26 Nov 2026, OQ-3: "accept recommended")
+interval = "newcombe_hybrid"       # FIXED (owner, R48, 26 Nov 2026, OQ-3: "accept recommended")
+correction = "bonferroni_per_side" # FIXED (owner, R48, 26 Nov 2026, OQ-3: "accept recommended")
 path_times_s = [1, 3, 10]          # PROPOSED (workflow section 5): flight-path distance marks
 chunk_cells = 6                    # PROPOSED (calibration.toml [run] chunk_cells, measured on the CPU 25 Nov 2026)
 device = "cpu"
@@ -142,35 +142,35 @@ strike = [
 # channel's largest output, the zero-command skill's largest output; games changed (b + c) per cell; the per-cell and
 # pooled intervals inside the margins; with end_time_gated, the mean |end-tick difference| per cell (OP-18).
 # end_time_max_ticks is required and a number whatever end_time_gated says (no FILL_ survives into a run of record).
-cmd_rmse_max = "FILL_OWNER_R38"
-cmd_unused_max_abs = "FILL_OWNER_R38"
-cmd_zero_skill_max_abs = "FILL_OWNER_R38"
-flips_max_games = "FILL_OWNER_R38"
-cell_margin = "FILL_OWNER_R38"
-pooled_margin = "FILL_OWNER_R38"
-end_time_gated = "FILL_OWNER_R38"
-end_time_max_ticks = "FILL_OWNER_R38"
+cmd_rmse_max = 0.05  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+cmd_unused_max_abs = 0.05  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+cmd_zero_skill_max_abs = 0.005  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+flips_max_games = 30  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+cell_margin = 0.045  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+pooled_margin = 0.01  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+end_time_gated = false  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+end_time_max_ticks = 3.0  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
 
 [controls]
 # The owner's (R38, OP-21, OQ-3): at least this many cells miss for the permuted codes (C3, C5; the permutation is
 # cells.toml [permutation]) and for an unfitted network (C4).
-permuted_min_miss_cells = "FILL_OWNER_R38"
-unfitted_min_miss_cells = "FILL_OWNER_R38"
+permuted_min_miss_cells = 15  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+unfitted_min_miss_cells = 15  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
 
 [controls.near_miss]
 # The owner's (OQ-3), set with the limits so the two cannot contradict each other: bias on xy (C6), a turn of xy in
 # degrees (C6), noise (C7, which must pass).
-bias = "FILL_OWNER_R38"
-rotate_deg = "FILL_OWNER_R38"
-noise = "FILL_OWNER_R38"
+bias = 0.05  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+rotate_deg = 6.0  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+noise = 0.02  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
 
 [controls.near_miss.switch]
 # One moved-switch player per key, at this value in that player's unit (opponents/perturbed.py SWITCHES): Strike
 # SacrificeMovedEntry, ConvergeMovedGather, FlankMoved; Guard FieldMovedRange (C6).
-sacrifice_entry_rad = "FILL_OWNER_R38"
-converge_gather_rad = "FILL_OWNER_R38"
-flank_margin_m = "FILL_OWNER_R38"
-field_range_m = "FILL_OWNER_R38"
+sacrifice_entry_rad = 0.6109  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+converge_gather_rad = 0.15  # FIXED (owner, R48, 26 Nov 2026: "accept recommended"; ste_learning/drafts/LS1_LIMIT_OPTIONS.md section 7)
+flank_margin_m = 0.9  # FIXED (owner, R48, 26 Nov 2026: "top-up yes"; the smallest top-up rung that fails with room under the limits above, record T91): 0.6 failed only by RMSE 0.055 v 0.05 and pooled 0.012 v 0.01
+field_range_m = 1.5  # FIXED (owner, R48, 26 Nov 2026: "top-up yes"; the smallest top-up rung that fails with room under the limits above, record T91): RMSE 0.117, 42 games, pooled 0.042
 
 [stop]
 # The stop rules of LS1 (workflow section 5), as the owner acknowledged them on 25 Nov 2026 (R47): pre-registered with

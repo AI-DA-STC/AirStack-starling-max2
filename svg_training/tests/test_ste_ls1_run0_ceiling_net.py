@@ -28,6 +28,7 @@ from svg_training.ste import exploit, skill_net, skills
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import ste_l3_run0_ceiling as ceiling  # noqa: E402
+import ste_ls1_equivalence as eq  # noqa: E402
 
 GAMES = 3
 CHUNK = "33"
@@ -89,8 +90,9 @@ def test_net_ceiling_runs_and_sets_a_mark_from_the_nets_own_best(done, net):
     assert res["untrained"]["name"] == ceiling.untrained_choice(ceiling.choices(g), g)["name"]
     assert mark == ceiling.mark_rule(res["best"]["k"], res["untrained"]["k"], GAMES, float(g.run0["margin"]),
                                      of_record=False)
-    assert res["equivalence"] == {side: {"folder": str(net["reads"][side]), "net_sha256": net["nets"][side][1],
+    assert res["equivalence"] == {side: {"folder": eq.rel(net["reads"][side]), "net_sha256": net["nets"][side][1],
                                          "verdict": "DISTILLED"} for side in SIDES}
+    assert all(not v["folder"].startswith("/") for v in res["equivalence"].values())   # no machine path in a file
     assert (done / "results.md").read_text().startswith("Simulator: training simulator, tier 1")
 
 

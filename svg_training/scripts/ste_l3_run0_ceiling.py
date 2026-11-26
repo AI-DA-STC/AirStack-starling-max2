@@ -304,8 +304,8 @@ def strike_net_problems(gates) -> list[str]:
 def equivalence_reads(gates, folders: list[Path]) -> tuple[dict | None, str | None]:
     """Route 3 (F7): the LS1.2 reads given by ``--equivalence``, one per side. Each ``<folder>/results.json`` must be
     complete, of record, DISTILLED, and name one side's ``[learner.skill_net]`` sha256 (its side), with every
-    ``cells[].side`` that side; exactly one read per side. Returns ({side: {folder, net_sha256, verdict}}, None) or
-    (None, the reason to refuse)."""
+    ``cells[].side`` that side; exactly one read per side. Returns ({side: {folder (repository-relative, ``eq.rel``),
+    net_sha256, verdict}}, None) or (None, the reason to refuse)."""
     import ste_ls1_equivalence as eq                         # scripts/ (route 3 only: the scripts route never loads it)
     by_sha = {gates.learner.skill_net[side]["sha256"]: side for side in EQ_SIDES}
     found: dict[str, dict] = {}
@@ -331,7 +331,7 @@ def equivalence_reads(gates, folders: list[Path]) -> tuple[dict | None, str | No
                           f"{cell_sides}")
         if side in found:
             return None, f"--equivalence: two LS1.2 reads of the {side} network ({found[side]['folder']}, {folder})"
-        found[side] = {"folder": str(folder), "net_sha256": res["net_sha256"], "verdict": res["verdict"]}
+        found[side] = {"folder": eq.rel(folder), "net_sha256": res["net_sha256"], "verdict": res["verdict"]}
     missing = [side for side in EQ_SIDES if side not in found]
     if missing:
         return None, (f"--equivalence: a DISTILLED LS1.2 read of each network is required (both sides, R47); "

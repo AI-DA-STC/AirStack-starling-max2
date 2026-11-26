@@ -14,6 +14,7 @@ after the fills (the pattern of tests/test_ste_ls1_distil_gates.py ``test_limits
 import json
 import tomllib
 
+from _ste_ls1 import STAND_IN
 from svg_training.ste import exploit, skills
 from svg_training.ste.config import load_ste_learning
 
@@ -27,6 +28,7 @@ NAMED_FILLS = {"[run0] skills_reach_min", "[learner.skill_net] strike.sha256", "
                *(f"[reading] {k}" for k in exploit.READING_MARGINS)}
 ROUTE2_SEED1_RUN0 = 140203                             # route 2 seed 1's run 0 (configs/ste_l3/skills_gates.toml)
 SECOND_RUN0 = 140213                                   # C8: the second seed's run 0, both arms (R46, option B)
+SYNTHETIC_REACH_MIN = 0.0613                           # a synthetic run 0 mark (off the 0.001 grid), not the ceiling's
 
 
 def _data(path) -> dict:
@@ -70,6 +72,7 @@ def test_heads_differs_from_skills_gates_in_the_named_keys_only():
     own = {"train_seed", "role", "reference_variant", "run0_seed"}
     assert {k: v for k, v in second.items() if k not in own} == {k: v for k, v in base.items() if k not in own}
     assert second["reference_variant"] == "base" and "run0_seed" not in base
+    assert exploit.load_gates(HEADS).verdict["order"] == ["base", SECOND]
 
 
 def test_seed2_differs_in_task_and_seeds_only():
@@ -169,24 +172,37 @@ def test_heads_has_reading_with_every_key():
     assert "W3" in text and "OP-30" in text and "curve.json" in text      # the departure from workflow section 6
 
 
+def _strings(node) -> list[str]:
+    if isinstance(node, dict):
+        return [s for v in node.values() for s in _strings(v)]
+    if isinstance(node, list):
+        return [s for v in node for s in _strings(v)]
+    return [node] if isinstance(node, str) else []
+
+
 def test_a_filled_copy_of_heads_has_no_fill_left(tmp_path):
-    """The template's marks are its only gaps: with every mark of the named fills replaced (synthetic values, not the
-    owner's) the file loads and ``unfilled`` is empty, so nothing else waits for a fill."""
+    """The template's marks are its only gaps: with every ``FILL_`` mark replaced (synthetic values: the margins from
+    ``STAND_IN``, a synthetic run 0 mark, a zero sha, a dated net folder) the file loads, ``unfilled`` is empty and no
+    string of the file holds a mark, so nothing else waits for a fill. The net ``file`` paths carry a mark that
+    ``unfilled`` does not list (the lead sets the folder's date with the sha, lead step 4); this test finds it."""
     text = HEADS.read_text()
     filled = _data(HEADS)
-    synthetic = {("run0", "skills_reach_min"): 0.5, ("reading", "margin_pooled"): 0.25,
-                 ("reading", "margin_cell"): 0.25}
+    synthetic = {("run0", "skills_reach_min"): SYNTHETIC_REACH_MIN,
+                 **{("reading", k): STAND_IN["reading"][k] for k in exploit.READING_MARGINS}}
     for (section, key), value in synthetic.items():
         old = filled[section][key]
         if _is_fill(old):
-            text = text.replace(f'{key} = "{old}"', f"{key} = {value}", 1)
+            text = text.replace(f'{key} = "{old}"', f"{key} = {value!r}", 1)
             filled[section][key] = value
     for side in skills.SIDE_KEYS:
-        old = filled["learner"]["skill_net"][side]["sha256"]
-        if _is_fill(old):
-            text = text.replace(f'"{old}"', f'"{"0" * 64}"', 1)
-            filled["learner"]["skill_net"][side]["sha256"] = "0" * 64
+        entry = filled["learner"]["skill_net"][side]
+        dated = entry["file"].replace(exploit.FILL_MARK + "DATE", "2026-12-01")
+        for field, value in (("sha256", "0" * 64), ("file", dated)):
+            if exploit.FILL_MARK in entry[field]:
+                text = text.replace(f'{field} = "{entry[field]}"', f'{field} = "{value}"', 1)
+                entry[field] = value
     out = tmp_path / "heads_gates.toml"
     out.write_text(text)
     assert tomllib.loads(text) == filled
     assert exploit.unfilled(exploit.load_gates(out)) == []
+    assert [s for s in _strings(filled) if exploit.FILL_MARK in s] == []

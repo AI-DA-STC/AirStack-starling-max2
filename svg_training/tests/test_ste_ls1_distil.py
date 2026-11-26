@@ -806,18 +806,6 @@ def _fast_text() -> str:
     return _sub(text, r"^epochs = \d+", f"epochs = {SMOKE_EPOCHS}")
 
 
-def _filled_text(text: str) -> str:
-    """``text`` with every owner key's ``FILL_`` value replaced by its synthetic ``h.STAND_IN`` value (the arithmetic is
-    not run here: a filled file only lets a refusal test reach the step after the ``FILL_`` refusal)."""
-    c = h.STAND_IN["controls"]
-    values = {**h.STAND_IN["limits"], **{k: c[k] for k in distil.COUNT_KEYS},
-              **{k: c["near_miss"][k] for k in distil.NEAR_MISS_KINDS}, **c["near_miss"]["switch"]}
-    out, n = re.subn(r'^(\w+) = "FILL_\w*"', lambda m: f"{m.group(1)} = {h._toml_value(values[m.group(1)])}", text,
-                     flags=re.MULTILINE)
-    assert n == len(values)
-    return out
-
-
 def _smoke_device(text: str, device: str) -> str:
     head, sep, rest = text.partition("\n[smoke]\n")
     assert sep and 'device = "cpu"' in rest
@@ -883,12 +871,14 @@ def test_a_changed_teacher_pin_is_refused(drv, key, tmp_path, capsys):
     assert not out.exists()
 
 
-def test_an_unfilled_file_is_refused_outside_the_smoke(drv, dg, tmp_path, capsys):
+def test_an_unfilled_file_is_refused_outside_the_smoke(drv, tmp_path, capsys):
+    gates = h.write_unfilled_distil_gates(tmp_path)                          # a copy: the committed file is filled (R48)
+    todo = distil.unfilled_limits(distil.load_distil_gates(gates))
+    assert todo
     out = tmp_path / "run"
-    assert distil.unfilled_limits(dg)                                        # the committed file waits for the owner
-    assert drv.main(_argv(DISTIL_GATES, out, "guard")) == EXIT_REFUSED
+    assert drv.main(_argv(gates, out, "guard")) == EXIT_REFUSED
     err = capsys.readouterr().err
-    assert all(key in err for key in distil.unfilled_limits(dg)) and not out.exists()
+    assert all(key in err for key in todo) and not out.exists()
 
 
 def test_a_seed_that_is_the_scoring_starts_is_refused(drv, dg, tmp_path, capsys):
@@ -900,18 +890,17 @@ def test_a_seed_that_is_the_scoring_starts_is_refused(drv, dg, tmp_path, capsys)
 
 
 def test_a_cpu_job_with_a_cuda_gate_device_is_refused(drv, dg, tmp_path, capsys):
-    assert dg.run["device"].startswith("cuda")
-    gates = _write(tmp_path, _filled_text(DISTIL_GATES.read_text()))
+    assert dg.run["device"].startswith("cuda") and distil.unfilled_limits(dg) == []   # the committed file, filled (R48)
     out = _job(tmp_path / "run", 0)
-    assert drv.main(_argv(gates, out, "guard")) == EXIT_REFUSED
+    assert drv.main(_argv(DISTIL_GATES, out, "guard")) == EXIT_REFUSED
     assert "0 GPU-h" in capsys.readouterr().err
     assert sorted(p.name for p in out.iterdir()) == ["job.json"]
 
 
-def test_gpu_h_must_equal_cap_h(drv, tmp_path, capsys):
-    gates = _write(tmp_path, _filled_text(DISTIL_GATES.read_text()))
+def test_gpu_h_must_equal_cap_h(drv, dg, tmp_path, capsys):
+    assert distil.unfilled_limits(dg) == []                                  # the committed file, filled (R48)
     out = _job(tmp_path / "run", 2)
-    assert drv.main(_argv(gates, out, "guard", cap_h="1")) == EXIT_REFUSED
+    assert drv.main(_argv(DISTIL_GATES, out, "guard", cap_h="1")) == EXIT_REFUSED
     assert "keep the two equal" in capsys.readouterr().err
     assert sorted(p.name for p in out.iterdir()) == ["job.json"]
 

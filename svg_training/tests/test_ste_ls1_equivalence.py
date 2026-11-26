@@ -11,7 +11,11 @@
 * The verdict arithmetic, always on a synthetic gate file written under ``tmp_path`` from ``STAND_IN`` (constraint 5):
   each limit just crossed fails naming its key, just met passes; a ``FILL_`` value never reaches a comparison; the
   controls are read first; a cell inside the margin at plain alpha but outside at the adjusted z is NOT DISTILLED.
-* ``test_the_committed_limits_run_through_the_rule`` is the one designed skip of M2 until the lead fills the file (R38).
+* ``test_the_committed_limits_run_through_the_rule`` runs the owner's own limits (R48) through the rule; it no longer
+  skips. A test that needs an unfilled gate file writes its own copy under ``tmp_path``
+  (``tests/_ste_ls1.write_unfilled_distil_gates``), never the committed file.
+* A smoke checks plumbing, never a verdict (lead, 26 Nov 2026): under ``--smoke`` C3 to C7, the failures and the verdict
+  are NOT_RUN, the filled committed file or an unfilled copy alike, and the read ends exit 0 with NOT_RUN.
 """
 import contextlib
 import io
@@ -55,6 +59,12 @@ def g():
 def stand_in(tmp_path_factory):
     """The distillation gate file with the owner's keys filled from STAND_IN (synthetic, constraint 5)."""
     return distil.load_distil_gates(h.write_distil_gates(tmp_path_factory.mktemp("stand_in")))
+
+
+@pytest.fixture(scope="module")
+def unfilled(tmp_path_factory):
+    """A copy of the committed distillation gate file with every owner key FILL_ (tests/_ste_ls1.unfilled_distil)."""
+    return distil.load_distil_gates(h.write_unfilled_distil_gates(tmp_path_factory.mktemp("unfilled")))
 
 
 @pytest.fixture(scope="module")
@@ -565,10 +575,11 @@ def test_a_missing_value_is_a_failure_not_a_pass(stand_in):
     assert [f for f in _run(case, limits) if "end_time_max_ticks" in f]
 
 
-def test_a_fill_limit_never_reaches_a_comparison(g, stand_in):
+def test_a_fill_limit_never_reaches_a_comparison(unfilled, stand_in):
     """A FILL_ limit or control size raises before any comparison; the verdict of a smoke with FILL_ values is NOT_RUN,
-    never DISTILLED or NOT DISTILLED."""
-    assert g.limits["end_time_gated"].startswith("FILL_")          # the committed file today
+    never DISTILLED or NOT DISTILLED (an unfilled copy under tmp_path, never the committed file)."""
+    g = unfilled
+    assert g.limits["end_time_gated"] == h.UNFILLED
     case = _pass_case(stand_in.limits)
     for key in distil.LIMIT_KEYS:
         limits = {**stand_in.limits, key: "FILL_OWNER_R38"}
@@ -589,10 +600,10 @@ def test_a_fill_limit_never_reaches_a_comparison(g, stand_in):
         eq.arms("strike", "flank_margin_m", g=g, among=eq.near_miss_cells(g, "strike"), cfg=_cfg(g), n=4,
                 device="cpu", seed=0)
     good = {"c": {"status": eq.PASS, "detail": ""}}
-    unfilled = distil.unfilled_limits(g)
-    assert unfilled
+    todo = distil.unfilled_limits(g)
+    assert todo
     for failures in ([], ["cell_margin: x"], eq.NOT_RUN):
-        assert eq.verdict(good, failures, unfilled) == eq.NOT_RUN
+        assert eq.verdict(good, failures, todo) == eq.NOT_RUN
 
 
 def test_the_near_miss_judgments(stand_in):
@@ -630,12 +641,10 @@ def test_stand_in_mirrors_no_limit(g):
 
 
 def test_the_committed_limits_run_through_the_rule(g):
-    """Constraint 5, R2 RC-2, OA-4: the owner's own numbers, once filled, each reach the rule (the body runs un-skipped
-    on the STAND_IN file in test_each_limit_just_crossed_gives_not_distilled)."""
-    unfilled = distil.unfilled_limits(g)
-    if unfilled:
-        pytest.skip(f"R38: the owner's keys of configs/ste_ls1/distil_gates.toml are still FILL_ ({', '.join(unfilled)}); "
-                    f"the one designed skip of M2 until lead step 3 fills the file")
+    """Constraint 5, R2 RC-2, OA-4: the owner's own numbers (R48), read from the committed file, each reach the rule (the
+    same body runs on the STAND_IN file in test_each_limit_just_crossed_gives_not_distilled). It never skips: the file
+    is filled."""
+    assert distil.unfilled_limits(g) == [], "the committed distil_gates.toml holds a FILL_ owner key (R38, R48)"
     _the_rule_reaches_every_key(g)
 
 
@@ -696,9 +705,8 @@ def test_a_cell_inside_the_margin_at_plain_alpha_but_outside_at_the_adjusted_z_i
 # controls and files are under test, not a fit.
 READ_SIDE = "guard"
 READ_OPPONENT = "strike_straight"          # the Guard team's near-miss opponent (distil_gates.toml [read])
-READ_MIXED = 1                             # the FILL_ read plays one gated mixed combination (R1 on a mixed cell)
+READ_MIXED = 1                             # the smoke read plays one gated mixed combination (R1 on a mixed cell)
 STRIKE_GATED_OPPONENT = "guard_field"      # the Strike team's read test: an opponent whose games end soon (T44: <= 81 ticks)
-VERDICT_WORDS = (eq.DISTILLED, eq.NOT_DISTILLED, eq.INCONCLUSIVE)
 
 
 def _read_argv(gates_file, net, run_dir, side=READ_SIDE, opponents=(READ_OPPONENT,), mixed=0, games=None, smoke=True,
@@ -729,10 +737,10 @@ def _json(path):
 
 
 @pytest.fixture(scope="module")
-def fill_read(tmp_path_factory):
-    """The committed gate file (the owner's keys FILL_) under --smoke: a first launch stopped (hidden flag) after the
-    last control batch, then the same command to the end. Returns the snapshot between the two and the end state."""
-    tmp = tmp_path_factory.mktemp("fill_read")
+def smoke_read(tmp_path_factory):
+    """The committed gate file (the owner's keys filled, R48) under --smoke: a first launch stopped (hidden flag) after
+    the last control batch, then the same command to the end. Returns the snapshot between the two and the end state."""
+    tmp = tmp_path_factory.mktemp("smoke_read")
     net, net_sha = h.read_net(tmp / "net", READ_SIDE, h.DISTIL_GATES)
     run_dir = tmp / "run"
     last_control = eq.batch_name(eq.STAGE_C5, f"{READ_OPPONENT}_00")
@@ -745,35 +753,35 @@ def fill_read(tmp_path_factory):
             "last_control": last_control}
 
 
-def test_controls_are_written_before_any_result_batch(g, fill_read):
-    """Every control (C1 to C7) is in controls.json before the first R1 batch is played; a stop after the last control
+def test_controls_are_written_before_any_result_batch(g, smoke_read):
+    """Every control (C1 to C7) is in controls.json before the first R1 batch is played (C3 to C7 NOT_RUN in a smoke); a stop after the last control
     batch is the contract's own stop (exit 4) and writes no results.json."""
-    snap = fill_read["snap"]
+    snap = smoke_read["snap"]
     assert snap["code"] == EXIT_INTERRUPTED and not snap["results"]
     assert set(eq.control_names(READ_SIDE)) <= set(snap["controls"])
-    assert f"{fill_read['last_control']}.npz" in snap["files"]
+    assert f"{smoke_read['last_control']}.npz" in snap["files"]
     assert not [f for f in snap["files"] if f.startswith(eq.STAGE_R1)]
     for name in eq.control_names(READ_SIDE):
         assert snap["controls"][name]["status"] in eq.STATUSES
 
 
-def test_resume_skips_done_batches(fill_read):
+def test_resume_skips_done_batches(smoke_read):
     """The same command resumes at the first batch not done: every batch file of the first launch is untouched (mtime),
     and the result batches are played."""
-    assert fill_read["code"] == EXIT_DONE
-    now = _files(fill_read["run_dir"])
-    for name, mtime in fill_read["snap"]["files"].items():
+    assert smoke_read["code"] == EXIT_DONE
+    now = _files(smoke_read["run_dir"])
+    for name, mtime in smoke_read["snap"]["files"].items():
         assert now[name] == mtime, name
     assert [f for f in now if f.startswith(eq.STAGE_R1)]
 
 
-def test_a_resumed_read_writes_the_uninterrupted_reads_results(tmp_path, fill_read):
+def test_a_resumed_read_writes_the_uninterrupted_reads_results(tmp_path, smoke_read):
     """results.json is built from the batch files only: the stopped and resumed read gives the very file of a read run
     through in one launch (same network, same command)."""
     net, _ = h.read_net(tmp_path / "net", READ_SIDE, h.DISTIL_GATES)
     whole = tmp_path / "whole"
     assert _launch(_read_argv(h.DISTIL_GATES, net, whole, mixed=READ_MIXED))[0] == EXIT_DONE
-    assert (whole / eq.RESULTS).read_bytes() == (fill_read["run_dir"] / eq.RESULTS).read_bytes()
+    assert (whole / eq.RESULTS).read_bytes() == (smoke_read["run_dir"] / eq.RESULTS).read_bytes()
 
 
 def test_the_strike_read_plays_the_info_cells_beside_the_scripts(g, tmp_path):
@@ -800,17 +808,21 @@ def test_a_filled_read_past_its_controls_reads_the_network_through_the_rule(tmp_
     """The R1 path with the owner's keys filled (STAND_IN, synthetic): with C3 to C7 forced to PASS (24 starts cannot
     meet the STAND_IN margins; the controls' own arithmetic is tested above), the network's gated cells, the pooled row
     and R1's command-error table go through limit_failures; each failure names a [limits] key and the verdict is the
-    rule's (verdict(controls, failures, [])), exit 0."""
+    rule's (verdict(controls, failures, [])), exit 0. Outside --smoke (a smoke never reads a verdict): a network of
+    record, --games 8 (test-only, so not of record); C6 and C7 are played."""
     gates = h.write_distil_gates(tmp_path)
-    net, _ = h.read_net(tmp_path / "net", READ_SIDE, gates)
+    net, _ = h.read_net(tmp_path / "net", READ_SIDE, gates, of_record=True)
     forced = {"status": eq.PASS, "detail": "forced by the test"}
     monkeypatch.setattr(eq, "gross_control", lambda *a, **k: dict(forced))
     monkeypatch.setattr(eq, "near_miss_control", lambda *a, **k: dict(forced))
     run_dir = tmp_path / "run"
-    code, lines = _launch(_read_argv(gates, net, run_dir, games=8))
+    code, lines = _launch(_read_argv(gates, net, run_dir, games=8, smoke=False))
     res = _json(run_dir / eq.RESULTS)
     assert code == EXIT_DONE and lines[-1] == res["verdict"] in (eq.DISTILLED, eq.NOT_DISTILLED)
-    assert isinstance(res["failures"], list)
+    assert isinstance(res["failures"], list) and res["of_record"] is False
+    assert eq.NOT_RUN not in {v["status"] for v in res["controls"].values()}
+    stages = {eq.stage_of(b["name"]) for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]}
+    assert {s for s in eq.STAGES if s.startswith(("c6_", "c7_"))} & stages
     assert all(f.split(":")[0] in distil.LIMIT_KEYS for f in res["failures"])
     gated = [c for c in res["cells"] if c["arm"] == eq.NET and c["kind"] != cells.INFO]
     limits = distil.load_distil_gates(gates).limits
@@ -821,23 +833,28 @@ def test_a_filled_read_past_its_controls_reads_the_network_through_the_rule(tmp_
     assert all(set(e["rmse_by_n_live"]) == {"1", "2", "3"} for e in res["errors"]["skills"].values())
 
 
-def test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays(g, fill_read):
-    """F1: with the owner's keys FILL_, C3 to C7, the failures and the verdict are NOT_RUN; C1, C1m and C2 PASS; no
-    DISTILLED or NOT DISTILLED anywhere; results.json has exactly the file table's keys (complete last); each batch file
-    holds the per-game arrays (save_batch's, pos_at, alive_at, and pair_class on an arm batch)."""
-    run_dir = fill_read["run_dir"]
-    assert fill_read["lines"][-1] == eq.NOT_RUN
+def test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays(g, smoke_read):
+    """F1, a smoke checks plumbing, never a verdict (lead, 26 Nov 2026): on the committed gate file, its owner's keys
+    filled (R48), a smoke still writes C3 to C7, the failures and the verdict NOT_RUN, plays no near-miss arm (C6, C7)
+    and ends exit 0 with NOT_RUN last; C1, C1m and C2 PASS; no DISTILLED or NOT DISTILLED anywhere; results.json has
+    exactly the file table's keys (complete last); each batch file holds the per-game arrays (save_batch's, pos_at,
+    alive_at, and pair_class on an arm batch)."""
+    run_dir = smoke_read["run_dir"]
+    assert distil.unfilled_limits(g) == []                         # a filled file
+    assert smoke_read["code"] == EXIT_DONE and smoke_read["lines"][-1] == eq.NOT_RUN
     res = _json(run_dir / eq.RESULTS)
     assert list(res) == list(eq.RESULT_KEYS) and res["complete"] is True
     assert res["verdict"] == eq.NOT_RUN and res["failures"] == eq.NOT_RUN and res["of_record"] is False
-    assert res["net_sha256"] == fill_read["net_sha"] and res["gates_sha256"] == g.sha256
+    assert res["net_sha256"] == smoke_read["net_sha"] and res["gates_sha256"] == g.sha256
     named = eq.control_names(READ_SIDE)
     for name in named:
         want = eq.PASS if name in (eq.CTL_C1, eq.CTL_C1M, eq.CTL_C2) else eq.NOT_RUN
         assert res["controls"][name]["status"] == want, (name, res["controls"][name])
     assert res["controls"] == _json(run_dir / eq.CONTROLS_FILE)
+    stages = {eq.stage_of(b["name"]) for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]}
+    assert not [s for s in stages if s.startswith(("c6_", "c7_"))]
     text = "\n".join([(run_dir / eq.RESULTS).read_text(), (run_dir / eq.RESULTS_MD).read_text(),
-                      (run_dir / eq.CONTROLS_FILE).read_text()] + fill_read["lines"] + fill_read["snap"]["lines"])
+                      (run_dir / eq.CONTROLS_FILE).read_text()] + smoke_read["lines"] + smoke_read["snap"]["lines"])
     assert eq.DISTILLED not in text                              # NOT DISTILLED contains it too
     drones, marks = g.specs[READ_SIDE].drones, len(g.read["path_times_s"])
     assert res["cells"] and all(set(c) == set(eq.CELL_KEYS) for c in res["cells"])
@@ -855,10 +872,10 @@ def test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays(g, fill_read
             assert set(np.unique(pg["pair_class"])) <= {eq.PAIR_SAME, eq.PAIR_B, eq.PAIR_C}
 
 
-def test_layout_names_every_batch_and_cell(g, ref, fill_read):
+def test_layout_names_every_batch_and_cell(g, ref, smoke_read):
     """layout.json lists every batch in play order with its cells (index, arm, codes, opponent, player) and how it was
     played (device, seed, tick cap, hold, n, the gate file's and, for the network's own arms, the network's sha256)."""
-    run_dir = fill_read["run_dir"]
+    run_dir = smoke_read["run_dir"]
     layout = _json(run_dir / eq.LAYOUT_FILE)
     assert list(layout) == ["batches"]
     names = [b["name"] for b in layout["batches"]]
@@ -871,7 +888,7 @@ def test_layout_names_every_batch_and_cell(g, ref, fill_read):
         assert (b["side"], b["device"], b["seed"], b["ticks_cap"], b["hold_ticks"], b["n"], b["gates_sha256"]) == (
             READ_SIDE, g.read["device"], int(ref.meta["seed"]), int(sg.run["ticks_cap"]), eq.HOLD_TICKS,
             g.smoke["read_games"], g.sha256)
-        assert b["net_sha256"] == (fill_read["net_sha"] if b["arm"] in (eq.NET, eq.PERMUTED) else None)
+        assert b["net_sha256"] == (smoke_read["net_sha"] if b["arm"] in (eq.NET, eq.PERMUTED) else None)
         assert isinstance(b["seconds"], float) and b["seconds"] > 0
         assert b["cells"] and all(set(c) == set(eq.LAYOUT_CELL_KEYS) for c in b["cells"])
         assert {c["arm"] for c in b["cells"]} == {b["arm"]}
@@ -879,10 +896,10 @@ def test_layout_names_every_batch_and_cell(g, ref, fill_read):
         assert all(c["player"].startswith(cells.PREFIXES) for c in b["cells"])
 
 
-def test_the_batch_file_serves_the_replay_check(g, fill_read):
+def test_the_batch_file_serves_the_replay_check(g, smoke_read):
     """R2 CA-4: a batch file holds start_pos_m [G, M, 3] (both teams) and every replay3d.EXACT_KEYS key, and the replay
     check of the batch against itself passes."""
-    run_dir = fill_read["run_dir"]
+    run_dir = smoke_read["run_dir"]
     guards, strikes = g.specs["guard"].drones, g.specs["strike"].drones
     for path in sorted((run_dir / eq.GAMES_DIR).glob("*.npz")):
         pg = scoring.load_batch(path)
@@ -903,10 +920,10 @@ def _reference_slices(run_dir):
     return out
 
 
-def test_the_intervals_use_the_adjusted_z(g, fill_read):
+def test_the_intervals_use_the_adjusted_z(g, smoke_read):
     """R2 RC-1: every stored cell ci is paired_cell at results' z_cell, z_cell = adjusted_z(alpha, m) with m the side's
     gated cells of the committed layout; the pooled ci at z_pooled = adjusted_z(alpha, 1)."""
-    run_dir = fill_read["run_dir"]
+    run_dir = smoke_read["run_dir"]
     res = _json(run_dir / eq.RESULTS)
     iv = res["intervals"]
     m = cells.gated_m(g.specs[READ_SIDE], g.cells, g.skills_gates)
@@ -930,21 +947,27 @@ def test_the_intervals_use_the_adjusted_z(g, fill_read):
     assert res["pooled"]["mixed"] is not None and res["pooled"]["mixed"]["cells"] == READ_MIXED
 
 
-def test_a_smoke_with_stand_in_limits_ends_with_a_verdict_word(tmp_path):
-    """Constraint 5 (design check of M2): a smoke on a gate file filled from STAND_IN judges the controls and writes a
-    verdict word (which one depends on 24 starts and a tiny network, so it is not asserted): the last line, results'
-    verdict and the exit agree, no control is NOT_RUN, the failures are a list."""
-    gates = h.write_distil_gates(tmp_path)
+def test_a_smoke_on_an_unfilled_copy_ends_with_not_run_as_before(tmp_path, smoke_read):
+    """F1 on an unfilled gate file (a copy under tmp_path, the owner's keys FILL_): as on the filled file, C3 to C7, the
+    failures and the verdict are NOT_RUN, the read ends exit 0 with NOT_RUN last, and it plays the same stages; the
+    NOT_RUN details name the unfilled keys."""
+    gates = h.write_unfilled_distil_gates(tmp_path)
+    todo = distil.unfilled_limits(distil.load_distil_gates(gates))
+    assert todo
     net, _ = h.read_net(tmp_path / "net", READ_SIDE, gates)
-    opps = cells.gated_opponents(distil.load_distil_gates(gates).skills_gates, READ_SIDE)
-    second = next(o for o in opps if o != READ_OPPONENT)
     run_dir = tmp_path / "run"
-    code, lines = _launch(_read_argv(gates, net, run_dir, opponents=(READ_OPPONENT, second)))
+    code, lines = _launch(_read_argv(gates, net, run_dir, mixed=READ_MIXED, games=4))
     res = _json(run_dir / eq.RESULTS)
-    assert lines[-1] in VERDICT_WORDS and lines[-1] == res["verdict"]
-    assert code == (EXIT_CONTROL_FAILED if res["verdict"] == eq.INCONCLUSIVE else EXIT_DONE)
-    assert isinstance(res["failures"], list) and res["of_record"] is False
-    assert eq.NOT_RUN not in {v["status"] for v in res["controls"].values()}
+    assert code == EXIT_DONE and lines[-1] == eq.NOT_RUN == res["verdict"] == res["failures"]
+    for name in eq.control_names(READ_SIDE):
+        want = eq.PASS if name in (eq.CTL_C1, eq.CTL_C1M, eq.CTL_C2) else eq.NOT_RUN
+        assert res["controls"][name]["status"] == want, (name, res["controls"][name])
+        if want == eq.NOT_RUN:
+            assert todo[0] in res["controls"][name]["detail"]
+    stages = [eq.stage_of(b["name"]) for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]]
+    filled = [eq.stage_of(b["name"]) for b in _json(smoke_read["run_dir"] / eq.LAYOUT_FILE)["batches"]]
+    assert stages == filled
+    assert eq.DISTILLED not in "\n".join([(run_dir / eq.RESULTS).read_text(), (run_dir / eq.RESULTS_MD).read_text()] + lines)
 
 
 class _ChangedOracle(cells.ScriptOracle):
@@ -1003,8 +1026,9 @@ def test_a_net_from_another_gate_file_or_side_is_refused(tmp_path):
     refused(_read_argv(h.DISTIL_GATES, mixed_up, tmp_path / "r6b"), tmp_path / "r6b")
     smoke_net, _ = h.read_net(tmp_path / "smoke_net", READ_SIDE, filled, of_record=False)
     refused(_read_argv(filled, smoke_net, tmp_path / "r7", smoke=False), tmp_path / "r7")
-    fill_net, _ = h.read_net(tmp_path / "fill_net", READ_SIDE, h.DISTIL_GATES, of_record=True)
-    refused(_read_argv(h.DISTIL_GATES, fill_net, tmp_path / "r8", smoke=False), tmp_path / "r8")
+    unfilled = h.write_unfilled_distil_gates(tmp_path)                 # the owner's keys FILL_: a copy, not the committed file
+    fill_net, _ = h.read_net(tmp_path / "fill_net", READ_SIDE, unfilled, of_record=True)
+    refused(_read_argv(unfilled, fill_net, tmp_path / "r8", smoke=False), tmp_path / "r8")
     record_net, _ = h.read_net(tmp_path / "record_net", READ_SIDE, filled, of_record=True)
     full = ["--gates", str(filled), "--side", READ_SIDE, "--skill-net", str(record_net), "--run-dir",
             str(tmp_path / "r10"), "--cap-h", "1"]
@@ -1014,5 +1038,6 @@ def test_a_net_from_another_gate_file_or_side_is_refused(tmp_path):
     job_dir = tmp_path / "r9"
     job_dir.mkdir()
     (job_dir / "job.json").write_text(json.dumps({"gpu_h": 0.5}))
-    assert _launch(_read_argv(h.DISTIL_GATES, fill_net, job_dir))[0] == EXIT_REFUSED
+    job_net, _ = h.read_net(tmp_path / "job_net", READ_SIDE, h.DISTIL_GATES)
+    assert _launch(_read_argv(h.DISTIL_GATES, job_net, job_dir))[0] == EXIT_REFUSED
     assert sorted(p.name for p in job_dir.iterdir()) == ["job.json"]

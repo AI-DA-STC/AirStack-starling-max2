@@ -30,7 +30,7 @@ every mixed cell); C2 the scripts as a network (``cells.ScriptOracle`` through `
 C1m's cells (game for game equal to them, its command error within ``[data] label_check_atol``); C3 the permuted
 scripts from T44 (no play); C4 the unfitted network and C5 the permuted network on the gated fixed cells (OP-20); C6
 (bias, turn, each switch player of the side) and C7 (noise on each skill's active channels, from C2's labels) on
-``[read] near_miss_cells``, played only when the owner's keys are filled; then R1, the network on the gated cells
+``[read] near_miss_cells``, played only outside --smoke; then R1, the network on the gated cells
 (fixed and mixed) with its command error against the scripts' labels, and R2 (INFO, the Strike team against
 cells.toml ``[info_opponents]``: the scripts, then the network, paired with each other, not gated). The scripted arms
 hold the gated and the near-miss cells (under the test-only options the near-miss cells of the read's opponents are
@@ -41,8 +41,10 @@ finished, and C1's and C2's checks) and the named controls (``control_names``: C
 owner's count of cells miss, C6 the near miss fails a limit, C7 it meets every limit) are written to ``controls.json``
 as they are settled, all of them before the first R1 batch. A control not PASS: ``results.json`` with the verdict
 INCONCLUSIVE and no result batch (exit 6, terminal: the same command on the folder exits 6 again); a non-finite
-action: exit 5, no result. With the owner's keys FILL_ (a smoke, F1) C4 and C5 are played but not judged, C6 and C7
-are not played, and C3 to C7, the failures and the verdict are NOT_RUN.
+action: exit 5, no result. A smoke checks plumbing, never a verdict (F1; lead, 26 Nov 2026): under --smoke, the
+owner's keys filled or FILL_, C4 and C5 are played but not judged, C6 and C7 are not played, and C3 to C7, the failures
+and the verdict are NOT_RUN (``Ctx.plumbing_only``); the smoke ends exit 0 with NOT_RUN when every plumbing control
+(C1, C1m, C2 and each batch's own) passes. Outside --smoke a FILL_ key is refused, so every step is judged.
 
 Files in ``--run-dir``: ``gates.toml`` and ``gates.sha256`` (pinned at the first launch), ``run.json`` (side, smoke,
 sizes, options, the network), ``code.json``; ``layout.json`` (``batches``, each appended before it is played, its
@@ -52,7 +54,7 @@ what ``results.json`` needs, so a resumed read rebuilds the uninterrupted read's
 ``controls.json``; ``results.json`` (exactly ``RESULT_KEYS``, ``complete`` last; the per-cell intervals at ``z_cell =
 adjusted_z(alpha, m)``, m the side's gated cells of the committed layout, the pooled rows at ``z_pooled``) and
 ``results.md``. The last line on stdout is the verdict word (DISTILLED, NOT DISTILLED, INCONCLUSIVE, or NOT_RUN for a
-smoke with FILL_ values).
+smoke).
 
 The run contract (``ste/run_contract.py``): the same command resumes at the first batch not done (done batches are
 not replayed); SIGINT or SIGTERM stops before the next tick (exit 4, the partial batch dropped); --cap-h caps effective
@@ -124,7 +126,7 @@ from svg_training.ste.run_contract import (EXIT_CONTROL_FAILED, EXIT_DONE, EXIT_
                                            EXIT_REFUSED, STOP_INTERRUPTED, NonFiniteError, RunBusyError, RunGuard)
 
 PASS, FAIL, NONFINITE = scoring.PASS, scoring.FAIL, scoring.NONFINITE
-NOT_RUN = "NOT_RUN"                              # a control or a verdict not run (a smoke with FILL_ values, F1)
+NOT_RUN = "NOT_RUN"                              # a control or a verdict not run (a smoke, F1)
 STATUSES = (PASS, FAIL, NONFINITE, NOT_RUN)
 DISTILLED, NOT_DISTILLED, INCONCLUSIVE = "DISTILLED", "NOT DISTILLED", "INCONCLUSIVE"
 HOLD_TICKS = 1                                   # C6: every read plays hold 1
@@ -742,7 +744,8 @@ def verdict(controls: dict, failures, unfilled: list[str]) -> str:
     """The read's word: ``NOT_RUN`` while any owner key is FILL_ (``unfilled = distil.unfilled_limits(g)``, a smoke;
     F1); else INCONCLUSIVE if any control is not PASS (controls first: FAIL, NONFINITE or NOT_RUN); else NOT DISTILLED
     on any failure, DISTILLED on none. ValueError for no control, an unknown status, or failures ``NOT_RUN`` in a
-    run with every owner key filled."""
+    run with every owner key filled. The read calls it only outside --smoke (a smoke's word is NOT_RUN,
+    ``Ctx.plumbing_only``)."""
     if unfilled:
         return NOT_RUN
     if not controls:
@@ -875,6 +878,20 @@ class Ctx:
     @property
     def run_dir(self) -> Path:
         return self.args.run_dir
+
+    @property
+    def plumbing_only(self) -> bool:
+        """A smoke checks plumbing, never a verdict (F1; lead, 26 Nov 2026): under --smoke the limit-dependent steps (C3
+        to C7 judged, C6 and C7 played, ``limit_failures``, the verdict) are NOT_RUN, filled gate file or not. Outside
+        --smoke an unfilled file never gets here (``prepare`` refuses it)."""
+        return bool(self.args.smoke or self.unfilled)
+
+    def not_judged(self) -> str:
+        """Why the limit-dependent steps are NOT_RUN (``plumbing_only``)."""
+        why = "a smoke checks plumbing, never a verdict (F1)"
+        if self.unfilled:
+            why += f"; the owner's keys are not filled ({', '.join(self.unfilled)}; R38)"
+        return why
 
 
 # ------------------------------------------------------------------------------------------------ the command line
@@ -1062,14 +1079,14 @@ def stage_cells(ctx: Ctx) -> dict:
     """{stage: its cells} in play order. The scripted arms (C1 fixed, C1m mixed) hold the gated cells and the near-miss
     cells (under the test-only options the near-miss cells may lie outside the gated ones); C2 the same cells; C4 and C5
     the gated fixed cells (OP-20: C4 30, C5 30 cell-plays per side); C6 and C7 the near-miss cells (each switch arm only
-    those where its code flies), played only when the owner's keys are filled; R1 the gated cells; R2 the info cells
+    those where its code flies), played only outside --smoke (``Ctx.plumbing_only``); R1 the gated cells; R2 the info cells
     (the Strike team's guard_mark_inside), its scripted arm then the network."""
     side = ctx.side
     fixed = [c for c in ctx.scripted if c.kind == FIXED]
     mixed = [c for c in ctx.scripted if c.kind == MIXED]
     out = {STAGE_C1: fixed, STAGE_C1M: mixed, STAGE_C2: fixed + mixed,
            STAGE_C4: [c for c in ctx.gated if c.kind == FIXED], STAGE_C5: [c for c in ctx.gated if c.kind == FIXED]}
-    if not ctx.unfilled:
+    if not ctx.plumbing_only:
         for kind in systematic_kinds(side) + RANDOM_KINDS:
             out[(f"c7_{kind}" if kind in RANDOM_KINDS else f"c6_{kind}")] = arm_cells(kind, ctx.near, side)
     out[STAGE_R1] = list(ctx.gated)
@@ -1291,14 +1308,13 @@ def arm_errors(ctx: Ctx, accs: list) -> dict:
 
 
 def _not_run(ctx: Ctx) -> dict:
-    return {"status": NOT_RUN, "phase": "controls",
-            "detail": f"not judged: the owner's keys are not filled ({', '.join(ctx.unfilled)}; R38); a smoke (F1)"}
+    return {"status": NOT_RUN, "phase": "controls", "detail": f"not judged: {ctx.not_judged()}"}
 
 
 def permuted_scripts_control(ctx: Ctx) -> dict:
     """C3 from T44 alone (no play): code k flies T44's cell of code perm[k] on the read's gated fixed cells; at least
     ``permuted_min_miss_cells`` cells miss."""
-    if ctx.unfilled:
+    if ctx.plumbing_only:
         return _not_run(ctx)
     opponents = list(dict.fromkeys(c.opponent for c in ctx.gated if c.kind == FIXED))
     rows = permuted_from_t44(ctx.ref, ctx.variant, ctx.spec, ctx.g.cells["permutation"][ctx.side], ctx.n, opponents)
@@ -1334,12 +1350,12 @@ def judge(ctx: Ctx, stage_batches: dict, controls: dict, reader: Reader, active:
     for stage, name, key in ((STAGE_C4, CTL_C4, "unfitted_min_miss_cells"), (STAGE_C5, CTL_C5, "permuted_min_miss_cells")):
         if stage not in stage_batches:
             continue
-        if ctx.unfilled:
+        if ctx.plumbing_only:
             out[name] = _not_run(ctx)
             continue
         rows = arm_read(ctx, stage_batches[stage], reader, STAGE_ARM[stage])["rows"]
         out[name] = {**gross_control(rows, ctx.g.limits, ctx.g.controls, key), "phase": "controls"}
-    if ctx.unfilled:
+    if ctx.plumbing_only:
         if STAGE_C5 in stage_batches:               # C6 and C7 are not played (F1): written NOT_RUN with C5's judgment
             for name in control_names(ctx.side):
                 if name.startswith((CTL_C6, CTL_C7)):
@@ -1388,14 +1404,13 @@ def results_of(ctx: Ctx, stage_batches: dict, controls: dict, reader: Reader) ->
     pooled = r1["pooled"]
     errors = arm_errors(ctx, [a for key, a in r1["accs"].items() if r1["kinds"][key] == FIXED])
     gated = [r for r in rows if r["arm"] == NET and r["kind"] in (FIXED, MIXED)]
-    if ctx.unfilled:
-        failures = NOT_RUN
-        reasons = [f"not judged: the owner's keys are not filled ({', '.join(ctx.unfilled)}; R38); a smoke reads no "
-                   f"verdict (F1)"]
+    if ctx.plumbing_only:
+        failures, word = NOT_RUN, NOT_RUN
+        reasons = [f"not judged: {ctx.not_judged()}"]
     else:
         failures = limit_failures(gated, pooled["all"], errors, ctx.g.limits)
-    word = verdict(controls, failures, ctx.unfilled)
-    if not ctx.unfilled:
+        word = verdict(controls, failures, ctx.unfilled)
+    if not ctx.plumbing_only:
         reasons = ([f"{n}: {v['status']}" for n, v in controls.items() if v["status"] != PASS] if word == INCONCLUSIVE
                    else list(failures))
     return {"controls": controls, "cells": rows, "intervals": r1["intervals"], "pooled": pooled, "errors": errors,
@@ -1427,7 +1442,7 @@ def results_md(ctx: Ctx, res: dict) -> str:
              f"{iv['interval']}, {iv['correction']}, alpha {iv['alpha']}, m = {iv['m'][ctx.side]}, z_cell "
              f"{iv['z_cell']:.4f}, z_pooled {iv['z_pooled']:.4f}.", "",
              f"**Verdict: {res['verdict']}**" + ("" if res["verdict"] != NOT_RUN else
-                                                  " (the owner's keys are FILL_: no verdict is read, F1)"), ""]
+                                                  f" (no verdict is read: {ctx.not_judged()})"), ""]
     lines += [f"- {r}" for r in res["reasons"]] + ["", "## Controls (read before any result)", "",
                                                     "| Control | Status | Detail |", "|---|---|---|"]
     lines += [f"| {name} | {v['status']} | {v['detail']} |" for name, v in res["controls"].items()

@@ -57,9 +57,14 @@ One commit per task, tests first, on the merge's branch in its own worktree cut 
    (or the LS1.4 rule) on synthetic results built from the file's own values (each limit just crossed and just met),
    so every limit key is reached and none is typed. This is the plan's reading of R38 (synthetic values for the
    arithmetic, the file's values for the committed rule); **the lead confirms it** (OP-41).
-   **Under `--smoke` with `FILL_` values (F1):** the limit-dependent steps (`limit_failures`, controls C6 and C7, the
-   verdict) are not run and are written `NOT_RUN`; a `FILL_` string never reaches an arithmetic comparison, and a smoke
-   never writes DISTILLED or NOT DISTILLED (M2-T5, M2-T6). No typed fallback in code or script (R38).
+   **Under `--smoke`, the file filled or not (F1; lead, 26 Nov 2026, after the owner filled `distil_gates.toml`, R48: a
+   smoke checks plumbing, never a verdict):** the limit-dependent steps (`limit_failures`, the judgments of controls C3
+   to C7, C6 and C7 not played, the verdict) are always written `NOT_RUN` and a smoke ends exit 0 with `NOT_RUN` last
+   when every plumbing control passes; a test that needs an unfilled file writes its own copy under `tmp_path` with the
+   owner's keys `"FILL_OWNER_R38"` (`write_unfilled_distil_gates` in `tests/_ste_ls1.py`), and
+   `test_the_committed_limits_run_through_the_rule` now runs on the committed file's own values (it no longer skips); a
+   `FILL_` string never reaches an arithmetic comparison, and a smoke never writes DISTILLED or NOT DISTILLED (M2-T5,
+   M2-T6). No typed fallback in code or script (R38).
 6. **Wording:** Guard team, Strike team, tag, reach the zone; "observed in the training simulator". Never write the
    home directory's user name in a file (write `~/...`); results write repository-relative paths.
 7. **Git:** explicit paths; never `git add -A`, `commit -a`, `stash`, `reset`, `checkout` of another branch, `clean`,

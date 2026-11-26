@@ -20,6 +20,11 @@ ste_learning/drafts/LS1_TASK_PLAN.md, section 0 constraint 5; created in task LS
   tests/test_ste_ls1_distil_gates.py so the distillation gate file has one writer in every test): a gate file's text
   from its parsed dict, the committed ``distil_gates.toml`` with the owner's keys filled from ``STAND_IN``, and that
   text written under ``tmp_path`` (relative ``[source]`` paths still resolve from the ``svg_training/`` root).
+* ``unfilled_distil``, ``write_unfilled_distil_gates`` (lead, 26 Nov 2026, after the owner filled the committed file,
+  R48): the committed ``distil_gates.toml`` with every owner key (the keys of ``STAND_IN["limits"]`` and
+  ``STAND_IN["controls"]``) set back to ``UNFILLED`` (``"FILL_OWNER_R38"``), written under ``tmp_path``: the one source of
+  an unfilled gate file for the tests that need one (a refusal outside ``--smoke``, a ``FILL_`` value that never reaches
+  a comparison).
 * ``save_tiny_net(..., provenance=...)``, ``write_fit_report``, ``read_net`` (task LS1-M2-T6): the equivalence read
   takes a network only with a complete ``fit_report.json`` beside it whose shas name the network and the gate file,
   and whose provenance names the same gate file; ``read_net`` saves a tiny network distilled, by its meta, from a given
@@ -50,6 +55,7 @@ STD_FLOOR = 0.0029                       # synthetic meta value (the real one is
 READING_IN_NET_FILES = False             # LS1-M4-T1 sets this True (its [reading] section is then required)
 CHOICE_ANCHOR = re.compile(r'^choice = "two_level".*$', re.MULTILINE)   # the whole line, its comment included
 HOLD = 12                                # the tiny learner's decision ticks (tests/test_ste_l3_export.py)
+UNFILLED = "FILL_OWNER_R38"               # an owner key not set yet (R38; exploit.FILL_MARK convention)
 
 TIER2_PLAYERS = """
 [players]
@@ -250,6 +256,25 @@ def filled_distil(data: dict | None = None) -> dict:
     data["limits"] = dict(STAND_IN["limits"])
     data["controls"] = copy.deepcopy(STAND_IN["controls"])
     return data
+
+
+def _unfill(node: dict) -> dict:
+    return {k: _unfill(v) if isinstance(v, dict) else UNFILLED for k, v in node.items()}
+
+
+def unfilled_distil(data: dict | None = None) -> dict:
+    """The committed distillation gate file's dict (or ``data``) with every owner key (the keys of ``STAND_IN``'s
+    ``limits`` and ``controls``, nested tables included) set to ``UNFILLED``: the gate file as it stood before the owner
+    set the limits (R38), whatever the committed file holds today."""
+    data = copy.deepcopy(data if data is not None else committed_distil())
+    data["limits"] = _unfill(STAND_IN["limits"])
+    data["controls"] = _unfill(STAND_IN["controls"])
+    return data
+
+
+def write_unfilled_distil_gates(tmp_path, name: str = "distil_gates_unfilled.toml") -> Path:
+    """``toml_text(unfilled_distil())`` written under ``tmp_path``."""
+    return write_distil_gates(tmp_path, unfilled_distil(), name=name)
 
 
 def write_distil_gates(tmp_path, data: dict | None = None, name: str = "distil_gates.toml") -> Path:

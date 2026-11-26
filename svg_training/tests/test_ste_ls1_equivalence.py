@@ -16,6 +16,9 @@
   (``tests/_ste_ls1.write_unfilled_distil_gates``), never the committed file.
 * A smoke checks plumbing, never a verdict (lead, 26 Nov 2026): under ``--smoke`` C3 to C7, the failures and the verdict
   are NOT_RUN, the filled committed file or an unfilled copy alike, and the read ends exit 0 with NOT_RUN.
+* The one end-to-end read with real control judgments (nothing stubbed), outside --smoke on a STAND_IN gate file:
+  ``test_a_read_outside_smoke_judges_every_control_and_ends_with_its_word`` (C1 to C7 judged, the verdict word, the
+  exit code and the last stdout line agree).
 """
 import contextlib
 import io
@@ -831,6 +834,49 @@ def test_a_filled_read_past_its_controls_reads_the_network_through_the_rule(tmp_
     skills_seen = {s for s, e in res["errors"]["skills"].items() if e["rows"]}
     assert skills_seen == set(distil.load_distil_gates(gates).specs[READ_SIDE].players)
     assert all(set(e["rmse_by_n_live"]) == {"1", "2", "3"} for e in res["errors"]["skills"].values())
+
+
+READ_SECOND_OPPONENT = "strike_flank"      # the real-controls read's second opponent (10 gated fixed cells, not 5)
+WORD_EXIT = {eq.DISTILLED: EXIT_DONE, eq.NOT_DISTILLED: EXIT_DONE, eq.INCONCLUSIVE: EXIT_CONTROL_FAILED}
+
+
+def test_a_read_outside_smoke_judges_every_control_and_ends_with_its_word(tmp_path):
+    """The end-to-end read with real control judgments (nothing stubbed): outside --smoke, on a gate file written from
+    STAND_IN (constraint 5), a network of record, --games 4 (test-only, so not of record), the Guard team against two
+    opponents (one gives 5 gated fixed cells, fewer than STAND_IN's permuted_min_miss_cells of 7, and C3 would end the
+    read). Every named control C1 to C7 is in results.json and controls.json, judged PASS or FAIL (none NOT_RUN, none
+    missing: a control not PASS ends the read, so a missing one would mean the read stopped before it); C6 and C7 are
+    played; the verdict word is DISTILLED, NOT DISTILLED or INCONCLUSIVE and is the rule's; the exit code and the last
+    stdout line agree with it as the script's docstring maps them (0 DISTILLED or NOT DISTILLED, 6 INCONCLUSIVE). On
+    STAND_IN's tiny margins C7 (the noise arm must meet every limit) fails, so the word is INCONCLUSIVE today; the test
+    does not pin the word."""
+    assert eq.gross_control.__module__ == eq.near_miss_control.__module__ == eq.__name__   # the real judgments
+    gates = h.write_distil_gates(tmp_path)
+    net, net_sha = h.read_net(tmp_path / "net", READ_SIDE, gates, of_record=True)
+    run_dir = tmp_path / "run"
+    code, lines = _launch(_read_argv(gates, net, run_dir, opponents=(READ_OPPONENT, READ_SECOND_OPPONENT), games=4,
+                                     smoke=False))
+    res = _json(run_dir / eq.RESULTS)
+    assert list(res) == list(eq.RESULT_KEYS) and res["complete"] is True and res["of_record"] is False
+    assert res["net_sha256"] == net_sha
+    named = eq.control_names(READ_SIDE)
+    assert any(n.startswith(eq.CTL_C6) for n in named) and any(n.startswith(eq.CTL_C7) for n in named)
+    for name in named:
+        assert name in res["controls"], (name, sorted(res["controls"]))
+        assert res["controls"][name]["status"] in (eq.PASS, eq.FAIL), (name, res["controls"][name])
+    assert res["controls"] == _json(run_dir / eq.CONTROLS_FILE)
+    stages = {eq.stage_of(b["name"]) for b in _json(run_dir / eq.LAYOUT_FILE)["batches"]}
+    assert {eq.STAGE_C4, eq.STAGE_C5} <= stages
+    assert [s for s in stages if s.startswith("c6_")] and [s for s in stages if s.startswith("c7_")]
+    word = res["verdict"]
+    assert word in WORD_EXIT, word
+    assert isinstance(res["failures"], list) and word == eq.verdict(res["controls"], res["failures"], [])
+    assert code == WORD_EXIT[word] and lines[-1] == word
+    if word == eq.INCONCLUSIVE:
+        assert [n for n in named if res["controls"][n]["status"] != eq.PASS]
+        assert not [s for s in stages if s == eq.STAGE_R1]
+    else:
+        assert all(res["controls"][n]["status"] == eq.PASS for n in named) and eq.STAGE_R1 in stages
 
 
 def test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays(g, smoke_read):

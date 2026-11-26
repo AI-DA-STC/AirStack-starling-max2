@@ -53,7 +53,8 @@ One commit per task, tests first, on the merge's branch in its own worktree cut 
    values of the committed `[limits]`, `[controls]` and `[reading]`, **read from the file**. **The owner's own numbers
    are exercised too (R2 RC-2, OA-4):** one test per gate file (`test_the_committed_limits_run_through_the_rule` in
    M2-T5 for `distil_gates.toml`, `test_the_committed_margins_run_through_the_rule` in M4-T5 for `heads_gates.toml`)
-   is skipped while any owner key holds `FILL_` and, once filled, loads the committed file and runs `limit_failures`
+   (the committed `distil_gates.toml` is filled, R48, so its test asserts that and never skips; the M4-T5 test is
+   skipped while a `heads_gates.toml` owner key holds `FILL_`) loads the committed file and runs `limit_failures`
    (or the LS1.4 rule) on synthetic results built from the file's own values (each limit just crossed and just met),
    so every limit key is reached and none is typed. This is the plan's reading of R38 (synthetic values for the
    arithmetic, the file's values for the committed rule); **the lead confirms it** (OP-41).
@@ -851,7 +852,7 @@ are computed (M2-T6, R2 RC-1), so `limit_failures` reads the stored `ci` and nev
   b, c, n chosen so the plain-alpha interval lies inside ±`STAND_IN` `cell_margin` and the interval at
   `adjusted_z(alpha, m)` does not; the cells built through M2-T6's interval step, `limit_failures` names
   `cell_margin`, `verdict` is NOT DISTILLED); `test_the_committed_limits_run_through_the_rule` (constraint 5, R2 RC-2,
-  OA-4: skipped while `distil.unfilled_limits(g)` is non-empty; once filled, every limit and control-size key of the
+  OA-4: the committed file is filled (R48), so it asserts `distil.unfilled_limits(g) == []` and never skips; every limit and control-size key of the
   committed file is read from it and each one, just crossed in a synthetic result, gives a failure naming it, just met
   gives none; no number typed).
 - **Implementation:** these live in the script (not literal-scanned; OP-12); `RecordingSkillTeam.reset` marks a slot's later games as
@@ -901,10 +902,15 @@ are computed (M2-T6, R2 RC-1), so `limit_failures` reads the stored `ci` and nev
   control failed (INCONCLUSIVE written, OP-19); 5 non-finite; 3/4 stopped; 2 refused (pins; `net_problems` non-empty;
   net meta's `distil_gates_sha256` not this file's; `FILL_` outside `--smoke`; `gpu_h > 0`).
 - **Tests first:** `test_controls_are_written_before_any_result_batch` (hidden `--stop-after-batch`);
-  `test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays` (net from the M2-T4 smoke, committed-style
-  `FILL_` limits: last line `NOT_RUN`, C3 to C7 `NOT_RUN`, C1, C1m, C2 PASS, no DISTILLED or NOT DISTILLED anywhere, `results.json` has every
-  key of the table); `test_a_smoke_with_stand_in_limits_ends_with_a_verdict_word` (a `tmp_path` gate file filled from
-  `STAND_IN`);
+  `test_a_smoke_on_24_starts_ends_with_not_run_and_per_game_arrays` (the committed file, filled (R48): last line
+  `NOT_RUN`, C3 to C7 `NOT_RUN`, C1, C1m, C2 PASS, no DISTILLED or NOT DISTILLED anywhere, `results.json` has every
+  key of the table); `test_a_smoke_on_an_unfilled_copy_ends_with_not_run_as_before` (a `tmp_path` copy with the owner's
+  keys `FILL_`: the same stages and the same end); `test_a_filled_read_past_its_controls_reads_the_network_through_the_rule`
+  (outside `--smoke`, a `STAND_IN` gate file, C3 to C7 stubbed to PASS: R1 through `limit_failures` and `verdict`);
+  `test_a_read_outside_smoke_judges_every_control_and_ends_with_its_word` (outside `--smoke`, a `STAND_IN` gate file,
+  two opponents, nothing stubbed: C1 to C7 judged PASS or FAIL, the word DISTILLED, NOT DISTILLED or INCONCLUSIVE, the
+  exit code and the last line agree with it); `test_a_resumed_read_writes_the_uninterrupted_reads_results`;
+  `test_the_strike_read_plays_the_info_cells_beside_the_scripts`;
   `test_a_failed_control_exits_6_and_again_6_on_the_same_folder` (oracle monkeypatched to change one command);
   `test_resume_skips_done_batches` (mtimes unchanged); `test_a_net_from_another_gate_file_or_side_is_refused`;
   `test_layout_names_every_batch_and_cell`; `test_the_batch_file_serves_the_replay_check` (R2 CA-4: `scoring.load_batch`

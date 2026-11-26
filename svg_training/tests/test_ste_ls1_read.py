@@ -48,19 +48,17 @@ def _once(text: str, old: str, new: str) -> str:
 
 
 def heads_text(reading: bool = True, fill: str | None = None, edits=()) -> str:
-    """The committed heads gate file with its ``FILL_`` marks filled (a value already filled is kept): the margins from
-    ``STAND_IN`` (read at call time, so a monkeypatched value reaches the file), ``REACH_MIN``, ``NET_SHAS`` and a dated
-    net folder. ``fill``: that margin left ``FILL_``. ``reading`` False cuts the ``[reading]`` section (the file's
-    last). ``edits``: (old, new) replacements, each of a text found once."""
+    """The committed heads gate file with its ``[reading]`` section replaced, always, by ``STAND_IN``'s four keys (read
+    at call time, so a monkeypatched value reaches the file; the committed margins never reach the arithmetic,
+    constraint 5), and its other ``FILL_`` marks filled (a value already filled is kept): ``REACH_MIN``, ``NET_SHAS``
+    and a dated net folder. ``fill``: that margin written as a ``FILL_`` mark. ``reading`` False leaves the section out.
+    ``edits``: (old, new) replacements, each of a text found once."""
     text = HEADS.read_text()
     data = tomllib.loads(text)
 
     def is_fill(v) -> bool:
         return isinstance(v, str) and v.startswith(exploit.FILL_MARK)
 
-    for key in exploit.READING_MARGINS:
-        if key != fill and is_fill(data["reading"][key]):
-            text = _once(text, f'{key} = "{data["reading"][key]}"', f"{key} = {STAND_IN['reading'][key]!r}")
     if is_fill(data["run0"]["skills_reach_min"]):
         text = _once(text, f'skills_reach_min = "{data["run0"]["skills_reach_min"]}"',
                      f"skills_reach_min = {REACH_MIN!r}")
@@ -70,8 +68,10 @@ def heads_text(reading: bool = True, fill: str | None = None, edits=()) -> str:
         file = entry["file"].replace(exploit.FILL_MARK + "DATE", "2026-12-01")
         sha = NET_SHAS[side] if is_fill(entry["sha256"]) else entry["sha256"]
         text = _once(text, old, f'file = "{file}", sha256 = "{sha}"')
-    if not reading:
-        text = text[:text.index("\n[reading]")] + "\n"
+    text = text[:text.index("\n[reading]")] + "\n"          # [reading] is the file's last section
+    if reading:
+        values = {k: (f"{exploit.FILL_MARK}TEST" if k == fill else v) for k, v in STAND_IN["reading"].items()}
+        text += "\n[reading]\n" + "".join(f"{k} = {json.dumps(v)}\n" for k, v in values.items())
     for old, new in edits:
         text = _once(text, old, new)
     return text
@@ -528,7 +528,7 @@ def test_the_route2_seed2_pilot_is_route2s_l33_pilot(tmp_path, monkeypatch, caps
 
 def test_a_gate_file_without_reading_or_with_a_fill_margin_exits_2(tmp_path, monkeypatch, capsys):
     """F8: a net gate file without [reading] is refused by the loader, a FILL_ margin by the reader; both exit 2. The
-    committed heads gate file (FILL_ until the owner and LS1.2) is refused today."""
+    committed heads gate file is refused while it holds a FILL_ mark (until lead steps 4 and 5)."""
     manifest, _ = build(tmp_path, monkeypatch)
     for i, (text, words) in enumerate(((heads_text(reading=False), ["[reading]"]),
                                        (heads_text(fill="margin_pooled"), ["margin_pooled", "FILL_"]))):
@@ -539,9 +539,10 @@ def test_a_gate_file_without_reading_or_with_a_fill_margin_exits_2(tmp_path, mon
         assert code == reader.EXIT_REFUSED, err
         for w in words:
             assert w in err, (w, err)
-    use_heads(monkeypatch, HEADS)
-    code, err = run(manifest, tmp_path / "out_committed", capsys)
-    assert code == reader.EXIT_REFUSED and "FILL_" in err
+    if exploit.unfilled(exploit.load_gates(HEADS)):          # until lead steps 4 and 5 fill it
+        use_heads(monkeypatch, HEADS)
+        code, err = run(manifest, tmp_path / "out_committed", capsys)
+        assert code == reader.EXIT_REFUSED and "FILL_" in err
 
 
 def test_stand_in_mirrors_no_limit(tmp_path):

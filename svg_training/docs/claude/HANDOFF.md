@@ -4,7 +4,7 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 26 November 2026 ~22:45, on the home RTX 5090 (route 3 flowcharts redrawn; Stage 0 on hold by the owner; before: ~14:30 M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 27 November 2026 ~01:50, on the home RTX 5090 (owner ruled R50: overnight pilot trials approved, not started, waiting for the owner's account switch; before: 26 Nov ~22:45 route 3 flowcharts redrawn; before: ~14:30 M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
@@ -37,6 +37,14 @@ note disagree, this file wins.
   `ls_architecture.png` gives the skill network an amber "being redesigned" outline. The route page, `ste_learning/README.md`'s
   route paragraph and the deck's title and status slides follow. One review round (numbers: no finding; completeness:
   1 blocker, 4 minor, fixed).
+- **27 Nov ~01:45: owner ruled R50 (A):** Stage 0 and the full pilot trials of `LS1_REDESIGN.md` section 4 (go on
+  Stage 0 and decision 1, CPU only, 0 GPU-h). **Not started**: the owner is switching Claude accounts first ("dont start
+  first"). Next session, on the owner's word: write the scratch code in the session scratchpad (harness per 4.2 0a,
+  features per rung, closed forms, the 4.3 arms), run Stage 0 (stop everything if 0a misses 44 / 122 / 64 or
+  ScriptOracle is not 0), then Stage 1 and Stage 2, up to 4 jobs at 6 threads; stop and wait at decisions 2, 3, 8, 9,
+  10. Friday evening: stop cleanly, resume on the laptop's CPU. Save scripts and logs to
+  `records/evidence/<date>_ste_ls1_redesign_pilots/` afterwards. On the work account the advisor is an agent, not the
+  advisor tool (CLAUDE.md, models).
   Asked the owner for a go on Stage 0 only (no training, CPU). Stage 0c (blended switches) decides whether a learnable
   copy can pass; the later decisions wait for it.
 

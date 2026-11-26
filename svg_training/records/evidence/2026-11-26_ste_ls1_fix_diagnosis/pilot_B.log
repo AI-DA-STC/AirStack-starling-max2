@@ -1,0 +1,3 @@
+[B] D=71 hidden=[512, 512, 512] rows=1500000 params=568836
+[B] step 1 t 1s loss 0.23646 heldout {'straight': 0.3016, 'flank': 0.5137, 'high': 0.5017, 'low': 0.5076, 'sacrifice': 0.6196, 'converge': 0.6895}
+[B] step 1000 t 877s loss 0.03991 heldout {'straight': 0.0754, 'flank': 0.4651, 'high': 0.0639, 'low': 0.0681, 'sacrifice': 0.3885, 'converge': 0.3658}

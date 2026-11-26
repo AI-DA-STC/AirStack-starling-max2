@@ -1,0 +1,4 @@
+256 ms per forward of 3000 rows: 2.493 params 153348
+512 ms per forward of 3000 rows: 6.679 params 568836
+768 ms per forward of 3000 rows: 12.496 params 1246468
+1024 ms per forward of 3000 rows: 21.549 params 2186244

@@ -1,0 +1,54 @@
+strike_straight max |label - recompute| 1.1920928955078125e-07
+strike_flank max |label - recompute| 1.4901161193847656e-07
+strike_high max |label - recompute| 1.7881393432617188e-07
+strike_low max |label - recompute| 1.7881393432617188e-07
+strike_sacrifice max |label - recompute| 3.5762786865234375e-07
+strike_converge max |label - recompute| 5.066394805908203e-06
+
+rows 300000, alive 300000; flank blocked share 0.948
+flank label != straight label share 0.9475633502006531
+RMSE net flank v flank label: all 0.3363 blocked 0.3431 unblocked 0.1731
+share of flank MSE from blocked rows 0.986
+RMSE net flank v STRAIGHT label: blocked 0.3660 unblocked 0.1731
+RMSE flank label v straight label (predict-straight baseline): all 0.4957 blocked 0.5093
+RMSE net flank v net straight: blocked 0.3648 unblocked 0.1693
+RMSE flank label v aim-at-guard on blocked 0.3849 ; net flank v aim-at-guard 0.2946
+blocked: mean cos(net flank, flank label) 0.873 ; mean cos(net flank, straight label) 0.876; share cos<0 v flank label 0.000
+
+blocked rows by |off| (side choice); share of blocked rows; flank RMSE; share of wrong side (net cross sign)
+  |off| [0,0.001) share 0.001 rmse 0.4808 wrong-side 0.504
+  |off| [0.001,0.01) share 0.011 rmse 0.4790 wrong-side 0.514
+  |off| [0.01,0.05) share 0.047 rmse 0.4417 wrong-side 0.452
+  |off| [0.05,0.2) share 0.178 rmse 0.3685 wrong-side 0.343
+  |off| [0.2,0.5) share 0.450 rmse 0.2921 wrong-side 0.292
+  |off| [0.5,9) share 0.313 rmse 0.3714 wrong-side 0.467
+
+rows by distance to the corridor edge (nearest candidate guard): share; flank RMSE
+  [0,0.01) share 0.000 rmse 0.5005 blocked share in bin 0.750
+  [0.01,0.05) share 0.000 rmse 0.4200 blocked share in bin 0.818
+  [0.05,0.2) share 0.001 rmse 0.3731 blocked share in bin 0.962
+  [0.2,0.5) share 0.016 rmse 0.3482 blocked share in bin 1.000
+  [0.5,99) share 0.931 rmse 0.3430 blocked share in bin 1.000
+  [99,inf) share 0.052 rmse 0.1724 blocked share in bin 0.000
+
+by guards in the way: {0: (0.052, 0.1731), 1: (0.512, 0.3195), 2: (0.436, 0.3689), 3: (0.0, 0.5853)}
+  blocked, guard ahead 0-0.5 m: share 0.000 rmse nan
+  blocked, guard ahead 0.5-1.0 m: share 0.000 rmse nan
+  blocked, guard ahead 1.0-2.0 m: share 0.528 rmse 0.3332
+  blocked, guard ahead 2.0-4.0 m: share 0.472 rmse 0.3539
+  blocked, guard ahead 4.0-99 m: share 0.000 rmse nan
+
+blocked share and |off|<1cm share by opponent:
+  guard_parked_centre  blocked 0.951  |off|<1cm among blocked 0.014  flank rmse 0.3342
+  guard_parked_ring    blocked 0.948  |off|<1cm among blocked 0.013  flank rmse 0.3378
+  guard_mark_edge      blocked 0.967  |off|<1cm among blocked 0.011  flank rmse 0.3394
+  guard_mirror         blocked 0.954  |off|<1cm among blocked 0.011  flank rmse 0.3411
+  guard_field          blocked 0.906  |off|<1cm among blocked 0.014  flank rmse 0.3266
+jitter 0.001 m: strike_straight label RMSE(orig, jittered) 0.0003; share rows moved >0.2 0.0000
+jitter 0.001 m: strike_flank label RMSE(orig, jittered) 0.0261; share rows moved >0.2 0.0009
+jitter 0.001 m: strike_sacrifice label RMSE(orig, jittered) 0.0283; share rows moved >0.2 0.0007
+jitter 0.001 m: strike_converge label RMSE(orig, jittered) 0.0195; share rows moved >0.2 0.0004
+jitter 0.01 m: strike_straight label RMSE(orig, jittered) 0.0028; share rows moved >0.2 0.0000
+jitter 0.01 m: strike_flank label RMSE(orig, jittered) 0.0831; share rows moved >0.2 0.0095
+jitter 0.01 m: strike_sacrifice label RMSE(orig, jittered) 0.0856; share rows moved >0.2 0.0070
+jitter 0.01 m: strike_converge label RMSE(orig, jittered) 0.0882; share rows moved >0.2 0.0074

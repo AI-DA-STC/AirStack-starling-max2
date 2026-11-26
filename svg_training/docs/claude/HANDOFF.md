@@ -4,13 +4,29 @@ INTERNAL · the lab's AI-assistant hand-over notes: where the work stands, what 
 
 > **How to use this file.** Read it at the start of a session, after [../../CLAUDE.md](../../CLAUDE.md).
 > §4 is the current state, §5 is what is waiting on people. Update both before you stop.
-> Last updated: 26 November 2026 ~10:00, on the home RTX 5090 (M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
+> Last updated: 26 November 2026 ~14:30, on the home RTX 5090 (M4 merged; LS1.2 NOT DISTILLED both teams, T93/T94; fix-round proposal reviewed; waiting on the owner; before: ~10:00 M1–M3 merged, limits set R48, LS1.1 running; before: 25 Nov ~17:00 LS1 task plan merged, merge M1 building; before: ~14:45 route 3 build has the owner's word, R42–R45; before: ~14:00 rulings R36–R41, execution workflow v3, its design review done and folded in; before: ~12:10 morning: clean-up, automatic 3-D clip hook, learner v2 first; before: night: L3–L6 pipeline check done, both routes PIPELINE WORKS; before: 24 Nov ~18:20 late day: rulings R29–R33, L2.6 and the figure-eight check, L3 slice 2 merged; before: ~13:30 day: rulings R24–R28, AirStack set up, L1.4, L1.5, L2.5 done, L3 note v2; before: ~07:30 night run: L1 reads, L2.1/L2.3/L2.4; before: 23 Nov ~13:30 documentation clean-up), worktree `~/AirStack-starling-max2-dev` on branch `development`.
 
 ## 0. Resume here (for a new session or another Claude account)
 
 Everything needed is in this folder; nothing depends on the previous chat. Claude's user memory (`~/.claude/…`) and
 the private NUS workspace (`~/ma_skills-self-play/`, 5090 only) do **not** travel with git: if this file and a memory
 note disagree, this file wins.
+
+### 26 November 2026 ~14:30 — RTX 5090: M4 MERGED; LS1 COPY CHECK NOT DISTILLED ON BOTH TEAMS; WAITING ON THE OWNER (read this first)
+
+- **Build:** merge M4 (head training on the network, its gates, read, unseen scorer, clips, export) is on `development`
+  at `79a3e10c`; full suite 3,425 passed, 60 skipped. All four LS1 merges are in.
+- **LS1.1** (T93): one skill network per team, `runs/2026-11-26_ste_ls11_distil_{guard,strike}`, 0.172 of LS1.1's 0.8
+  GPU-h (union, probe included). **LS1.2** (T94): copy check on the CPU, every control PASS, **NOT DISTILLED** on both
+  teams (Guard 18 limit failures, Strike 98). Record `records/2026-11-26_ste_ls1_distil_read_record.md`, two reviewers.
+- **Diagnosis and the one fix round** (R47): `ste_learning/drafts/LS1_FIX_ROUND_PROPOSAL.md`, two reviewers; its
+  scratch scripts and logs are in `records/evidence/2026-11-26_ste_ls1_fix_diagnosis/`. The network underfits. With
+  the allowed levers, one skill alone stays 2–3x over the limit. Guard's parked-centre offset has no allowed lever.
+  **The lead recommends stopping LS1** (section 0b). The re-scoped build: own-frame inputs, a network or head per skill,
+  a fit schedule, an exact zero.
+- **Waiting on the owner:** spend the fix round (section 5: five gate keys, 0.62 GPU-h, new gate hash) or stop LS1.
+  Nothing launches before the answer. LS1.4 needs both teams DISTILLED.
+- LS1.2 ran with an uncommitted (likely docs-only) diff; launch any further run from a clean tree.
 
 ### 26 November 2026 ~10:00 — RTX 5090: M1–M3 MERGED, LIMITS SET (R48), LS1.1 DISTILLATION RUNNING ON THE GPU (read this first)
 

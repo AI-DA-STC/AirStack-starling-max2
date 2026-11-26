@@ -1,0 +1,13 @@
+[A] D=71 hidden=[256, 256, 256] rows=1500000 params=153348
+[A] step 1 t 0s loss 0.24834 heldout {'straight': 0.5329, 'flank': 0.59, 'high': 0.2425, 'low': 0.2448, 'sacrifice': 0.6305, 'converge': 0.6015}
+[A] step 1000 t 293s loss 0.04128 heldout {'straight': 0.0668, 'flank': 0.4651, 'high': 0.0605, 'low': 0.0713, 'sacrifice': 0.3928, 'converge': 0.3805}
+[A] step 2000 t 590s loss 0.03794 heldout {'straight': 0.0597, 'flank': 0.4632, 'high': 0.0498, 'low': 0.0504, 'sacrifice': 0.3825, 'converge': 0.3474}
+[A] step 3000 t 885s loss 0.03615 heldout {'straight': 0.0563, 'flank': 0.4625, 'high': 0.0444, 'low': 0.0415, 'sacrifice': 0.3796, 'converge': 0.3329}
+[A] step 4000 t 1181s loss 0.03542 heldout {'straight': 0.0545, 'flank': 0.4619, 'high': 0.0399, 'low': 0.0389, 'sacrifice': 0.379, 'converge': 0.3247}
+[A] step 5000 t 1478s loss 0.03492 heldout {'straight': 0.0503, 'flank': 0.4608, 'high': 0.039, 'low': 0.0388, 'sacrifice': 0.3783, 'converge': 0.3199}
+[A] step 6000 t 1776s loss 0.03410 heldout {'straight': 0.0425, 'flank': 0.4593, 'high': 0.0357, 'low': 0.037, 'sacrifice': 0.3774, 'converge': 0.3128}
+[A] step 7000 t 2075s loss 0.03353 heldout {'straight': 0.0384, 'flank': 0.46, 'high': 0.035, 'low': 0.0327, 'sacrifice': 0.3782, 'converge': 0.3099}
+[A] step 8000 t 2373s loss 0.03358 heldout {'straight': 0.0333, 'flank': 0.4599, 'high': 0.0332, 'low': 0.0299, 'sacrifice': 0.3767, 'converge': 0.3069}
+[A] step 9000 t 2671s loss 0.03290 heldout {'straight': 0.0347, 'flank': 0.4603, 'high': 0.0343, 'low': 0.0319, 'sacrifice': 0.3766, 'converge': 0.3041}
+[A] step 10000 t 2969s loss 0.03252 heldout {'straight': 0.0366, 'flank': 0.4606, 'high': 0.0352, 'low': 0.034, 'sacrifice': 0.3771, 'converge': 0.301}
+[A] END step 10096 t 3000s heldout {'straight': 0.0322, 'flank': 0.4597, 'high': 0.0327, 'low': 0.0287, 'sacrifice': 0.3752, 'converge': 0.2976}

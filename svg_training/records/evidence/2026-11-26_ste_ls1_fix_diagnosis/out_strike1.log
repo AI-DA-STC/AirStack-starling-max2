@@ -1,0 +1,25 @@
+meta {'pad_guards': 5, 'pad_strikes': 3, 'keepout_strike_m': 1.1, 'keepout_guard_m': 1.1, 'wall_margin_m': 0.25, 'height_band_m': [0.5, 1.8], 'starling_enabled': True, 'guard_speed_mps': 0.3333333333333333, 'strike_speed_mps': 0.5} [256, 256, 256] [6, 7, 10, 11] 3 3
+
+=== round 0 kept rows sample 400000; net_flown share 0.000
+flown share: {'strike_straight': 0.122, 'strike_flank': 0.139, 'strike_high': 0.149, 'strike_low': 0.161, 'strike_sacrifice': 0.175, 'strike_converge': 0.254}
+  strike_straight    rmse xy 0.0207  (per ch 0.0236,0.0174)  rows where flown 0.0194
+  strike_flank       rmse xy 0.3361  (per ch 0.3352,0.3371)  rows where flown 0.3027
+  strike_high        rmse xy 0.0229  (per ch 0.0214,0.0243)  rows where flown 0.0322
+  strike_low         rmse xy 0.0238  (per ch 0.0293,0.0166)  rows where flown 0.0293
+  strike_sacrifice   rmse xy 0.2804  (per ch 0.2809,0.2798)  rows where flown 0.2486
+  strike_converge    rmse xy 0.1967  (per ch 0.2031,0.1900)  rows where flown 0.1976
+  strike_flank: by n_live {1: 0.154, 2: 0.2343, 3: 0.3659} near_switch {True: 0.3225, False: 0.3419} mode {'uniform': 0.3421, 'mix': 0.3274, 'random': 0.3318} opp {'parked_centre': 0.3343, 'parked_ring': 0.338, 'mark_edge': 0.3391, 'mirror': 0.3404, 'field': 0.3261}
+  strike_sacrifice: by n_live {1: 0.0351, 2: 0.1936, 3: 0.3085} near_switch {True: 0.2808, False: 0.2802} mode {'uniform': 0.2863, 'mix': 0.2831, 'random': 0.2681} opp {'parked_centre': 0.2864, 'parked_ring': 0.2842, 'mark_edge': 0.2775, 'mirror': 0.2807, 'field': 0.2665}
+  strike_converge: by n_live {1: 0.0577, 2: 0.3202, 3: 0.1802} near_switch {True: 0.2718, False: 0.1531} mode {'uniform': 0.1775, 'mix': 0.195, 'random': 0.2263} opp {'parked_centre': 0.2214, 'parked_ring': 0.2098, 'mark_edge': 0.1924, 'mirror': 0.1947, 'field': 0.1235}
+
+=== round 3 kept rows sample 400000; net_flown share 1.000
+flown share: {'strike_straight': 0.119, 'strike_flank': 0.136, 'strike_high': 0.144, 'strike_low': 0.157, 'strike_sacrifice': 0.17, 'strike_converge': 0.275}
+  strike_straight    rmse xy 0.0206  (per ch 0.0234,0.0174)  rows where flown 0.0195
+  strike_flank       rmse xy 0.3474  (per ch 0.3473,0.3475)  rows where flown 0.3446
+  strike_high        rmse xy 0.0228  (per ch 0.0212,0.0243)  rows where flown 0.0322
+  strike_low         rmse xy 0.0241  (per ch 0.0296,0.0169)  rows where flown 0.0313
+  strike_sacrifice   rmse xy 0.3278  (per ch 0.3288,0.3268)  rows where flown 0.3178
+  strike_converge    rmse xy 0.2164  (per ch 0.2217,0.2110)  rows where flown 0.2125
+  strike_flank: by n_live {1: 0.1542, 2: 0.2398, 3: 0.3776} near_switch {True: 0.3216, False: 0.3601} mode {'uniform': 0.3524, 'mix': 0.3406, 'random': 0.343} opp {'parked_centre': 0.3456, 'parked_ring': 0.3493, 'mark_edge': 0.3495, 'mirror': 0.3536, 'field': 0.3352}
+  strike_sacrifice: by n_live {1: 0.0349, 2: 0.2175, 3: 0.3601} near_switch {True: 0.3123, False: 0.3356} mode {'uniform': 0.3304, 'mix': 0.3307, 'random': 0.321} opp {'parked_centre': 0.337, 'parked_ring': 0.3314, 'mark_edge': 0.3179, 'mirror': 0.3316, 'field': 0.3109}
+  strike_converge: by n_live {1: 0.0575, 2: 0.3451, 3: 0.1928} near_switch {True: 0.2858, False: 0.1692} mode {'uniform': 0.1964, 'mix': 0.2133, 'random': 0.2501} opp {'parked_centre': 0.2377, 'parked_ring': 0.23, 'mark_edge': 0.213, 'mirror': 0.2166, 'field': 0.1374}

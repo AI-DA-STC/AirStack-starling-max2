@@ -1,0 +1,36 @@
+SACRIFICE branches: share, RMSE, share of MSE
+  fallback straight (decoy out or alone)     0.173  0.0449  0.004
+  decoy (slot 0) at nearest guard            0.286  0.1169  0.050
+  others: circling                           0.428  0.3400  0.636
+  others: straight in (gap)                  0.113  0.4622  0.310
+   others, |angle to entry edge| 0-0.02 rad: share 0.009 RMSE 0.5660
+   others, |angle to entry edge| 0.02-0.1 rad: share 0.035 RMSE 0.5367
+   others, |angle to entry edge| 0.1-0.3 rad: share 0.085 RMSE 0.4591
+   others, |angle to entry edge| 0.3-4 rad: share 0.413 RMSE 0.3225
+   others, within 0.1 rad of the +-pi direction flip: share 0.010 RMSE 0.7221
+   decoy, gap between nearest two guards 0-0.05 m: share 0.008 RMSE 0.2033
+   decoy, gap between nearest two guards 0.05-0.2 m: share 0.027 RMSE 0.1820
+   decoy, gap between nearest two guards 0.2-99 m: share 0.250 RMSE 0.1029
+   others, gap between two guards nearest Strike 0 0-0.05 m: share 0.016 RMSE 0.5836
+   others, gap between two guards nearest Strike 0 0.05-0.2 m: share 0.052 RMSE 0.5208
+   others, gap between two guards nearest Strike 0 0.2-99 m: share 0.474 RMSE 0.3382
+
+CONVERGE branches: share, RMSE, share of MSE
+  alone (straight)                           0.097  0.0576  0.008
+  run-in, committed                          0.091  0.3911  0.358
+  run-in, gathered not committed             0.020  0.5289  0.145
+  placing: circling                          0.360  0.1390  0.180
+  placing: steer to point                    0.432  0.1661  0.308
+   not committed, worst mate bearing error 0-0.08 rad (gate at 0.1): share 0.017 RMSE 0.5126
+   not committed, worst mate bearing error 0.08-0.12 rad (gate at 0.1): share 0.006 RMSE 0.4995
+   not committed, worst mate bearing error 0.12-0.3 rad (gate at 0.1): share 0.035 RMSE 0.2429
+   not committed, worst mate bearing error 0.3-9 rad (gate at 0.1): share 0.755 RMSE 0.1479
+   n_live 2 run-in, committed                        share 0.048 RMSE 0.3390
+   n_live 2 run-in, gathered not committed           share 0.003 RMSE 0.6137
+   n_live 2 placing: circling                        share 0.032 RMSE 0.2609
+   n_live 2 placing: steer to point                  share 0.045 RMSE 0.3071
+   n_live 3 run-in, committed                        share 0.042 RMSE 0.4429
+   n_live 3 run-in, gathered not committed           share 0.017 RMSE 0.5096
+   n_live 3 placing: circling                        share 0.328 RMSE 0.1207
+   n_live 3 placing: steer to point                  share 0.387 RMSE 0.1411
+   a mate within 0.1 rad of the reference bearing (rank wrap): share 0.000 RMSE nan

@@ -1,16 +1,18 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-25 19:48 (+08:00) (asked: full status)** · RTX 5090 · GPU 3 % / 49 W / 1.8 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-26 14:30 (+08:00) (event: LS1 copy check NOT DISTILLED, diagnosis reviewed; owner decision needed)** · RTX 5090 · GPU 1 % / 36 W / 1.2 of 32 GB · 0 training processes (0 paused)
 
-**Main track:** route 3 (the learned-skills route), merge M1: 6 of 7 tasks built and through QC, the last (T7, the calibration read) being built · **Side track:** none
+**Main track:** route 3 (the learned-skills route), stage LS1: the copy check failed on both teams; waiting on the owner (spend the one fix round, or stop LS1) · **Side track:** none
 
-**Plain summary.** Since 14:28: the owner's rulings R42 to R47 (the build's go, no cap confirmed, self-play timing, page redraw, a run 0 per Strike seed, shorter stop rules); the builder's task plan for LS1 and LS1.4 written and checked against the code in two rounds (12 serious findings fixed; round 2's fixes not re-checked); the route page, figures and slides redrawn; merge M1 built task by task, each passing independent QC the first time. The pipeline check's six trained checkpoints, four exports and saved settings load unchanged with M1's code (checked by the lead). Nothing trained, 0 GPU-h on route 3.
+**Plain summary.** One network per team was trained to copy its hand-written skills (LS1.1, T93, 0.17 GPU-h) and played against the scripts in the copy check (LS1.2, T94, CPU). Every control passed, so the result is real: **NOT DISTILLED on both teams.** Strike's flank, sacrifice and converge are 4 to 7 times over the 0.05 command-error limit. Guard misses mirror narrowly, field by about 2 times, and the parked-at-centre skill (which must output zero) by about 7 times. The diagnosis says the network is under-trained, not misled. Its scratch trials show that even one skill alone in its own network stays 2 to 3 times over the limit with the levers the fix round may use. **The lead recommends stopping LS1 now** and re-scoping the next build. That build would use inputs in each drone's own frame (flank reached 0.045 alone with them), a network or output head per skill, a fit schedule, and an exact zero for the parked skills.
 
 ## Watch
 
-![The five steps of route 3 in their order: LS1 Distil, head training, LS2 Fine-tune, self-play, LS3 Free codes](../figures/ls_four_stages.png)
+| The scripts fly flank | The LS1.1 network on the same start |
+|---|---|
+| ![Strike flank, scripts](../../records/evidence/2026-11-26_ste_ls1_fix_diagnosis/strike_strike_flank_g0_scripts.gif) | ![Strike flank, network](../../records/evidence/2026-11-26_ste_ls1_fix_diagnosis/strike_strike_flank_g0_net.gif) |
 
-The new order of route 3's steps (R41). Nothing is built or run on the GPU yet.
+2-D top-down clips with the height panel, game 0 of LS1.1. Flank is the skill the network copies worst (0.33 command error against 0.05).
 
 ## Phases
 
@@ -24,44 +26,36 @@ The new order of route 3's steps (R41). Nothing is built or run on the GPU yet.
 | L2 Game rules in training | DONE | PyTorch | tier 1; tier 2 Isaac Lab | |
 | L3 Learner (two routes) | DONE | PyTorch | tier 1; tier 2 Isaac Lab (smoke) | |
 | L4–L6 pipeline check | DONE, both routes PIPELINE WORKS (INFO) | PyTorch | tier 1 fast engine; tier 2 Isaac Lab (smoke) | 2.29 of 20 GPU-h |
-| ▶ Route 3, LS1 Distil and LS1.4 Head training | BUILDING (merge M1 of four) | PyTorch | tier 1 fast engine | the scripts copied into a skill network per team, then the heads trained on it |
+| ▶ Route 3, LS1 Distil | NOT DISTILLED, both teams (T94); owner decision: fix round or stop | PyTorch | tier 1 fast engine | the scripts copied into a skill network per team |
+| Route 3, LS1.4 Head training | BUILT (M4 merged), NOT STARTED: needs both teams DISTILLED | PyTorch | tier 1 fast engine | the heads trained on the skill network, both sides |
 | Route 3, LS2, self-play, LS3 | NOT STARTED (each needs its design note) | PyTorch | tier 1 fast engine | order by R41 |
 | L7–L9 | NOT STARTED | — | AirStack simulator; real flight | owner's gate |
 
-## Route 3, merge M1, task by task
+## Route 3, stage LS1, task by task
 
-From [the task plan](../drafts/LS1_TASK_PLAN.md) section 2; branch `ls1-m1`, worktree `~/AirStack-starling-max2-ls1m1`.
-
-| ID | Plain name | Status | Simulator | Result / ETA |
+| ID | Plain name | Status | Simulator | Result |
 |---|---|---|---|---|
-| — | Design check of M1 against the code (two parts) | DONE | none | no blocker; corrections passed to the builders |
-| LS1-M1-T1 | The route's budget section `[budget_ls]` and task IDs | DONE, QC PASS | none | `604b76fd` |
-| LS1-M1-T2 | Job status shows the route's hours; hours carried from the other machine | DONE, QC PASS | none | `e3574028` |
-| LS1-M1-T3 | The skill network: two paths, save and load with refusals | DONE, QC PASS | tier 1 (CPU tests) | `254079e4` |
-| LS1-M1-T4 | The setting that switches skills to the network; net-backed dispatch | DONE, QC PASS | tier 1 (CPU tests) | `bf86d183` |
-| — | The pipeline check's real files with M1's code | PASS | CPU | 6 checkpoints load, 4 exports reload, pilot and run 0 settings equal |
-| — | `test_dependencies` broken on `development` since `402a66ab` (deck script imports) | FIXED on the branch | none | `c45a7736` |
-| LS1-M1-T5 | Game set-ups of the reads, either team | DONE, QC PASS | tier 1 (CPU tests) | `74c64ca6` |
-| LS1-M1-T6 | Deliberately changed scripts for the calibration (own file) | DONE, QC PASS | tier 1 (CPU tests) | `c9b78872` |
-| LS1-M1-T7 | Paired statistics and the calibration read (job LS1.5) | RUNNING (builder) | tier 1 (CPU) | then its QC |
-| — | Full test suite on the M1 branch | QUEUED | CPU | about 40 min, nothing merged while it runs |
-| LS1.5 | Calibration read | QUEUED (after the merge) | tier 1 (CPU) | then the owner sets the limits (R38) |
+| M1–M4 | The build: skill network, calibration, distillation, copy check, export, head training | DONE, all four merged (full suite 3,425 passed at M4) | tier 1 (CPU tests) | `79a3e10c` |
+| LS1.5 | Calibration read, then the top-up (owner R48) | DONE (T90, T91, INFO) | tier 1 (CPU) | limits set by the owner (R48) |
+| LS1.0 | Smokes and the CUDA label probe | DONE (T92, INFO) | tier 1; GPU probe | labels bit-equal on CUDA |
+| LS1.1 | Distillation, one skill network per team | DONE (T93, INFO) | tier 1 (GPU) | 0.172 of 0.8 GPU-h |
+| LS1.2 | Copy check against the scripts | **NOT DISTILLED** both teams (T94); every control PASS | tier 1 (CPU) | Guard 18 limit failures, Strike 98 |
+| — | Diagnosis and the fix-round proposal | DONE, two reviewers (numbers, reasoning) | CPU scratch pilots | [proposal](../drafts/LS1_FIX_ROUND_PROPOSAL.md), section 0b the lead's recommendation |
+| LS1.1-fix, LS1.2-fix | The one fix round the stop rules allow (R47) | WAITING ON THE OWNER | tier 1 (GPU, then CPU) | 0.62 GPU-h asked, about 1 h CPU; expected NOT DISTILLED again |
 
-GPU-h on route 3 so far: 0 (`[budget_ls]`, 200 by R43). L3–L6: 2.291 of 20. L1 + L2: 4.447 of 13 (`ste_job.py status`: own rows 0.907, carried 3.540).
+GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
 ## Other workstreams
 
 | ID | Plain name | Status |
 |---|---|---|
-| — | Route 3 route page, figures and slides redrawn (R45) | DONE, one reviewer, merged |
-| — | Route 3 builder's task plan | DONE, two check rounds, merged; round 2's fixes not re-checked |
 | — | Learner v2 note | NOT STARTED: after LS1 (R37) |
 | NEAR-962 | Planned-pushes flight; the Crazyflie commanded gaps | unchanged from 24 Nov |
 
-**Next.** 1) LS1-M1-T7 and its QC, then the full suite on the M1 branch, then merge M1 into `development`. 2) LS1.5 calibration read (CPU), then the limit options to the owner. 3) Merge M2 (distillation and the copy check) in parallel with the owner's limits.
+**Next.** On the owner's word: either the fix round (new gate-file hash, LS1.1-fix on the GPU, LS1.2-fix on the CPU, record with two reviewers), or LS1 closed on T94 and a design note for the re-scoped build.
 
-**Waiting on you.** Nothing now. Next: the LS1 pass limits and the LS1.4 margin (R38, after LS1.5).
+**Waiting on you.** Spend the one LS1 fix round (0.62 GPU-h, expected to fail again), or stop LS1 now and have the lead draft the re-scoped build (own-frame inputs, a network or head per skill, a fit schedule, an exact zero). The lead recommends stopping.
 
-**Usage:** GPU 0 on route 3. Agents since 14:28: the task-plan workflow (33 runs, 5.1 M tokens: Opus scouts, writer, fixer; Sonnet checkers and refuters), M1 part 1 (9 runs, 1.1 M tokens), M1 part 2 (6 runs so far). Advisor (Fable 5.2) twice since 14:28 (before M1, after the plan). Checks: docs check and the document test set at each docs merge; no full suite yet (M1's comes before its merge).
+**Usage:** GPU 0.172 h on route 3 (LS1.1 and the probe). The diagnosis workflow: 5 agents, 859k tokens, 2.6 h (analyst, record writer, two reviewers, reviser). The M4 full suite took about 40 min of CPU. Advisor (Fable 5.2, advisor tool) once after the diagnosis. Checks: the docs check and the document test set for this docs-only commit.
 
-**Ready to push.** 13 commits on `development` (`d70b4e01` to `97e85a31`, plus this status): rulings R42 to R47, the route page redraw, the task plan, HANDOFF; mirror updated; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 39 commits on `development` (up to this status commit); mirror to update after the commit; push from GitHub Desktop. `main` unchanged.

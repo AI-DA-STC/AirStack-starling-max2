@@ -1,0 +1,17 @@
+[S5] code strike_converge feat raw D=71 hidden [256, 256, 256]
+[S5] step 2500 t 99s loss 0.03960 heldout xy RMSE 0.269
+[S5] step 5000 t 199s loss 0.03463 heldout xy RMSE 0.2508
+[S5] step 7500 t 299s loss 0.03043 heldout xy RMSE 0.2362
+[S5] step 10000 t 398s loss 0.02940 heldout xy RMSE 0.2289
+[S5] step 12500 t 498s loss 0.02625 heldout xy RMSE 0.2201
+[S5] step 15000 t 598s loss 0.02472 heldout xy RMSE 0.2138
+[S5] step 17500 t 698s loss 0.02429 heldout xy RMSE 0.2102
+[S5] step 20000 t 798s loss 0.02173 heldout xy RMSE 0.1976
+[S5] step 22500 t 898s loss 0.02011 heldout xy RMSE 0.1897
+[S5] step 25000 t 998s loss 0.01692 heldout xy RMSE 0.182
+[S5] step 27500 t 1098s loss 0.01705 heldout xy RMSE 0.174
+[S5] step 30000 t 1197s loss 0.01523 heldout xy RMSE 0.1696
+[S5] step 32500 t 1298s loss 0.01435 heldout xy RMSE 0.1645
+[S5] step 35000 t 1398s loss 0.01347 heldout xy RMSE 0.1607
+[S5] step 37500 t 1498s loss 0.01300 heldout xy RMSE 0.1565
+[S5] END step 37532 heldout 0.1578

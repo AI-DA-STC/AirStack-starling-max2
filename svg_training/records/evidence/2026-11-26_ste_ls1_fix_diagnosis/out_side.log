@@ -1,0 +1,8 @@
+blocked rows: share where the net is closer to the MIRRORED side's command than to the label:
+  |off| [0,0.01) rows 0.013  closer-to-mirror 0.511  flank RMSE 0.4792
+  |off| [0.01,0.05) rows 0.047  closer-to-mirror 0.440  flank RMSE 0.4417
+  |off| [0.05,0.2) rows 0.178  closer-to-mirror 0.307  flank RMSE 0.3685
+  |off| [0.2,0.5) rows 0.450  closer-to-mirror 0.201  flank RMSE 0.2921
+  |off| [0.5,9) rows 0.313  closer-to-mirror 0.356  flank RMSE 0.3714
+  all blocked: closer-to-mirror 0.284; RMSE(label, mirrored label) 0.8091
+  blocked: median |angle error| deg 19.6, p90 49.8

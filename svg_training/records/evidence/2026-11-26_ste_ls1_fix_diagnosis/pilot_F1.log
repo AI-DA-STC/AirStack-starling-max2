@@ -1,0 +1,26 @@
+[F1] code strike_flank feat raw D=71 hidden [256, 256, 256]
+[F1] step 2500 t 109s loss 0.09668 heldout xy RMSE 0.4288
+[F1] step 5000 t 218s loss 0.02437 heldout xy RMSE 0.2139
+[F1] step 7500 t 327s loss 0.01654 heldout xy RMSE 0.1721
+[F1] step 10000 t 437s loss 0.01348 heldout xy RMSE 0.158
+[F1] step 12500 t 546s loss 0.01232 heldout xy RMSE 0.1596
+[F1] step 15000 t 655s loss 0.01103 heldout xy RMSE 0.1444
+[F1] step 17500 t 765s loss 0.01023 heldout xy RMSE 0.1422
+[F1] step 20000 t 874s loss 0.00975 heldout xy RMSE 0.1386
+[F1] step 22500 t 983s loss 0.00904 heldout xy RMSE 0.1338
+[F1] step 25000 t 1093s loss 0.00868 heldout xy RMSE 0.1305
+[F1] step 27500 t 1202s loss 0.00831 heldout xy RMSE 0.1293
+[F1] step 30000 t 1312s loss 0.00918 heldout xy RMSE 0.1286
+[F1] step 32500 t 1421s loss 0.00784 heldout xy RMSE 0.1242
+[F1] step 35000 t 1530s loss 0.00774 heldout xy RMSE 0.126
+[F1] step 37500 t 1640s loss 0.00762 heldout xy RMSE 0.1224
+[F1] step 40000 t 1749s loss 0.00720 heldout xy RMSE 0.1228
+[F1] step 42500 t 1853s loss 0.00801 heldout xy RMSE 0.124
+[F1] step 45000 t 1954s loss 0.00811 heldout xy RMSE 0.1227
+[F1] step 47500 t 2055s loss 0.00845 heldout xy RMSE 0.1329
+[F1] step 50000 t 2156s loss 0.00692 heldout xy RMSE 0.1203
+[F1] step 52500 t 2257s loss 0.00892 heldout xy RMSE 0.1242
+[F1] step 55000 t 2358s loss 0.00733 heldout xy RMSE 0.1202
+[F1] step 57500 t 2459s loss 0.00634 heldout xy RMSE 0.1159
+[F1] step 60000 t 2560s loss 0.00661 heldout xy RMSE 0.1124
+[F1] END step 60000 heldout 0.1124

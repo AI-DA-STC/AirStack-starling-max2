@@ -1,0 +1,6 @@
+[C] D=98 hidden=[256, 256, 256] rows=1500000 params=160260
+[C] step 1 t 0s loss 0.24937 heldout {'straight': 0.5357, 'flank': 0.5913, 'high': 0.2458, 'low': 0.2461, 'sacrifice': 0.6272, 'converge': 0.6018}
+[C] step 1000 t 304s loss 0.03901 heldout {'straight': 0.0661, 'flank': 0.463, 'high': 0.0658, 'low': 0.0754, 'sacrifice': 0.3894, 'converge': 0.3495}
+[C] step 2000 t 612s loss 0.03517 heldout {'straight': 0.0499, 'flank': 0.4597, 'high': 0.0524, 'low': 0.0596, 'sacrifice': 0.3812, 'converge': 0.3029}
+[C] step 3000 t 919s loss 0.03332 heldout {'straight': 0.0414, 'flank': 0.4582, 'high': 0.0458, 'low': 0.0437, 'sacrifice': 0.3786, 'converge': 0.2816}
+[C] step 4000 t 1226s loss 0.03226 heldout {'straight': 0.0426, 'flank': 0.458, 'high': 0.0424, 'low': 0.0444, 'sacrifice': 0.3778, 'converge': 0.2683}

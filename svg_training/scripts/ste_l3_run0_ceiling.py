@@ -6,6 +6,7 @@ no training.
     ste_l3_run0_ceiling.py --out <folder> [--gates configs/ste_l3/skills_gates.toml] [--games <n>]
                            [--device cpu|cuda] [--chunk <choices per batch>]
     ste_l3_run0_ceiling.py --oracle-check <finished ceiling folder> [--top 3] [--check-out <file>]
+    (route 3, a net gate file: either mode also takes --equivalence <LS1.2 read folder>, once per side)
 
 Why: run 0's mark ``[run0] skills_reach_min`` was set at 0.90 from the 1v1 screen (T66). In the 3v3 base game on T44's
 starts the parked-centre Guard holds against every Strike script (T70, the L2.5 screen, group ctl_reference_replay;
@@ -41,7 +42,19 @@ choice and the ``--top`` choices by reaches (choice order on a tie) are replayed
 dispatch and against the hold-1 oracle written without the dispatch (``Composite``: drone m flies its script's own
 column, closed loop). PASS needs every game equal (outcome, end step, tags, Strike drones left) and the replay's reaches
 equal to the folder's. Writes <folder>/oracle_check.json (or ``--check-out``), ``complete`` last; exit 0 PASS, 6 FAIL,
-2 refused (no finished ceiling, a finished check, a gate file off the folder's sha256)."""
+2 refused (no finished ceiling, a finished check, a gate file off the folder's sha256).
+
+Route 3 (task LS1-M4-T3; ste_learning/drafts/LS1_TASK_PLAN.md section 5): under ``[learner] skill_source = "net"`` the
+Strike skill network flies every choice (the dispatch is ``skills.NetTwoLevelDispatch``) and the mark is the network's
+own (best constant choice less the margin, above the untrained net team's Wilson upper bound; the rule is unchanged).
+``ctl_one_script_choices_are_reference`` is then INFO, its T44 numbers kept: equivalence of a network and the scripts is
+LS1.2's gate (C1 and C2), so both modes take ``--equivalence <folder>`` once per side and refuse (exit 2) unless each
+``results.json`` is complete, of record, DISTILLED and names that side's ``[learner.skill_net]`` sha256 (a read is
+mapped to its side by ``net_sha256``; ``cells[].side`` must agree); a FILL_, missing or edited Strike network
+(``skill_net.net_problems`` on the run 0 variant's game, C5) is refused before a game is played. ``--oracle-check``
+flies ``NetComposite`` (drone m flies its code through ``skill_net.one_code`` on the whole team tensor: no heads, no
+dispatch, hold 1, the dispatch path's batch shape). The scripts route reads and writes as before; ``--equivalence``
+with it is refused."""
 from __future__ import annotations
 
 import argparse
@@ -62,7 +75,7 @@ import ste_l3_held_arm as arm  # noqa: E402  (the input checks against the gate 
 import ste_sweep_l011 as l011  # noqa: E402  (the simulator label, JSON writing)
 from svg_training.core.metrics import wilson_interval  # noqa: E402
 from svg_training.opponents.scripted import make_strategy  # noqa: E402
-from svg_training.ste import atomic, exploit, scoring, skills, sweep  # noqa: E402
+from svg_training.ste import atomic, exploit, scoring, skill_net, skills, sweep  # noqa: E402
 
 EXIT_DONE, EXIT_REFUSED, EXIT_CONTROL_FAILED = 0, 2, 6
 PASS, FAIL = scoring.PASS, scoring.FAIL
@@ -75,6 +88,9 @@ ORACLE_FILE = "oracle_check.json"
 ORACLE = "oracle:"                  # the oracle's cell name (never a script's or a choice's name)
 TOP = 3                             # --oracle-check: the top choices replayed besides the best
 STATUS = "pipeline check, not for flight"
+INFO = "INFO"                       # route 3: the T44 control's status (LS1.2's gate, not this run's; scoring.ending
+                                    # stops only on FAIL and NONFINITE)
+EQ_SIDES = ("guard", "strike")      # route 3: one LS1.2 read per side (F7)
 
 
 class ConstHeads(nn.Module):
@@ -177,10 +193,15 @@ def controls_of(gates, ref, chs: list[dict], played: dict, n: int, device: str) 
         t44 = {k: np.asarray(v)[:n] for k, v in ref.cell(rv, opp, c["script"]).items()}
         good, text = exploit.replay_ok(cell, t44, device, gates.controls, ticks_cap=cap)
         rows.append((c["name"], good, text))
-    out = {"ctl_one_script_choices_are_reference": {
-        "status": PASS if rows and all(r[1] for r in rows) else FAIL, "phase": "ceiling",
-        "detail": "; ".join(f"{name} v T44's cell {'ok' if good else 'DIFFERS'} ({text})" for name, good, text in rows)
-                  or "no choice flies one script"}}
+    detail = ("; ".join(f"{name} v T44's cell {'ok' if good else 'DIFFERS'} ({text})" for name, good, text in rows)
+              or "no choice flies one script")
+    if is_net(gates):                                            # route 3: equivalence is LS1.2's gate (F7)
+        out = {"ctl_one_script_choices_are_reference": {
+            "status": INFO, "phase": "ceiling",
+            "detail": f"INFO under a skill network (the scripts' equivalence is LS1.2's gate): {detail}"}}
+    else:
+        out = {"ctl_one_script_choices_are_reference": {
+            "status": PASS if rows and all(r[1] for r in rows) else FAIL, "phase": "ceiling", "detail": detail}}
     names = skills.team_skills(gates.players, SIDE)
     bad = []
     for c, log in zip(chs, played["logs"]):
@@ -245,7 +266,95 @@ class Composite:
         return torch.stack([s.act(obs)[:, m] for m, s in enumerate(self.scripts)], dim=1)
 
 
-def oracle_check(folder: Path, out: Path | None, top: int) -> int:
+class NetComposite:
+    """Route 3's oracle, written without the heads and the dispatch: drone m flies code ``codes[m]`` of the Strike
+    skill network through ``skill_net.one_code`` on the whole team's observation [N, M, D] -> [N, M, 4] (the
+    dispatch's own forward call and batch shape, constraint 8 of the LS1 plan). The network is stateless."""
+
+    def __init__(self, net, codes: list[int], side: str, name: str):
+        self.team, self.name, self.net = side, name, net
+        self.codes = torch.as_tensor([int(c) for c in codes], dtype=torch.long)
+
+    def reset(self, games: torch.Tensor) -> None:
+        pass
+
+    def act(self, obs: torch.Tensor) -> torch.Tensor:
+        z = self.codes.to(obs.device)[None, :].expand(obs.shape[0], -1)
+        return skill_net.one_code(self.net, obs, z)
+
+
+def is_net(gates) -> bool:
+    """Route 3: the two-level skills route with its skills flown by a skill network."""
+    return bool(gates.learner.skills) and gates.learner.skill_source == skills.NET_SOURCE
+
+
+def strike_net_problems(gates) -> list[str]:
+    """The faults of the Strike network of ``[learner.skill_net]`` against the run 0 variant's game (C5:
+    ``skill_net.net_problems``: FILL_ sha256, missing or edited file, format, team, skills, team size, scripts sha256,
+    game file, sha256 and constants); ``[]`` when it is good."""
+    variant = gates.run0.get("variant", VARIANT)
+    game = gates.games[gates.variants[variant]["game"]]
+    entry = gates.learner.skill_net[SIDE]
+    return skill_net.net_problems(skills.net_file(entry), sha256=entry["sha256"], team=SIDE,
+                                  skills=skills.team_skills(gates.players, SIDE), team_size=strikes(gates),
+                                  cfg=exploit.variant_cfg(gates, variant), game_file=str(game.file),
+                                  game_sha256=game.sha256)
+
+
+def equivalence_reads(gates, folders: list[Path]) -> tuple[dict | None, str | None]:
+    """Route 3 (F7): the LS1.2 reads given by ``--equivalence``, one per side. Each ``<folder>/results.json`` must be
+    complete, of record, DISTILLED, and name one side's ``[learner.skill_net]`` sha256 (its side), with every
+    ``cells[].side`` that side; exactly one read per side. Returns ({side: {folder, net_sha256, verdict}}, None) or
+    (None, the reason to refuse)."""
+    import ste_ls1_equivalence as eq                         # scripts/ (route 3 only: the scripts route never loads it)
+    by_sha = {gates.learner.skill_net[side]["sha256"]: side for side in EQ_SIDES}
+    found: dict[str, dict] = {}
+    for folder in folders:
+        res_file = Path(folder) / eq.RESULTS
+        try:
+            res = json.loads(res_file.read_text())
+        except (OSError, ValueError):
+            return None, f"--equivalence {folder}: no LS1.2 read ({res_file} missing or unreadable)"
+        if res.get("complete") is not True:
+            return None, f"--equivalence {folder}: the LS1.2 read is not complete"
+        if res.get("of_record") is not True:
+            return None, f"--equivalence {folder}: the LS1.2 read is not of record"
+        if res.get("verdict") != eq.DISTILLED:
+            return None, f"--equivalence {folder}: the LS1.2 verdict is {res.get('verdict')!r}, not {eq.DISTILLED}"
+        side = by_sha.get(res.get("net_sha256"))
+        if side is None:
+            return None, (f"--equivalence {folder}: the LS1.2 read names the network {res.get('net_sha256')}, not a "
+                          f"network of the gate file's [learner.skill_net]")
+        cell_sides = sorted({str(c.get("side")) for c in res.get("cells") or []})
+        if cell_sides != [side]:
+            return None, (f"--equivalence {folder}: the LS1.2 read's network is the {side} team's, its cells are of "
+                          f"{cell_sides}")
+        if side in found:
+            return None, f"--equivalence: two LS1.2 reads of the {side} network ({found[side]['folder']}, {folder})"
+        found[side] = {"folder": str(folder), "net_sha256": res["net_sha256"], "verdict": res["verdict"]}
+    missing = [side for side in EQ_SIDES if side not in found]
+    if missing:
+        return None, (f"--equivalence: a DISTILLED LS1.2 read of each network is required (both sides, R47); "
+                      f"none for {missing}")
+    return {side: found[side] for side in EQ_SIDES}, None
+
+
+def net_refusal(gates, folders: list[Path] | None) -> tuple[dict | None, str | None]:
+    """Both modes' route 3 preflight, before a game is played: ``--equivalence`` only under a network; under one, the
+    Strike network's faults (``strike_net_problems``), then the LS1.2 reads (``equivalence_reads``). Returns (the
+    reads, or None on the scripts route; the reason to refuse, or None)."""
+    folders = list(folders or [])
+    if not is_net(gates):
+        if folders:
+            return None, "--equivalence belongs to a net gate file ([learner] skill_source = \"net\") only"
+        return None, None
+    problems = strike_net_problems(gates)
+    if problems:
+        return None, "the Strike skill network: " + "; ".join(problems)
+    return equivalence_reads(gates, folders)
+
+
+def oracle_check(folder: Path, out: Path | None, top: int, equivalence: list[Path] | None = None) -> int:
     """The oracle check of a finished ceiling folder (module docstring; QC S1)."""
     res_file, out = folder / "results.json", (out if out is not None else folder / ORACLE_FILE)
     try:
@@ -270,6 +379,9 @@ def oracle_check(folder: Path, out: Path | None, top: int) -> int:
     problem = arm.input_problems(gates)
     if problem:
         return refuse(problem)
+    reads, problem = net_refusal(gates, equivalence)
+    if problem:
+        return refuse(problem)
     ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
     n, device = int(res["games"]), "cpu"
     ranked = sorted(res["choices"], key=lambda c: -c["k"])          # stable: choice order on a tie
@@ -280,8 +392,15 @@ def oracle_check(folder: Path, out: Path | None, top: int) -> int:
     replay = play(gates, ref, chs, n, device, chunk=len(chs))["cells"]
     cfg = exploit.variant_cfg(gates, gates.run0.get("variant", VARIANT))
     seed = int(ref.meta["seed"])
-    players = {ORACLE + c["name"]: Composite(c["flies"], cfg, n, device, seed + exploit.STRIKE_SEED_OFFSET)
-               for c in chs}
+    if reads is None:
+        players = {ORACLE + c["name"]: Composite(c["flies"], cfg, n, device, seed + exploit.STRIKE_SEED_OFFSET)
+                   for c in chs}
+    else:                                                        # route 3: the network itself, no heads, no dispatch
+        entry, names_k = gates.learner.skill_net[SIDE], skills.team_skills(gates.players, SIDE)
+        net, _ = skill_net.load_skill_net(skills.net_file(entry), team=SIDE, skills=names_k, cfg=cfg, device=device,
+                                          file_sha256=entry["sha256"])
+        players = {ORACLE + c["name"]: NetComposite(net, [names_k.index(s) for s in c["flies"]], SIDE,
+                                                    ORACLE + c["name"]) for c in chs}
     pg = exploit.play_cells(cfg, gates.run["size"], ref, [(gates.run0["opponent"], ORACLE + c["name"]) for c in chs],
                             n, device, seed, int(gates.run["ticks_cap"]), hold_ticks=1, players=players)
     k_ceiling = {c["name"]: c["k"] for c in res["choices"]}
@@ -299,6 +418,8 @@ def oracle_check(folder: Path, out: Path | None, top: int) -> int:
                    "simulator", "status_note": STATUS, "folder": str(folder), "games": n, "device": device,
            "top": top, "ceiling_gates_sha256": res["gates_sha256"], "of_record": bool(res.get("of_record")),
            "status": PASS if ok else FAIL, "checked": rows}
+    if reads is not None:
+        chk["equivalence"] = reads                               # route 3 only: the scripts route's keys are today's
     chk["complete"] = True                                       # written last
     l011.write_json(out, chk)
     print(f"[oracle check] {chk['status']}: " + "; ".join(f"{r['name']} differ {r['differ']}, k {r['k_replay']} v "
@@ -322,11 +443,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--oracle-check", type=Path, help="a finished ceiling folder: the oracle check (QC S1)")
     ap.add_argument("--top", type=int, default=TOP, help="--oracle-check: top choices replayed besides the best")
     ap.add_argument("--check-out", type=Path, help=f"--oracle-check: the result file (default <folder>/{ORACLE_FILE})")
+    ap.add_argument("--equivalence", type=Path, action="append",
+                    help="route 3 (a net gate file), either mode: a finished LS1.2 read folder, once per side")
     a = ap.parse_args(argv)
     if a.oracle_check is not None:
         if any(v is not None for v in (a.out, a.gates, a.games, a.device, a.chunk)):
-            return refuse("--oracle-check takes only --top and --check-out (it reads the rest from the folder)")
-        return oracle_check(a.oracle_check, a.check_out, a.top)
+            return refuse("--oracle-check takes only --top, --check-out and --equivalence (it reads the rest from the "
+                          "folder)")
+        return oracle_check(a.oracle_check, a.check_out, a.top, a.equivalence)
     if a.out is None:
         return refuse("--out <folder> (a ceiling run) or --oracle-check <folder> (the check of a finished one)")
     a.gates = a.gates if a.gates is not None else DEFAULT_GATES
@@ -339,6 +463,9 @@ def main(argv: list[str] | None = None) -> int:
         return refuse(f"{a.gates} is not the two-level skills route ([learner] action = \"skills\", choice = "
                       f"\"{skills.TWO_LEVEL}\")")
     problem = arm.input_problems(gates)
+    if problem:
+        return refuse(problem)
+    reads, problem = net_refusal(gates, a.equivalence)
     if problem:
         return refuse(problem)
     ref = exploit.load_reference(exploit.ROOT / gates.reference["file"])
@@ -380,6 +507,8 @@ def main(argv: list[str] | None = None) -> int:
               "untrained": {k: unt[k] for k in ("name", "flies", "k", "n", "rate", "ci")},
               "mark": mark_rule(best["k"], unt["k"], n, float(gates.run0["margin"]),
                                 of_record=of_record(n, a.device))}
+    if reads is not None:
+        result["equivalence"] = reads                            # route 3 only: the scripts route's keys are today's
     result["complete"] = True                                    # written last
     atomic.write_text(a.out / "results.md", render(result))
     l011.write_json(a.out / "results.json", result)

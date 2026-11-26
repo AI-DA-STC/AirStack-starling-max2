@@ -1,0 +1,198 @@
+# STE route 3, stage LS1, job group LS1.4: head training on the skill network (R40). The two heads (team strategy,
+# drone skill) of route 2's skills route are trained again, with each chosen skill flown by the distilled skill network
+# of its team in place of the script. TEMPLATE: it holds FILL_ marks until LS1.2, the net ceiling and the owner have
+# set them, and a run of record, the pilot and the run 0 refuse it while one is left (exit 2, exploit.unfilled).
+# Build plan: ste_learning/drafts/LS1_TASK_PLAN.md section 5, task LS1-M4-T4; design: ste_learning/drafts/
+# LS_EXECUTION_WORKFLOW.md section 6.
+#
+# This file is configs/ste_l3/skills_gates.toml (route 2, L5.2) with only these keys changed
+# (tests/test_ste_ls1_heads_gates.py checks it):
+#   [run] task                 LS1.4 (the route's budget section [budget_ls]);
+#   [learner] skill_source     "net", and [learner.skill_net] (both sides, plan C4; sha FILL until LS1.2);
+#   [variants] base_s2         the base game, g* and s*, route 2's second training pair (the pair of
+#                              configs/ste_ls1/skills_seed2_gates.toml), scored on the base reference cells
+#                              (reference_variant = "base"), its own run 0 (run0_seed, owner R46);
+#   [verdict] order            both variants;
+#   [run0] per_variant         true (owner R46, option B of OQ-1: a run 0 per training pair on both arms);
+#   [run0] skills_reach_min    FILL until the net ceiling (LS1-M4-T3);
+#   [reading]                  the LS1.4 reading rule (margins FILL until the owner, R38).
+# Everything else is route 2's: the game, the recipe pinned as filled (the Strike recipe of route 2's L3.3 pilot and
+# its 550 M game-step budget; the route 3 pilot LS1.4-P is a check of them, not a fill: the driver refuses a launch when
+# its rule would choose another recipe or fewer game-steps), the scoring starts, the curve and clip starts, the pool
+# draws. Variant base pairs with route 2 seed 1 (configs/ste_l3/skills_gates.toml), base_s2 with route 2 seed 2: the
+# same training pairs, run 0s and pool draws, so the arms are compared pair by pair on the same starts.
+#
+# Order of the fills (plan section 7): LS1.2 DISTILLED on both sides (owner R47: both sides distilled before head
+# training), then the network shas (lead step 4), the net ceiling's mark (step 4), the owner's margins (step 5), then
+# this file and skills_seed2_gates.toml are hashed together before LS1.4-P.
+#
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on; study tag on; observed in the training
+# simulator. Not for flight.
+
+[run]
+task = "LS1.4"                    # the budget key ([budget_ls], configs/ste_learning.toml; cap 4.0 GPU-h, owner R43)
+kind = "INFO"                      # a pipeline check (R23): the reads are INFO; the CONTROLS are gated (exit 6)
+device = "cuda"
+size = "3v3"                       # G0's main game
+eval_games = 1000                  # VALIDATION_QC section 0 rule 2; T44's 1,000 starts (the skills run 0 mark needs 1,000)
+ticks_cap = 2400                   # the game length (120 s): no evaluation game is cut short
+curve_seed = 140900                # learning-curve evaluations: their own starts (never the scoring starts)
+curve_games = 256
+clip_seed = 140950                 # videos: their own starts (CPU)
+cap_check_every_ticks = 100
+
+[reference]
+file = "configs/ste_l012/t44_reference.npz"
+sha256 = "4bc5e011071adced368b2a0025fc47499839e0bbc8d8d650207bd12c3da0f8b5"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"
+t44_gates_sha256 = "8bfbc2cb8f1d6551fb3060bc750c24f9b2220ebafb19fcd44e9e3baa1c24e5d4"
+t44_record = "records/2026-11-21_ste_l011_screen_record.md"
+t44_run = "2026-11-21_ste_l011_screen"
+
+[games]
+base = { file = "configs/ste_l011/base.toml", sha256 = "96e0e7f61a49999da54eee81a544bf64c519cd80833f0dcdfa2a07edfc10cc4d" }
+
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+[variants]
+base = { game = "base", g_star = "guard_mark_edge", s_star = "strike_straight", role = "L3-L6 pipeline check, 1.6 m tag, both routes on the same budget", train_seed = { strike = 140201, guard = 140202 }, extra_eval_opponents = { strike = [], guard = [] } }
+base_s2 = { game = "base", g_star = "guard_mark_edge", s_star = "strike_straight", role = "LS1.4 route 3, the second training pair (route 2 seed 2)", train_seed = { strike = 140211, guard = 140212 }, extra_eval_opponents = { strike = [], guard = [] }, reference_variant = "base", run0_seed = 140213 }
+
+[trainer]
+# T46's recipe (configs/ste_l1/l110_gates.toml, record T46): skrl IPPO, one network per drone slot.
+algorithm = "IPPO"
+decision_ticks = 12                # one learner decision per 0.6 s (finding L011-F1); the skills route holds its choice
+num_games = 16384                  # T46 and L1.10's size (fits the laptop's 12 GB and the RTX 5090)
+game_steps_per_run = 550_000_000  # route 2's pinned budget (L5.2, its L3.3 pilot); the same in both LS1.4 arms
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true              # the skills route then sets p(free) = 0.5 (ste/two_level.free_start_bias)
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0           # the velocity route's (the T41 recipe); the skills route uses [learner.entropy_scale]
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+shaping_weight = 0.0
+strike_fallback = { shaping_weight = 1.0 }
+strike_fallback_label = "shaped Strike recipe"
+side_overrides = { strike = {}, guard = {} }   # route 2's recipe, pinned as filled (its L3.3 pilot: T41's recipe)
+checkpoint_every_updates = 1
+curve_every_updates = 10
+final_reserve_s = 600
+final_reserve_factor = 2.0
+clip_reserve_s = 120
+
+[controls]
+stop_on_fail = true
+replay_count_tol_cuda_games = 10
+replay_differ_tol_cuda_games = 20
+
+[verdict]
+band = 0.2
+gain_rule = "intervals_disjoint"
+learned_rule = "trained_low_above_untrained_high"
+order = ["base", "base_s2"]
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
+follow_up_seeds = []
+
+[videos]
+games = 4
+keep = 2
+max_ticks = 2400
+speed = 8
+fps = 10
+dpi = 50
+
+[pilot]
+variant = "base"
+num_games = [8192, 16384, 32768]
+updates = 1
+warmup_updates = 1
+probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 },
+          { side = "strike", shaping_weight = 1.0, opponent = "guard_parked_centre" }]
+probe_num_games = 16384
+timing_batches = [{ variant = "base", side = "strike" }]
+probe_updates = 3
+
+[run0]
+per_variant = true                 # owner R46 (option B of OQ-1): a run 0 per variant, --run0 --variant <v>; each
+#   Strike run reads the run 0 of its own variant; base trains [run0] train_seed, base_s2 its run0_seed (the C8 pair)
+variant = "base"
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05                      # the velocity route's criterion (L0.12's): scripted strike_straight's reach - 0.05
+train_seed = 140203                # route 2's base run 0 trains the same (skills_gates.toml): the arms pair by seed
+skills_reach_min = "FILL_NET_CEILING_M4T3"
+#   FILL (plan section 7, lead step 4, after LS1.2 reads DISTILLED on both sides): the network's own run 0 mark, set by
+#   the net ceiling (scripts/ste_l3_run0_ceiling.py on this file, LS1-M4-T3): the network's best constant choice's
+#   reaches less the margin x 1,000, above the untrained network team's Wilson upper bound (not route 2's 466). Route
+#   2's 0.554 is the scripts' mark and is not copied. FAIL never overridden; route 3 Strike runs launch on PASS only
+
+[pool]
+# Both routes train against every script of the other team except random, one drawn per game (lead's answers 2-3 of
+# slice 3; ste/pool.OpponentPool), the same draw per (slot, game number) in every file. Run 0 keeps its parked Guard.
+enabled = true
+seed = 140001
+
+[learner]
+action = "skills"
+choice = "two_level"              # owner R30: a team strategy, with individual drone skills
+skill_source = "net"               # route 3 (R40): the skill network flies the chosen skill (LS1-M1-T4, plan C4)
+mask_absent = true                # the absent-drone mask on (both routes alike)
+
+[learner.team_strategies]
+strike = ["strike_sacrifice", "strike_converge"]
+guard = ["guard_parked_ring", "guard_field"]
+
+[learner.drone_skills]
+strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]   # strike_straight first: run 0's known answer
+guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]          # list A (lead, 24 Nov 2026)
+
+[learner.entropy_scale]
+# 0.01 per head (lead, 24 Nov 2026), fixed before the pilot. No kl_threshold is set (the recipe's 0, off); if one is
+# ever set for this route, it is set for the SUM of the two per-head KLs (each a mean over its masked-in samples), which
+# triggers earlier than the same number in stock skrl (ste/two_level.py; L3_SLICE3_DESIGN.md revision, QC S1).
+team = 0.01
+drone = 0.01
+
+[learner.skill_net]
+# FILL (plan section 7, lead step 4, after LS1.2 reads DISTILLED on both sides): each side's network copied to
+# ste_provisional/skill_nets/<date>_ls1_<side>/ (plan C9; the file name of scripts/ste_ls1_distil.py), listed in
+# ste_provisional/SHA256SUMS; the lead sets both the folder's date and the sha256. Until then the sha holds a FILL_ mark
+# (listed by exploit.unfilled: the driver refuses the file, exit 2; the net ceiling refuses a FILL_ Strike sha, exit 2).
+strike = { file = "ste_provisional/skill_nets/FILL_DATE_ls1_strike/skill_net_strike.pt", sha256 = "FILL_AFTER_LS1_2_DISTILLED" }
+guard = { file = "ste_provisional/skill_nets/FILL_DATE_ls1_guard/skill_net_guard.pt", sha256 = "FILL_AFTER_LS1_2_DISTILLED" }
+
+[reading]
+# The LS1.4 reading rule (workflow section 6, PROPOSED there; plan LS1-M4-T1 and LS1-M4-T5), hashed with this file
+# before the pilot LS1.4-P (lead step 5). scripts/ste_ls1_read.py reads these keys; no margin is typed in code.
+#   Strike: the run 0 cell (the Strike runs of record of route 2 did not learn; workflow section 6). A pair's score is
+#     the mean of its run 0's last last_reads reads, the gap against the same pair's route 2 run 0 judged with
+#     margin_cell (OP-34). Under option B (owner R46) each of the two training pairs has its own run 0 on both arms,
+#     so the Strike read is two against two and the two-pair rule applies as written.
+#   Guard: the pooled row of the final INFO batch, paired start by start (OP-30 (a)), judged with margin_pooled; the
+#     per-cell gaps against margin_cell are INFO, never gated (two pairs carry no per-cell verdict).
+#   Departure from workflow section 6 (W3): a run of record saves only curve.json reads (256 games on the curve starts
+#     against one opponent) and one final batch, so its last three reads are not paired start by start. The Guard
+#     score is therefore the final batch's pooled row (OP-30 (a)); the lowest of the last last_reads curve.json reads
+#     (min_last_reads) is written beside each score as INFO.
+#   Rule: "no drop beyond the margin" when the mean of route 3's pairs is at least route 2's mean less the margin and
+#     each route 3 pair is at least route 2's lower pair less the margin; "below" when route 3's mean is under route
+#     2's by more than twice the margin; otherwise INCONCLUSIVE, and a third pair per arm is announced.
+# margin_pooled and margin_cell: FILL (R38: the owner sets them with the LS1 limits; lead step 5). last_reads PROPOSED
+# (workflow section 6: the mean of the last three reads); strike_read "run0" (workflow section 6, OP-34).
+margin_pooled = "FILL_OWNER_R38"
+margin_cell = "FILL_OWNER_R38"
+last_reads = 3
+strike_read = "run0"

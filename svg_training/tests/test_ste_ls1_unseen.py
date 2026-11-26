@@ -270,11 +270,44 @@ def test_an_edited_network_is_refused_before_a_game(use_world, tmp_path, monkeyp
     assert not played and not out.exists()
 
 
-@pytest.mark.parametrize("case", ["typo", "no_team", "used_out", "not_finished"])
-def test_a_bad_manifest_or_folder_is_refused(use_world, tmp_path, monkeypatch, case):
+def _edited_folder(world, tmp: Path, key: tuple, fn) -> Path:
+    """A copy of the run folder ``key`` whose results.json ``fn`` changes in place."""
+    folder = tmp / "edited"
+    shutil.copytree(world.folders[key], folder)
+    res = json.loads((folder / "results.json").read_text())
+    fn(res)
+    (folder / "results.json").write_text(json.dumps(res))
+    return folder
+
+
+BAD = {   # case: (what the refusal names, how the manifest or a folder is spoiled)
+    "typo": ("not folders by side", None),
+    "no_team": ("no route team", None),
+    "used_out": ("already holds results.json", None),
+    "not_finished": ("exit 6", None),
+    "pair_swapped": ("variant", None),
+    "side_swapped": ("side", None),
+    "incomplete": ("not complete", lambda r: r.pop("complete")),
+    "short_of_budget": ("short of its game-step budget", lambda r: r.update(budget_reached=False)),
+    "other_starts": ("other starts", lambda r: r.update(reference={"start_sha256": "0" * 64})),
+    "other_seed": ("train_seed", lambda r: r.update(train_seed=r["train_seed"] + 1)),
+    "no_checkpoint": ("agent_final.pt is missing", None),
+    "route1_with_learner": ("velocity route", None),
+    "other_hold": ("decision_ticks", None),
+}
+
+
+@pytest.mark.parametrize("case", list(BAD))
+def test_a_bad_manifest_or_folder_is_refused(use_world, tmp_path, monkeypatch, capsys, case):
+    """Every refusal before a game: a manifest typo or no team, a used folder, a run that did not work, a folder that is
+    not the named pair, side, seed or starts, incomplete, short of its budget or without its checkpoint, a route 1
+    results.json with a skills table, and a gate file that would make the cell another game (another hold): exit 2,
+    nothing played, no controls.json."""
     w = use_world
     out = tmp_path / "out"
-    teams, extra, replace = [("route2", "s1", "guard")], "", {}
+    key = ("route2", "s1", "guard")
+    teams, extra, replace = [key], "", {}
+    want, spoil = BAD[case]
     if case == "typo":
         extra = '[route3.s1]\ngaurd = "x"\n'
     elif case == "no_team":
@@ -282,15 +315,32 @@ def test_a_bad_manifest_or_folder_is_refused(use_world, tmp_path, monkeypatch, c
     elif case == "used_out":
         out.mkdir()
         (out / "results.json").write_text("{}")
+    elif case == "not_finished":
+        replace[key] = _edited_folder(w, tmp_path, key, lambda r: None)
+        (replace[key] / jobs.EXIT_FILE).write_text("6\n")
+    elif case == "pair_swapped":                   # route 3's pair s1 (variant base) given as pair s2 (base_s2)
+        teams, replace = [("route3", "s2", "guard")], {("route3", "s2", "guard"): w.folders[("route3", "s1", "guard")]}
+    elif case == "side_swapped":
+        replace[key] = w.folders[("route2", "s1", "strike")]
+    elif case == "no_checkpoint":
+        replace[key] = _edited_folder(w, tmp_path, key, lambda r: None)
+        (replace[key] / "agent_final.pt").unlink()
+    elif case == "route1_with_learner":
+        replace[("route1", "guard")] = _edited_folder(w, tmp_path, ("route1", "guard"), lambda r: r.update(
+            learner=skills.learner_table(w.gates["route2"].learner)))
+    elif case == "other_hold":
+        text = w.files["route2"].read_text().replace("decision_ticks = 12", "decision_ticks = 6", 1)
+        other_hold = tmp_path / "hold6.toml"
+        other_hold.write_text(text)
+        monkeypatch.setitem(reader.GATE_FILES["route2"], "s1", other_hold)
     else:
-        folder = tmp_path / "r2"
-        shutil.copytree(w.folders[("route2", "s1", "guard")], folder)
-        (folder / jobs.EXIT_FILE).write_text("6\n")
-        replace[("route2", "s1", "guard")] = folder
+        replace[key] = _edited_folder(w, tmp_path, key, spoil)
     played = []
     monkeypatch.setattr(exploit, "play_cells", lambda *a, **k: played.append(1))
     m = manifest(tmp_path / "m.toml", w, teams=teams, replace=replace, extra=extra)
     assert unseen.main(["--manifest", str(m), "--out", str(out)]) == 2
+    err = capsys.readouterr().err
+    assert want in err, err
     assert not played
     assert not (out / "controls.json").exists()
 

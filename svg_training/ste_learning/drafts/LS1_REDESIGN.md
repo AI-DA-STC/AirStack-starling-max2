@@ -9,10 +9,10 @@ is labelled **estimate**. Numbers from the redesign scouts' scratch work carry t
 [records/evidence/2026-11-26_ste_ls1_redesign_scouts/](../../records/evidence/2026-11-26_ste_ls1_redesign_scouts/README.md)
 and were not re-run by the writer (section 8 says which numbers the writer re-checked).
 
-**Review status (lead, 26 Nov 2026).** Sections 0 to 3, 4.1, 4.2 and 5 to 8 were reviewed by two reviewers. Rules added
-by the reviser after the review are a **draft** until a focused re-review: the Stage 1 assembly ladder and its
-eligibility screen, the second seed, the own-state rule and 0e (sections 4.3 to 4.5), and decisions 8 to 10. Only
-Stage 0 runs before that re-review.
+**Review status (lead, 26 Nov 2026).** Sections 0 to 3, 4.1, 4.2 and 5 to 8 were reviewed by two reviewers. The rules
+added by the reviser after that review (0e in 4.2, sections 4.3 to 4.6, decisions 8 to 10) were re-reviewed once by a
+focused reviewer (26 Nov 2026) and fixed: the ladder, the second seeds, the DAgger rescue, every trigger and term, 0e
+and the costs. A confirming check (26 Nov 2026) found 11 of the 12 findings resolved and one partly (the 1.2x match rule may sit inside seed noise): **the matches of 4.3 are evidence only and never gate the build's shape; only S-shared's closed-loop replay can choose a shared shape.** No blocker remains; the worst-case hours are a loose upper bound.
 
 ## 0. In plain words (for the owner)
 
@@ -32,13 +32,15 @@ Stage 0 runs before that re-review.
 - **What this changes on the route page.** The route's picture changes from one network per team that reads a skill
   code to one small network per skill, unless a trial shows that a shared network with one output head per skill does
   as well (that shape is tried too).
-- **The trials (CPU only, no GPU).** 5 to 7 hours to write the trial code, then about 8 to 15.5 hours of runs (up
-  to about 20 if every fallback runs), one job at a time on 6 threads (estimate). Every move of both teams is trained
-  small. Separate small trials test the first three ideas one at a time (the fourth is true by design), on one smooth
-  move and one switching move per team, so we learn which ideas actually help. Then the students play all 280 test
-  cells against the stored script games, and that replay alone decides pass or fail.
-- **What a trial pass means.** The trial reuses the earlier data and one or two training seeds. A pass is a go for the
-  build, not a prediction: the real check is the copy check after the build.
+- **The trials (CPU only, no GPU).** 5 to 7 hours to write the trial code, then about 9 to 16.5 hours of runs one
+  job at a time on 6 threads (up to about 29 in the worst case of the ladder and the rescue, a loose upper bound; the decision-8 fallback and a second redesign round would add to it); with up to 4 jobs side by side at 6 threads each
+  while the owner is not using the PC, about 4 to 8.5 hours of wall clock (up to about 15) (all estimates). Every
+  move of both teams is trained small. Separate small trials test the first three ideas one at a time (the fourth is
+  true by design), on one smooth move and one switching move per team, so we learn which ideas actually help. Then
+  the students play all 280 test cells against the stored script games, and that replay alone decides pass or fail.
+- **What a trial pass means.** The trial reuses the earlier data, and a design counts as passing only if it passes
+  with two training seeds. A pass is a go for the build, not a prediction: the real check is the copy check after the
+  build.
 - **After the trials (estimate).** 1.5 to 2.5 days of building, about 0.1 to 0.9 GPU-hours to distil again (as the
   ledger counts; 0.628 left under LS1.1's cap; the high end needs a higher cap, announced first), 40 to 85 minutes of
   CPU per team for the copy check.
@@ -207,8 +209,10 @@ today's forward, 13.2 against 2.2 ms per 3,000 rows; scout scratch `fwd_variants
 **The chosen design: the judge's combination.** Faithful's design and ladder, built and piloted with Fidelity's harness
 and marks, and three of the residual's ideas (a sort-free rewrite of the script logic the features need, export-parity
 marks at switch margins, an onnxruntime-flown INFO arm). The plain version (R1 + R2, inside R49's four directions) is
-tried on every skill. Script margins (R3) and script choices (R4) are tried on the four switch skills, and on another
-skill only if it fails at R1 + R2. The build takes each skill's lowest rung that passes the closed-loop read. R4 is
+tried on every skill. Script margins (R3) and script choices (R4) are tried on the four switch skills, and the next
+rung of each smooth skill that has one is fitted too (R3 for high and low; R4 for mark_edge, mirror and ring), so the
+closed-loop ladder of 4.4 can move it. The build takes the rungs of the assembly that passes the closed-loop read,
+lowest rungs first. R4 is
 compared with the residual design on the same criteria in 6.4.
 
 ## 3. The chosen design: LS1-R, per-skill networks in each skill's frame
@@ -357,9 +361,10 @@ FILL_; contract scout).
 ## 4. Pilot plan before any build
 
 All pilots are **scratch, INFO, not of record**. CPU only: each job sets `OMP_NUM_THREADS=6 MKL_NUM_THREADS=6
-CUDA_VISIBLE_DEVICES=""`, unsets `PYTHONPATH` and runs `env_isaaclab` python with `PYTHONPATH=source`. The session
-rule is CPU work at most 6 threads in all, so the jobs run **one at a time on 6 threads**; every time below is for that
-(4 jobs side by side would need 24 threads and is not assumed). Scratch code lives in the session scratchpad; nothing is
+CUDA_VISIBLE_DEVICES=""`, unsets `PYTHONPATH` and runs `env_isaaclab` python with `PYTHONPATH=source`. Every time
+below is for **one job at a time on 6 threads**. The lead's parallelism (26 Nov 2026, 4.6) allows up to 4 such jobs
+side by side (24 threads) while the owner is not using the PC, and one at a time when the owner is; 4.6 gives the wall
+clock both ways. Scratch code lives in the session scratchpad; nothing is
 written in the repository during the pilots. Afterwards the scripts, logs and a README are saved to
 `records/evidence/<date>_ste_ls1_redesign_pilots/`.
 
@@ -435,13 +440,32 @@ scripts fly the other codes. That is 96 cells × 4 widths (0, 1, 3, 10 cm) = 384
 
 A 0d miss on a rung makes that rung ineligible for the build until fixed; the other rungs go on.
 
-**0e. Combined-error replay (INFO, calibration, no mark).** The scripts fly with every allowed kind of row error at
-once, at the row marks of 4.3, on every gated cell of both teams, as T90's arms did one kind at a time: Strike team
-noise at RMSE about 0.010 plus bias 0.005 on x and y plus turn 0.5° plus scale 0.99; Guard team noise at RMSE about
-0.015 plus bias 0.003 plus turn 0.5° plus scale 0.99 (scratch wrapper around the scripts, paired with T94's stored
-script games). It answers whether the row marks, taken together, stay under 30 changed games. If they do not, the
-note says so: the row marks are then known not to be jointly budgeted, which is one reason they do not decide a pass
-(4.4). Cost about 8 min (Guard team) and 10 min (Strike team) (estimate, from T94's per-cell times).
+**0e. Combined-error replay (INFO, calibration, no mark; it changes nothing).** The scripts fly with every allowed
+kind of row error at once, at the row marks of 4.3, on every gated cell of both teams, paired with T94's stored script
+games. It reuses T90's perturbation code unchanged:
+[perturbed.py](../../source/svg_training/opponents/perturbed.py) `CommandPerturbation`, one wrapper per kind, built per
+drone slot as [ste_ls1_calibration.py](../../scripts/ste_ls1_calibration.py) `_member` builds T90's. Each wrapper
+clamps to [−1, 1] and multiplies by the alive flag, so 0e nests four of them around each slot's script, in this order
+(innermost first):
+
+| Wrapper | Strike team | Guard team | Channels | As T90's |
+|---|---|---|---|---|
+| 1 noise, i.i.d. uniform in [−h, h] per tick, drone and channel | h = 0.0173 (RMSE 0.010 = h/√3) | h = 0.0260 (RMSE 0.015) | the skill's active channels (the mask of 3.6: x and y; vz too for high and low) | T90's `active_only_arm` channel rule (active channels only); T90's main noise ladder noised all four channels |
+| 2 bias, +b on every live drone and tick | b = +0.005 | b = +0.003 | x and y, same sign | T90's `[bias]` (+size on channels 0 and 1) |
+| 3 turn of xy, anticlockwise | +0.5° | +0.5° | x and y | T90's `[turn]` direction |
+| 4 scale | 0.99 | 0.99 | vx, vy, vz | T90's `[scale]` channels [0, 1, 2] |
+
+- Noise seed per slot: T90's rule, `150101 + cell index in the side's full cell list × team size + slot` (calibration
+  `[noise] seed`), so 0e uses the same uniform draws as T90's noise arms (common random numbers).
+- guard_parked_centre is not wrapped: under the mask of 3.6 it is exactly 0, so the design gives it no error.
+- Reported per cell: b + c, the interval, and per skill the realised RMSE, bias, turn and scale of the flown command
+  against the bare script's command (each wrapper records only against its own inner, so this is computed by the
+  scratch driver, not read from the wrappers). The clamp makes the realised noise a little smaller than h/√3 where the
+  command is near ±1.
+
+It answers whether the row marks, taken together, stay under 30 changed games. Whatever it shows, **0e changes no
+mark, rung, trigger or decision**; it is reported, and if the sum goes over 30 the note says that the row marks are
+not jointly budgeted. Cost about 8 min (Guard team) and 10 min (Strike team) (estimate, from T94's per-cell times).
 
 ### 4.3 Stage 1: row-level fits, every skill of both teams
 
@@ -453,8 +477,20 @@ Common settings: the network of 3.4 for one skill, outputs in its frame (3.5), t
 | **B** (the owner-told design) | the 10 skills other than parked_centre | R1 + R2 | 3x128, 40,000 | 10 |
 | **A3** | flank, field, sacrifice, converge | R3 (if 0c allows R3 for that skill) | 3x128, 40,000 | up to 4 |
 | **A4** | flank, field, sacrifice, converge | R4 with branch heads and reflection (if 0d passed) | 3x128, 40,000 | 4 |
-| **Retry**, pre-declared, once per skill | a skill that misses only r5 by at most 1.5 times | same rung | 3x256, 80,000 | as needed |
-| **Next rung**, pre-declared | a smooth skill that fails at R1 + R2 | R3 for high/low; R4 for mark_edge, mirror, ring | 3x128, 40,000 | as needed |
+| **Next rung**, pre-declared, fitted whatever B shows (so the Stage 2 ladder always has a rung to move a smooth skill to; strike_high is in every passing-only Strike cell over 30) | strike_high, strike_low; guard_mark_edge, guard_mirror, guard_parked_ring | R3 for high and low (if 0d passed for R3); R4 for mark_edge, mirror, ring (if 0d passed for R4) | 3x128, 40,000 | 5 |
+| **Retry**, pre-declared, at most once per fitted rung | any fitted (skill, rung) of B, A3, A4 or Next rung that fails the eligibility screen (below) | same rung | 3x256, 80,000 | as needed (allowance 4) |
+
+Seeds: every Stage 1 fit uses fit seed **150003** (the gate file's `[fit] seed`, as T93); this is "seed 1" in 4.4.
+The second seed of 4.4 is **151003** (scratch; clear of the computed noise seeds, `[read] noise_seed` 150007 and the
+calibration's 150101 plus cell index × 3 plus slot, which stay below about 150600).
+
+**The eligibility screen (one criterion, used for retries and in 4.4).** For a fitted (skill, rung): the largest, over
+the skill's active channels, of its total RMSE (r7's quantity) on the pooled held-out rows of rounds 0 and 3 where
+`flown == k`. The rung is **eligible** if that is at most **0.10**: twice the gate's 0.05, because the read's and the
+fit report's RMSE differed by up to 2 times, and T94's parked_ring passed closed loop at own-row 0.062. A rung that
+fails the screen gets its one Retry; **the retry replaces that rung's fit, whatever its result** (it is not a new
+rung), and the screen is read again on it. The screen only decides which fitted rungs may enter a Stage 2 assembly;
+**it is never a pass criterion**, and a skill passing it says nothing about the closed loop.
 
 **Control arms: one idea at a time.** Arm B bundles the four ideas the owner was told about (own-frame inputs, a
 network per skill, the decaying schedule, the built-in zero). They are hypotheses, and only these arms test them one at
@@ -471,17 +507,29 @@ guard_field (switch). Same rows, held-out set, steps and seed as B; read on the 
 
 Idea 4 (the built-in zero) is true by construction and is not tested by an arm (3.6).
 
-An arm **matches B** on a skill if its r5 and r7 are within 1.2 times B's and it meets r2 and r3 wherever B meets them.
-What each outcome changes (pre-declared):
+**Matches B, defined.** For an arm and a skill, read two numbers on the pooled held-out rows of rounds 0 and 3 where
+`flown == k`: R5 = the largest r5 over the skill's active channels, R7 = the largest r7 over them. The comparison
+**counts** on that skill only where B meets r7's mark (R7 ≤ 0.030); where B misses it, the arm's numbers are reported
+and read neither as a match nor as a miss. Where it counts, the arm **matches B** on the skill if all of:
 
-- C-in matches B on both skills of a team: the own-frame inputs are reported as not needed for those skills; the
-  build keeps R1 (it costs little) but the note drops the claim that it is what fixes them.
-- C-lr matches B, r2 and r3 included: the decaying schedule is reported as not needed from scratch; the build keeps it
-  (it costs nothing). C-lr failing r2 or r3 where B meets them supports it.
-- C-head matches B on all four skills: a shared-trunk assembly is also played in Stage 2 (4.4); if it passes, it is the
-  build's recommended shape, because it keeps a path between codes for LS3 (section 6) and is closer to the route
-  page's "one skill network per team".
-- C-one matches B on all four skills: likewise, and if it passes, the route page's picture is unchanged.
+- its R5 ≤ max(1.2 × B's R5, B's R5 + 0.002) and its R7 ≤ max(1.2 × B's R7, B's R7 + 0.002) (the absolute floor of
+  0.002 keeps a tiny difference on a very small B from reading as a miss);
+- it meets r2 and r3 in each round (0 and 3, read separately as in 4.1) and on each channel where B meets them.
+
+The 1.2 and the 0.002 are the lead's choice. Seed-to-seed spread is not known until Stage 2's second seeds; a ratio
+near 1.2 may be seed noise, so a match or a miss is weak evidence and is reported beside that spread once it is
+known. What each outcome changes (pre-declared; a team's two skills are those named above):
+
+- C-in matches B on both skills of a team: the own-frame inputs are reported as not needed for that team's two
+  skills; the build keeps R1 (it costs little) but the note drops the claim that it is what fixes them.
+- C-lr matches B on both skills of a team: the decaying schedule is reported as not needed from scratch for that team;
+  the build keeps it (it costs nothing). C-lr missing r2 or r3 on a skill where B meets them is reported as support
+  for the schedule.
+- C-head or C-one **qualifies for S-shared on a team** if it matches B on each of that team's two skills where the
+  comparison counts, and the comparison counts on at least one of them. If both qualify on a team, **only C-head's
+  shape** goes to that team's Stage 2 (it keeps a separate head per skill and a path between codes for LS3, section 6); C-one is reported. If it
+  passes there (4.4), it is the build's recommended shape: C-head is closer to the route page's "one skill network per
+  team"; with C-one the route page's picture is unchanged.
 - Otherwise the build uses separate per-skill networks, and the note states which idea the arms showed to matter.
 
 These are row-level reads. 1.3 shows that row error predicts changed games poorly (rank correlation 0.19 and 0.29), so
@@ -495,21 +543,24 @@ Throughput: F2 ran 3x256 at about 23 steps per second on 2 threads (2,605 s for 
 [pilot_F2.log](../../records/evidence/2026-11-26_ste_ls1_fix_diagnosis/pilot_F2.log)); 3x128 on 6 threads is expected
 at about 60 to 100 steps per second (estimate), so about 7 to 11 min per 40,000-step per-skill fit. The joint arms
 label every row with every code: C-head runs one trunk and K small heads (about 10 to 20 min a fit), C-one runs its
-network K = 5 or 6 times a row (about 40 to 80 min a fit) (estimates). Fits, one at a time on 6 threads:
+network K = 5 or 6 times a row (about 40 to 80 min a fit) (estimates). A retry at 3x256 and 80,000 steps is about 25
+to 35 min (estimate: F2's 23 steps per second on 2 threads, faster on 6). Fits, one at a time on 6 threads:
 
 | Fits | Count | Time (estimate) |
 |---|---|---|
-| B, A3, A4 (per skill) | up to 18 | 2.1 to 3.3 h |
+| B, A3, A4, Next rung (per skill; 10 + up to 4 + 4 + 5) | up to 23 | 2.7 to 4.2 h (23 × 7 to 11 min) |
 | C-in, C-lr (per skill) | 8 | 0.9 to 1.5 h |
-| C-head, C-one (joint) | 4 | 1.7 to 3.3 h |
-| Retries and next rungs (allowance: 4 to 8 fits, some at 3x256 and 80,000 steps) | 4 to 8 | 0.6 to 1.8 h |
-| **Stage 1** | | **about 5.3 to 9.9 h** |
+| C-head, C-one (joint) | 4 | 1.7 to 3.3 h (2 × 10 to 20 min + 2 × 40 to 80 min) |
+| Retries (each replaces a fit; costed at none to 4, the rule itself has no cap) | 0 to 4 | 0 to 2.3 h (4 × 25 to 35 min) |
+| **Stage 1** | | **about 5.3 to 11.3 h** |
 
 Stage 1 also measures CPU forward time per 3,000-row and 49,152-row call for the assembled networks, features
 included.
 
-**Row marks, per skill on its own held-out rows, both rounds.** They are screens: they order the rungs (4.4), set the
-retries, and are reported. **A missed row mark never blocks a PASS; Stage 2 alone decides.** They are not jointly
+**Row marks, per skill on its own held-out rows, both rounds.** They are reported, and the control arms' comparisons
+(above) read them. They decide nothing in the ladder: the eligibility screen (above) sets the retries and which rungs
+may enter an assembly, and 4.4's rules order the rungs. **A missed row mark never blocks a PASS; Stage 2 alone
+decides.** They are not jointly
 budgeted (0e tests that), and on the Guard team they are stricter than the closed-loop evidence: T94's 12 Guard cells
 made only of parked_ring and mark_edge reached a largest of 27 changed games, at own-row RMSE 0.062 and 0.035
 (`g_ownrows.out`), far above r5 and r7.
@@ -524,84 +575,169 @@ made only of parked_ring and mark_edge reached a largest of 27 changed games, at
 | r6 tail: share of all own rows with max-channel \|error\| > 0.1 | switch skills: at most the share produced by the widest blend that passed 0c; 0.2 % if none passed; other skills 0.2 % | same rule | 0c; Fidelity r6 |
 | r7 total RMSE per active channel, all own rows | ≤ 0.030 | ≤ 0.030 | gate 0.05; the read's and the fit report's RMSE differed by up to 2 times (parked_ring 0.042 v 0.088) |
 
-These marks are estimates between calibration rungs and only screen. Stage 2 decides. The Strike r5 of 0.010 on its
+These marks are estimates between calibration rungs and are reported only (the eligibility screen above is a
+separate, single criterion). Stage 2 decides. The Strike r5 of 0.010 on its
 own uses most of the Strike margin (noise RMSE 0.011 → 27 of 30), and the same skill may also carry the r2, r3 and r4
 allowances; nothing but 0e shows the sum stays under 30.
 
 ### 4.4 Stage 2: closed-loop deciding read (every gated cell, both teams)
 
-- **Assemblies, pre-declared, at most four per team, in this order** (Stage 2 alone decides; the row marks only order
-  the rungs):
-  1. **S1**: every skill at its lowest fitted rung that is **eligible**: own-row total RMSE (r7) at most 0.10 per
-     active channel, twice the gate's 0.05 because the read's and the fit report's RMSE differed by up to 2 times, and
-     T94's parked_ring passed closed loop at own-row 0.062. A skill with no eligible rung goes in at its best rung (by
-     r7). Missed row marks are reported, not counted against the team.
-  2. **S2**, only if S1 fails: every skill present in at least half of S1's cells over 30 (or whose cell intervals
-     fail) moves up one eligible rung, if it has one; the others stay. If S1 stopped at the screen, its cells over 30
-     are the screen cells over 30.
-  3. **S3**, only if S2 fails: the same rule once more.
-  4. **S-shared**, only if C-head or C-one matched B (4.3): that shape at the rungs of the first of S1 to S3 that
-     passed, or of S1 if none did.
-  The team's result is that of the first of S1 to S3 that passes (lowest rungs first), or else the best of them;
-  S-shared is reported beside it and decides only the build's shape, and only if it also passes a second seed (its
-  joint fit again, about 1 to 2 h a team, estimate); otherwise it is reported and not used. No other assembly is
-  played.
-- **Cells**: all gated cells (Guard team 150, Strike team 130) plus the 26 Strike INFO cells (reported). N = 1,000
-  games per cell (T44's starts). Network arm only, paired with T94's stored script games (0a's driver). Intervals with
-  the read's own `newcombe_hybrid`, Bonferroni per team, and the pooled row.
-- **Screen first** (about 1.5 min per team): per team, the union of T94's 10 worst network cells and the 10 worst
-  cells of the T90 arm nearest the team's binding kind of error (Guard team: bias 0.01; Strike team: noise 0.05),
-  written to `cells_screen.json` from the `results.json` files before any pilot network plays. A screen cell over
-  30 stops that assembly early (reported as FAIL).
+Stage 2 alone decides. The row marks decide nothing here; the eligibility screen of 4.3 only says which fitted rungs
+may enter an assembly.
+
+**One full replay.** All gated cells (Guard team 150, Strike team 130) plus the 26 Strike INFO cells (reported, not
+gated). N = 1,000 games per cell on T44's starts (seed 110000, the read's). Network arm only, paired with T94's stored
+script games (0a's driver). Recomputed on every full replay: each cell's b + c and interval (the read's own
+`newcombe_hybrid`, Bonferroni per team), the pooled row over all gated cells, the command-error table from the
+labeller over every cell played, the median b + c and the count of cells over 20. **A PASS or a MARGINAL is read only
+from a full replay**; nothing is carried over from an earlier replay or another seed.
+
+**Screen first** (about 1.5 min per team): per team, the union of T94's 10 worst network cells and the 10 worst cells
+of the T90 arm nearest the team's binding kind of error (Guard team: bias 0.01; Strike team: noise 0.05), written to
+`cells_screen.json` from the `results.json` files before any pilot network plays. All screen cells are played first;
+if any of them is over 30, the replay stops there and is a FAIL (its screen cells over 30 are all known). A screen stop
+can only give FAIL, never a pass.
 
 **Marks, per team (fixed once the owner confirms the plan, before any trial):**
 
 | Class | Condition |
 |---|---|
-| gate limits (all must hold) | every gated cell b + c ≤ 30; every cell interval inside ±0.045; pooled interval inside ±0.01; the replay's own command-error table passes R48 (active-channel RMSE ≤ 0.05, unused ≤ 0.05, zero skill ≤ 0.005) |
+| gate limits (all must hold) | every gated cell b + c ≤ 30; every cell interval inside ±0.045; pooled interval inside ±0.01; the replay's own command-error table passes R48 (active-channel RMSE ≤ 0.05, unused ≤ 0.05, zero skill ≤ 0.005). `end_time_gated` is false in the gate file, so end time is reported, not gated |
 | headroom (all must hold) | median b + c over gated cells ≤ 9; at most 5 gated cells over 20 |
 
-Per team:
+Per full replay (and per assembly, below):
 
 - **PASS**: the gate limits and the headroom marks hold.
 - **MARGINAL**: the gate limits hold, the headroom marks do not. The pilot rows come from LS1.1's data and seed; the
   build refits on its own DAgger rows. Headroom is the only buffer for that shift.
-- **FAIL**: any gate limit is missed.
-
-The pilot's result: PASS if both teams PASS; FAIL if both FAIL; MARGINAL if both meet the gate limits and one or both
-are MARGINAL (decision 6); one team meeting the gate limits and the other failing is the one-team row of 4.5.
+- **FAIL**: any gate limit is missed, or the replay stopped at the screen.
 
 Consistency of the headroom marks with the calibration (writer's tally, 1.3): Strike noise RMSE 0.011 meets them
 (median 8, 3 cells over 20, largest 27); Guard noise RMSE 0.029 meets them (7.5, 1, 21); Strike bias 0.02 passes the
 gate but misses headroom (median 13, 11 over 20). So headroom is stricter than the gate, on purpose.
+
+**Assemblies, pre-declared, at most four per team, in this order.** An assembly is one network per fitted skill, each
+at a named rung (guard_parked_centre: its masked slot).
+
+1. **S1**: every skill at its lowest fitted rung that is eligible (4.3). A skill with no eligible rung goes in at the
+   rung with the smallest screen value.
+2. **S2**, only if S1's result is FAIL: each skill of S1's trigger set (below) moves to its lowest eligible fitted
+   rung above its current one, if it has one; the others stay.
+3. **S3**, only if S2's result is FAIL: the same rule once more, from S2.
+4. **S-shared**, only on a team whose result is PASS or MARGINAL and on which C-head or C-one qualified (4.3); below.
+
+No assembly outside S1, S2, S3 and S-shared is played. The second seeds, the DAgger rescue (below) and the decision-8
+fallback (4.5) refit skills of a listed assembly; they are not new assemblies.
+
+**Two seeds for every assembly that reaches PASS or MARGINAL.** Seed 1 is the Stage 1 fits (fit seed 150003). If the
+seed-1 full replay gives PASS or MARGINAL, every per-skill fit of the assembly is made again with fit seed 151003, on
+the same rows, size and steps (3x256 and 80,000 for a retried rung); a seed-2 fit already made for the same (skill,
+rung) in an earlier assembly is reused (fits are deterministic, C8). The seed-2 networks get their own full replay
+(screen first). The assembly's result is the **worse of its two seeds**: PASS only if both pass; PASS and MARGINAL
+give MARGINAL; a FAIL at either seed gives FAIL (reported as seed-sensitive when seed 1 passed). A seed-1 FAIL ends
+the assembly with FAIL; it has no seed 2.
+
+**The ladder, per team.**
+
+- An assembly whose result is PASS or MARGINAL **ends the ladder**: it is the team's deciding assembly and its result
+  is the team's. A MARGINAL does not try higher rungs (they carry more of the scripts' logic); it goes to decision 6.
+- An assembly whose result is FAIL, at seed 1 or at seed 2, **fails that assembly only**; the ladder goes on to the
+  next assembly.
+- The ladder is **exhausted** when S3 has failed, or when an assembly has failed and no skill of its trigger set has
+  an eligible fitted rung above its current one.
+- On an exhausted ladder the team goes to the own-state check and DAgger rescue (below). **The team's result is FAIL
+  only when the ladder is exhausted and the rescue is not triggered or also gives FAIL.**
+- If every assembly failed, the **best** one is reported (it decides nothing): the fewest gated cells over 30 in its
+  failing replay, then the smaller largest cell, then the lower rungs. Assemblies stopped at the screen rank after
+  those replayed in full, by their number of screen cells over 30.
+
+**Trigger set of a failed assembly**, read from its failing replay (seed 1's, or seed 2's after a seed-1 pass), from
+the read's own failure kinds (`limit_failures` in [ste_ls1_equivalence.py](../../scripts/ste_ls1_equivalence.py)).
+One set per kind; the trigger set is their union:
+
+- **Cell kind** (`flips_max_games`, `cell_margin`): the offending cells are the gated cells with b + c > 30 or an
+  interval not inside ±0.045. Every skill flown in at least half of the offending cells is in the set; if none
+  reaches half, the skill (or the tied skills) flown in the most offending cells. In a replay stopped at the screen,
+  the offending cells are its screen cells over 30.
+- **Command kind** (`cmd_rmse_max`, `cmd_unused_max_abs`, `cmd_zero_skill_max_abs`): every skill named in a command
+  failure. guard_parked_centre is masked to exact 0 and cannot miss its limit; if it does, that is a harness fault:
+  stop, fix, rerun.
+- **Pooled kind** (`pooled_margin`): each skill's signed contribution `c_k = (1/m) Σ_cells diff_cell × n_k,cell / 3`,
+  over the m gated cells, with `diff_cell` the read's signed per-cell difference and `n_k,cell` the drones of the cell
+  flying skill k. The pooled difference is the mean of the gated cells' `diff` (checked on T94: Guard −0.00238,
+  Strike −0.00887), so the c_k add up to it. The skill with the largest |c_k| among those with the pooled difference's
+  sign is in the set (ties: all tied).
+- Missed headroom alone is MARGINAL, not FAIL, and triggers nothing.
+
+A skill of the set with no eligible fitted rung above its current one stays where it is.
+
+**S-shared.** Only the qualifying shape (4.3: C-head if both qualify), only on a team whose result is PASS or
+MARGINAL: it decides only the build's shape, and a FAIL team has no build to shape. One joint fit of that shape at the
+rungs of the team's deciding assembly, each skill's head (or code) reading its rung's features. At R1 + R2 the seed-1
+fit is the control arm's own fit, reused. With any skill at R3 or R4 it is a new joint fit that no arm has checked, so
+the eligibility screen is read on each of its skills first, and it plays only if every skill passes. Then the two
+seeds as above (seed 2 a joint fit at 151003). It becomes the build's recommended shape only if its two-seed result is
+at least the team's (PASS when the team PASSes; PASS or MARGINAL when the team is MARGINAL); otherwise it is reported
+and not used. **It never changes the team's result.** Cost per team (estimate): one or two joint fits (C-head about 10
+to 20 min, C-one about 40 to 80 min a fit, more with R3 or R4 blocks) plus up to two full replays.
+
+The pilot's result: PASS if both teams PASS; FAIL if both FAIL; MARGINAL if both meet the gate limits and one or both
+are MARGINAL (decision 6); one team meeting the gate limits and the other failing is the one-team row of 4.5.
 
 **Also in Stage 2:**
 
 - **C4 analogue**: an unfitted pilot network (seed 150003, all-ones mask) plays the 30 fixed gated cells per team. Mark:
   at least 15 cells miss on each team (the gate's number, `miss_count` definition). Cost about 5 min Guard team, about
   15 min Strike team (unfitted Strike games run to the tick cap; T94's C4 arm took about 850 s, scout scratch).
+  **Among the read's controls the pilot runs only this C4 analogue** (C1 and C2 only as far as 0a checks the stored
+  script games and `ScriptOracle`). C3, C5, C6 and C7 for per-skill networks are deferred to the build's read of
+  record (LS1.2), where they run as R48 set them.
 - **onnxruntime-flown arm (INFO)**: the exported pilot graph flies the 20 screen cells per team. Reported: changed games
   against the torch-flown network. More than 3 in any cell sends the lead to investigate before a build.
 - **Control arms** C-in, C-lr, C-head and C-one are read on their row marks only (4.3); only S-shared puts a shared
   shape through the closed loop.
-- **Second seed, pre-declared**: the first assembly that gives PASS or MARGINAL on a team is fitted again with a
-  second scratch seed (only its per-skill fits; the rows are the same) and replayed in full. The team's result is the
-  **worse of the two seeds** (PASS only if both pass; PASS and MARGINAL give MARGINAL; any FAIL gives FAIL, reported as
-  seed-sensitive). A FAIL from the second seed is final for that team (S2 and S3 are not run after it; the own-state
-  check below still applies). Cost about 1.2 to 1.8 h of fits for both teams (10 per-skill fits) plus one replay per
-  team (estimate).
-- **Own-state check (for a FAIL)**: the read's labeller keeps only aggregate errors, not rows
-  ([ste_ls1_equivalence.py](../../scripts/ste_ls1_equivalence.py) `RecordingSkillTeam`), so a scratch wrapper keeps a 1 %
-  sample of `(obs, slot, label)` rows from the failing cells' network games. If a failing skill's RMSE on those rows is
-  more than 1.5 times its held-out RMSE, the failure is put down to the pilot's shortcut (LS1.1's rows, no DAgger on the
-  pilot network's own states), not to the design: that skill gets one DAgger round (its rows added, one refit, the
-  failing cells replayed once). It runs once per team, after the last assembly that team plays has failed (S3, or
-  earlier if no skill can move up a rung), on that assembly. If the DAgger round turns the result into PASS or MARGINAL,
-  that result gets the second seed like any other. Cost about 30 to 60 min per team (estimate). The build itself does
-  4 DAgger rounds.
 
-Cost: Guard team about 9 to 12 min, Strike team about 13 to 18 min per assembly (T94 network arm 496 s and 703 s with
-the labeller, plus the larger forward; estimate); a screen-cell stop cuts a failing assembly to about 2 min.
+**Own-state check and DAgger rescue (once per team, only on an exhausted ladder).** It works on the last assembly the
+team played (the highest rungs) and on its **failing replay** (seed 1's, or seed 2's after a seed-1 pass). If that
+replay stopped at the screen, it is first completed in full with the same networks (9 to 18 min), so that every rule
+below reads a full replay.
+
+1. **Failing skills**: that assembly's trigger set (above).
+2. **Fresh rows, never the read's starts.** The scratch driver calls the build's collection code `distil.collect` with
+   round index 4, `[data]` seed 150001 and pool_seed 150002, script share 0: the assembly's **seed-1** networks (in
+   0a's contract wrapper) fly every drone of the side. LS1.1 played rounds 0 to 3; `round_seed` mixes seed, round and
+   purpose, so round 4's starts are new, neither rounds 0 to 3's nor T44's (seed 110000); the driver asserts both.
+   Sizes as `[data]`: 4,096 games × 600 ticks, hold 12, mode shares 0.5 / 0.25 / 0.25, switch_jump 0.2, switch
+   window 12 ticks; every row labelled with every code's script (the label control at 1e-5). Kept with `distil.keep`:
+   2,000,000 rows, error weights from the flying networks, absent quota 0.2, switch floor 1.0, keep generator seed
+   `round_seed(150001, 4, "keep")`. The kept rows are fixed once; both seeds below train on the same rows.
+3. **Held-out**: the new games with `game % 5 == 0` (4.1's rule); never trained on.
+4. **Trigger**: per failing skill k, its total RMSE per active channel on **all** collected rows of the held-out games
+   where `flown == k`, taken before the keep (unweighted: the keep weights rows by the flying network's own error,
+   which would inflate the ratio), against its r7 per channel on LS1.1's round-3 held-out rows where `flown == k`
+   (round 3 is network-flown, script share 0, like the new rows; script-flown rows would make the ratio near
+   automatic). Those baseline rows were kept with error weights from LS1.1's round-2 network, which leans toward harder
+   rows, so the ratio is if anything conservative. A skill is **triggered** if the ratio exceeds 1.5 on any active
+   channel. No triggered skill: the failure is read as a design result and the team is FAIL.
+5. **Diagnostic only** (never a trigger, never trained on): the read's labeller keeps only aggregate errors
+   (`RecordingSkillTeam`), so a scratch wrapper keeps a 1 % sample of `(obs, slot, label)` rows from the failing
+   replay's offending cells and another from all its gated cells; the failing skills' RMSE on both is reported.
+6. **Refit**: the triggered skills only, each from scratch (a fresh fit, as every round of the build, 3.7) at its
+   rung, size and steps (a retried rung's 3x256 and 80,000), fit seed 150003, on Stage 1's training rows (1,000,000
+   from round 0 and 1,000,000 from round 3) plus the new rows of games with `game % 5 != 0` (about 1.6 million,
+   estimate). Each refit replaces that skill's fit whatever its row marks (reported). The other skills keep theirs.
+7. **Replay every gated cell**: a full replay (screen first) of the assembly with the refits, with the cells, the
+   pooled row, the command table, the median and the over-20 count recomputed. If it gives PASS or MARGINAL, seed 2
+   follows: the triggered skills refitted at 151003 on the same rows (the DAgger rows included), the other skills' seed-2
+   fits made or reused as above, and a second full replay; the result is the worse of the two seeds.
+8. That result **replaces the team's FAIL**. A FAIL that survives it is the team's design result.
+
+Cost per team (estimate): collection 5 to 15 min (not measured on the CPU), the full replay before it if needed (9 to
+18 min), refits of 1 to 6 skills at 7 to 11 min each at two seeds (up to 132 min; more for retried rungs), two full
+replays (18 to 36 min): about 0.1 h (no skill triggered) to 3.4 h per team. The build itself does 4 DAgger rounds.
+
+Cost of a full replay: Guard team about 9 to 12 min, Strike team about 13 to 18 min (T94 network arm 496 s and 703 s
+with the labeller, plus the larger forward; estimate); a screen-cell stop cuts a failing replay to about 2 min.
 
 ### 4.5 What each outcome means (decision rule, fixed with the marks)
 
@@ -611,30 +747,40 @@ the labeller, plus the larger forward; estimate); a screen-cell stop cuts a fail
 | PASS needs R3 on some skills | owner decision 2 (script margins as inputs) before the build |
 | PASS needs R4 on some skills | owner decision 3, with the scope stated plainly: "for these skills the network copies the scripts' motion given the scripts' decisions; the decision logic is in the exported graph"; for sacrifice or converge, also: "for this skill route 3 is close to route 2, and the skill's own switch points are fixed until LS2 replaces the flags" (6.4) |
 | One team passes, the other fails | head training (LS1.4) needs both teams' skill networks (route page, "for both teams"), so the build does not start for one team alone; the passing team's result is recorded, the failing team follows the FAIL rows, and decision 9 asks the owner whether to build the passing team now |
-| FAIL whose cause is the pilot's shortcut (Stage 2's own-state check: the failing skills' error on the pilot network's own states is more than 1.5 times their held-out error) | the pre-declared DAgger round of 4.4 for those skills, then the failing cells replayed once; its result replaces the FAIL. Only a FAIL that survives it is read as a design result |
+| FAIL on an exhausted ladder with a triggered skill (4.4's own-state check: the failing skill's error on fresh rows flown by its own network is more than 1.5 times its round-3 held-out r7) | the pre-declared DAgger rescue of 4.4: fresh network-flown rows from round 4 of `[data]` seeds 150001 and 150002 (never T44's starts), the triggered skills refitted from scratch, then **every gated cell** replayed at both seeds with the pooled row, the command table, the median and the over-20 count recomputed; its result replaces the FAIL. Only a FAIL that survives it is read as a design result |
 | MARGINAL | owner decision 6 |
-| FAIL at every rung, or a skill fails R4 at 3x256 (after the own-state check) | LS1 stays stopped; the note reports which skills and cells fail and why. The ladder beyond R4: R4 is handed the script's decisions, so a failure there lies inside a branch (regression error or closed-loop amplification), not at the switches. (a) A second pilot round: R4 at 3x256 with Fourier features of the frame inputs (Tancik et al., section 8, against the spectral bias of plain networks) on the failing skills; (b) the residual design (6.5), with its own ruling. Whether (a) is run before (b), or (b) comes straight to the owner, is decision 10. No limit moves |
-| R4 passes but the owner declines decision 3 for a skill | the next trial for that skill is a classify-then-regress head at R3 inputs: a branch classifier trained on the script's branch labels, then a regression head per branch (Behavior Transformers, section 8). It uses the script's decisions as training labels only, not as inputs. One pilot round, its marks written before it runs |
+| Team FAIL: the ladder is exhausted (4.4) and the DAgger rescue is not triggered or also gives FAIL | LS1 stays stopped; the note reports which skills and cells fail and why, and the best assembly (4.4). The ladder beyond R4: R4 is handed the script's decisions, so a failure there lies inside a branch (regression error or closed-loop amplification), not at the switches. (a) A second pilot round: R4 at 3x256 with Fourier features of the frame inputs (Tancik et al., section 8, against the spectral bias of plain networks) on the failing skills, the other skills as in the last assembly; its marks are 4.4's gate limits and headroom marks unchanged, on every gated cell, at two seeds (151003 the second), with its fit sizes and feature scales written in the note before it runs; (b) the residual design (6.5), with its own ruling. Whether (a) is run before (b), or (b) comes straight to the owner, is decision 10. No limit moves |
+| R4 passes but the owner declines decision 3 for a skill | the next trial for that skill is a classify-then-regress head at R3 inputs: a branch classifier trained on the script's branch labels, then a regression head per branch (Behavior Transformers, section 8). It uses the script's decisions as training labels only, not as inputs. It is a second pilot round and counts against decision 10's limit (if a Fourier round is also due, the two run together as that one round). Its marks are 4.4's gate limits and headroom marks unchanged, on every gated cell, at two seeds; its fit sizes are written in the note before it runs |
+| guard_field is in the deciding assembly at R2 and the owner declines decision 8 | guard_field is refitted at R1 alone (slot order, no nearest-first lists) at both seeds (150003, 151003) on the same rows as its fit in that assembly (the DAgger rows included if a rescue made it); the Guard team's deciding assembly is otherwise unchanged and is replayed in full at both seeds against 4.4's marks (about 0.5 to 0.8 h, estimate: two fits and two Guard replays). Its result replaces the Guard team's. A FAIL there follows the team-FAIL row |
 | 0a or 0c driver check, or 0d, fails | harness or code fault: fixed and rerun; not a design result |
 
 ### 4.6 Wall clock and cost of the pilots
 
 All estimates. The lead sets the parallelism (26 Nov 2026): up to 4 jobs side by side at 6 threads each (24 of the
-RTX 5090 machine's 32 threads) while the owner is not using the PC; one job at a time when the owner is. The times below
-are one job at a time; side by side they fall to about a third to a half.
+RTX 5090 machine's 32 threads) while the owner is not using the PC; one job at a time when the owner is. The table is
+one job at a time. "Typical" is both teams ending at S1 (PASS or MARGINAL at both seeds) with no S-shared; "worst" is
+the bound when every fallback runs.
 
-| Part | Time | How it is made up |
+| Part | Time, one job at a time | How it is made up |
 |---|---|---|
 | Scratch-code writing (agent time) | 5 to 7 h | the harness, features of every rung, the closed forms, the arms of 4.3 (the control arms add about 1 h to the 4 to 6 h of the first draft) |
 | Stage 0 | about 1.5 to 2 h | 0a about 10 min; 0b about 25 min; 0c about 30 min; 0d 10 to 20 min; 0e about 18 min; feature caching |
-| Stage 1 | about 5.3 to 9.9 h | the fit table of 4.3 (per-skill fits 7 to 11 min; joint fits 10 to 80 min; retries and next rungs as an allowance) |
-| Stage 2 | about 1.5 to 3.5 h; up to about 8 h | first assembly both teams 22 to 30 min, C4 analogue about 20 min, onnxruntime arm about 10 min, the second seed about 1.2 to 1.8 h of fits plus a replay per team; the upper figure adds S2, S3, S-shared with its second seed and the own-state DAgger round |
-| **Total compute** | **about 8 to 15.5 h; up to about 20 h** | |
+| Stage 1 | about 5.3 to 11.3 h | the fit table of 4.3: up to 23 per-skill fits 2.7 to 4.2 h, C-in and C-lr 0.9 to 1.5 h, joint fits 1.7 to 3.3 h, retries 0 to 2.3 h |
+| Stage 2, typical | about 2.4 to 3.3 h | S1 seed 1 both teams 22 to 30 min, C4 analogue about 20 min, onnxruntime arm about 10 min, seed-2 fits 10 × 7 to 11 min (1.2 to 1.8 h), seed-2 replays 22 to 30 min |
+| Stage 2, S-shared if it plays | adds about 1.1 to 3.7 h | per team one new seed-2 joint fit at R1 + R2 (C-head 10 to 20 min, C-one 40 to 80 min) and two full replays; more with R3 or R4 blocks |
+| Stage 2, worst | up to about 16 h | C4 and onnxruntime 0.5 h; S1 to S3 each failing at seed 2 after a seed-1 pass, 6 full replays per team (2.2 to 3 h for both teams); seed-2 fits bounded by Stage 1's 23 per-skill fits, 4 of them retried at 3x256 (up to 5.8 h); the DAgger rescue refitting every skill at both seeds (Guard up to 2.3 h, Strike up to 3.4 h); or, on the S-shared path, two new joint fits per team at R3 or R4 (up to about 5.3 h with C-one) in place of the rescue |
+| **Total compute, one job at a time** | **about 9 to 16.5 h typical; up to about 29 h worst** | 1.5 + 5.3 + 2.4 = 9.2; 2 + 11.3 + 3.3 = 16.6; 2 + 11.3 + 16 = 29.3 |
 
-The first draft gave 7 to 9 h one at a time and 3.5 to 4.5 h with 4 jobs side by side. Its Stage 1 line (4 to 6 h for
-about 20 fits) was above its own throughput (2.3 to 3.7 h); the figures above replace it, and the rise comes from the
-control arms, the joint fits, the retry allowance, 0e and the second seeds. 4 jobs side by side at 6 threads each (24
-threads) cut the wall clock to about a working day.
+**Wall clock with 4 jobs side by side** (estimate). Stage 1's fits are independent: about a third to a half of the
+one-at-a-time time (memory bandwidth limits the gain). Stage 0's five checks split into about two at once. Stage 2's
+ladder is sequential per team, so only the two teams, and the seed-2 fits within an assembly, run side by side: about
+a half. Typical: about 0.75 to 1 h + 1.8 to 5.7 h + 1.2 to 1.7 h = **about 4 to 8.5 h**; worst: 1 + 5.7 + 8 = **about
+15 h**. When the owner uses the PC, the one-at-a-time figures apply.
+
+The first draft gave 7 to 9 h one at a time and 3.5 to 4.5 h with 4 jobs side by side; the review's draft gave 8 to
+15.5 h (up to 20). Both are replaced: the rise comes from the control arms, the joint fits, the pre-declared next
+rungs, the retries at 3x256, 0e, the second seeds of every assembly that reaches PASS or MARGINAL, the full-replay
+DAgger rescue and S-shared's own fits.
 
 All estimates. 0 GPU-hours.
 
@@ -720,7 +866,7 @@ LS1.4 cap (4.0 GPU-h, owner R43) is unchanged.
 |---|---|---|
 | LS1.4 head training | good | contract unchanged; heads cannot tell the new network from the old; each code is a faithful copy without cross-skill interference |
 | LS2 fine-tuning skills | good at R1 to R3; medium at R4 | a network per skill can be fine-tuned alone, tied to its frozen copy; PPO differentiates the weights, not the inputs, so feature inputs do not block it; R3 keeps thresholds learnable; R4 flags freeze where switches happen (a hook for the LS2 note: replace each flag by `sigmoid((margin − θ)/τ)` with θ, τ at the script values); the mask must be relaxed for vz or yaw to be learnable; raw world inputs stay, so the walls' asymmetry stays visible |
-| LS3 free codes | medium (separate networks); better with a shared trunk | separate networks share nothing, so there is no built-in path between codes; a free code would be a new network on the common R1 + R2 block, the skill-agnostic part. The shared-trunk shape (C-head, 4.3) keeps that path; it is the build's shape if its Stage 2 assembly passes |
+| LS3 free codes | medium (separate networks); better with a shared trunk | separate networks share nothing, so there is no built-in path between codes; a free code would be a new network on the common R1 + R2 block, the skill-agnostic part. The shared-trunk shape (C-head, 4.3) keeps that path; it is the build's recommended shape only if its S-shared assembly meets 4.4's rule |
 | Export | good, if 0d passes | features and networks are plain tensor ops; R4 features must stay sort-free and eye-free; the scripts are not in the graph at R1 to R3, and only their decision logic is at R4 |
 
 **Team size and the mask.** The mask file is pinned to team size 3 (and the Starling setting). guard_parked_centre is
@@ -771,16 +917,16 @@ The scripts plus a correction that starts at zero
 
 | # | Decision | When | Lead's recommendation |
 |---|---|---|---|
-| 1 | The pilot plan, its marks and its cost (section 4): about 5 to 7 h of agent time to write, about 8 to 15.5 h of CPU (up to about 20) one job at a time; the headroom marks of 4.4 are the lead's rule, stricter than R48's 30, and decide MARGINAL against PASS | before the first run (R49 approved trials in principle, not this plan) | run as written |
+| 1 | The pilot plan, its marks and its cost (section 4): about 5 to 7 h of agent time to write, about 9 to 16.5 h of CPU (up to about 29) one job at a time, about 4 to 8.5 h of wall clock (up to about 15) with 4 jobs side by side (4.6); the headroom marks of 4.4 are the lead's rule, stricter than R48's 30, and decide MARGINAL against PASS | before the first run (R49 approved trials in principle, not this plan) | run as written |
 | 2 | R3: the scripts' switch distances as network inputs, for the skills that need them | after the pilots, only if needed | accept: thresholds stay learnable for LS2 |
 | 3 | R4: the scripts' choices and flags as inputs, with one head per branch, for the skills that need them. For these skills the network copies the scripts' motion given the scripts' decisions; the decision logic is in the exported graph. For sacrifice and converge this makes route 3 close to route 2 (6.4), and the skill's own switch points are fixed until LS2's sigmoid hook is shown to work (6, the pre-LS1.4 check) | after the pilots, only if needed | accept only for skills that fail R1 to R3, with the plain scope sentence added to the route page; if declined, the classify-then-regress trial (4.5) |
 | 4 | The [K, 4] mask: exact zeros by design; the zero-skill and unused-channel limits then pass by construction and test the mask, not learning; vz and yaw locked until the LS2 note; pinned to team size 3 and the Starling setting, rebuilt (or removed for parked_centre) if team sizes are drawn (6) | with the build | accept |
 | 5 | The gate file: the `[stop]` fix_round text rewritten to record R49; new sha; FORMAT 2; format-1 networks refused | with the build | accept; the owner words the `[stop]` text |
 | 6 | A MARGINAL pilot (gate limits met, headroom missed) | after the pilots, only if it happens | build, because the read of record decides and the build costs about 0.1 to 0.9 GPU-h; with the risk stated |
 | 7 | The residual design, if nothing passes | after the pilots, only then | bring it with its own costs (C4 redefinition, scripts in the graph, LS1.4 as a plumbing check) |
-| 8 | guard_field at R2: the nearest-first order equals the script's own choice for field, so a field pass at R2 is not "own point of view" only | after the pilots, if guard_field passes at R2 | accept, reported as a script choice for that one skill (R2 is generic ordering for every other skill) |
+| 8 | guard_field at R2: the nearest-first order equals the script's own choice for field, so a field pass at R2 is not "own point of view" only | after the pilots, if guard_field passes at R2 | accept, reported as a script choice for that one skill (R2 is generic ordering for every other skill); if declined, the R1-only fallback of 4.5 (guard_field refitted at R1 alone, the Guard team replayed in full at both seeds) |
 | 9 | One team passes, the other fails: build the passing team now, or wait | after the pilots, only if it happens | wait: head training needs both teams (route page); record the passing team's result |
-| 10 | How many redesign rounds before the residual design: a second pilot round (R4 with Fourier features, or the classify-then-regress head) or the residual design straight away | after the pilots, only on a FAIL | at most one second round, then the residual design |
+| 10 | How many redesign rounds before the residual design: a second pilot round (R4 with Fourier features on a team FAIL, the classify-then-regress head for a skill whose R4 the owner declined, or both together as one round) or the residual design straight away. Each round's marks are 4.4's, unchanged, at two seeds (4.5) | after the pilots, only on a team FAIL or a declined decision 3 | at most one second round in all, the classify-then-regress trial included, then the residual design |
 
 The LS1.1 cap (5.3) is the lead's call under R39 and is announced, not asked.
 
@@ -804,8 +950,8 @@ The LS1.1 cap (5.3) is the lead's call under R39 and is announced, not asked.
    frame at ρ < 0.5 m.
 9. Whether R2's nearest-first order counts as "own point of view" for guard_field (it equals the script's choice
    there): decision 8.
-10. One seed (two for the deciding assembly) and LS1.1's rows: a pilot pass is a go for the build, not a prediction of
-    the copy check.
+10. Two seeds for every assembly that reaches PASS or MARGINAL, and LS1.1's rows (plus, only after a DAgger rescue,
+    one fresh round from the pilot network): a pilot pass is a go for the build, not a prediction of the copy check.
 
 ## 8. Method and sources
 
@@ -830,6 +976,16 @@ designs from the scouts' reports; a judge scored them and recommended the combin
   lines 17 to 18, 242 to 252, 261, 336, 451 to 452.
 - The route page's wording (lines 59, 74, 86, 93) and R47, R49 in the
   [DISCUSSION](../DISCUSSION_2026-11-19_20.md).
+- For the fixes of the focused re-review (26 Nov 2026): the pooled difference equals the mean of the gated cells'
+  `diff` (T94 `results.json`: Guard −0.00238, Strike −0.00887); the read's starts are seed 110000 (T94 `layout.json`);
+  `end_time_gated` is false and the failure kinds are those of `limit_failures`
+  ([distil_gates.toml](../../configs/ste_ls1/distil_gates.toml), [ste_ls1_equivalence.py](../../scripts/ste_ls1_equivalence.py));
+  `round_seed` mixes (seed, round, purpose), `collect` takes any round index, and `keep` weights rows by the flying
+  network's error ([distil.py](../../source/svg_training/ste/distil.py)); `CommandPerturbation`'s kinds, uniform
+  noise, +size bias, anticlockwise turn and per-wrapper clamp, and the calibration's seed rule
+  ([perturbed.py](../../source/svg_training/opponents/perturbed.py), [ste_ls1_calibration.py](../../scripts/ste_ls1_calibration.py),
+  [calibration.toml](../../configs/ste_ls1/calibration.toml)); seed 151003 appears nowhere in `configs`, `source` or
+  `scripts`.
 
 **Taken from the scouts, not re-run by the writer (scout scratch).** Contract scout: `fwd_variants.py`,
 `onnx_check.py`, `onnx_frame.py` (timings, ONNX results, the contract map). Geometry scout (folder `redesign/`):

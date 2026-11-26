@@ -26,7 +26,7 @@ import pytest
 import _ste_ls1 as H
 from _ste_ls1 import ROOT, SKILLS_GATES, net_gate_file
 from _torch_threads import default_torch_threads  # noqa: F401  (autouse: CPU numerics at the default thread count)
-from svg_training.ste import exploit, shared, skills
+from svg_training.ste import exploit, shared, skill_net, skills
 
 sys.path.insert(0, str(ROOT / "scripts"))
 import ste_exploit_l012 as driver  # noqa: E402
@@ -79,12 +79,19 @@ def net_runs(tmp_path_factory):
     mp.setenv(shared.SHARED_ENV, str(tmp / "shared"))
     mp.setenv(shared.LEGACY_LOGS_ENV, "")
     a, nets = net_gate_file(tmp / "a")
+    batches, play_cells = [], exploit.play_cells
+
+    def spy(cfg, size, ref, cells, *args, **kw):            # the pilot's batches: their cells and twin players
+        batches.append((list(cells), dict(kw.get("players") or {})))
+        return play_cells(cfg, size, ref, cells, *args, **kw)
+    mp.setattr(exploit, "play_cells", spy)
     assert driver.main(["--pilot", "--gates", str(a), "--run-dir", str(tmp / "pilot"), "--cap-h", "1"]) == 0
+    mp.setattr(exploit, "play_cells", play_cells)
     pilot = tmp / "pilot" / "pilot.json"
     fill = json.loads(pilot.read_text())["strike_recipe"]["side_overrides_strike"]
     b, _ = net_gate_file(tmp / "b", nets=nets, strike_recipe=fill)
     assert exploit.load_gates(b).trainer["side_overrides"]["strike"] == fill
-    out = {"a": a, "b": b, "nets": nets, "pilot": pilot, "fill": fill, "codes": {}}
+    out = {"a": a, "b": b, "nets": nets, "pilot": pilot, "fill": fill, "codes": {}, "pilot_batches": batches}
     for side in SIDES:
         r = tmp / side
         out["codes"][side] = run(b, r, side, pilot, *(() if side == "guard" else ("--no-videos",)))
@@ -178,6 +185,12 @@ def test_net_pilot_records_the_net_learner(net_runs):
         ctl = ev["controls"]["ctl_untrained_is_first_skill"]
         assert ctl["status"] == "PASS" and driver.NET_TWIN in ctl["detail"]
     assert driver.net_pilot_problem(exploit.load_gates(net_runs["b"]), p, "guard", 1.0) is None
+    # the twin is in pilot step 1 (each side) and in every timing batch; never in an INFO batch or the run 0 read
+    twinned = [(cells, players) for cells, players in net_runs["pilot_batches"]
+               if any(driver.NET_TWIN in str(x) for c in cells for x in c)]
+    assert len(twinned) == len(exploit.SIDES) + len(g.pilot["timing_batches"])
+    assert all(set(players) == {x for c in cells for x in c if x.startswith(driver.NET_TWIN)}
+               for cells, players in twinned)
     assert driver.net_pilot_problem(exploit.load_gates(net_runs["b"]), p, "strike", 1.0, run0=True) is None
 
 
@@ -208,26 +221,38 @@ def test_net_pilot_problem_is_none_for_the_scripts_route_with_route_2s_pilot_sha
 
 # ================================================================================================ the preflight
 @pytest.mark.parametrize("mode", ["run", "--pilot", "--run0"])
-@pytest.mark.parametrize("fault", ["missing", "edited"])
-def test_preflight_refuses_a_missing_or_edited_net_exit_2(net_runs, tmp_path, capsys, mode, fault):
+@pytest.mark.parametrize("fault", ["missing", "edited", "other_game"])
+@pytest.mark.parametrize("side", ["strike", "guard"])
+def test_preflight_refuses_a_missing_or_edited_net_exit_2(net_runs, tmp_path, capsys, mode, fault, side):
+    """Either side's network: missing, edited after its sha256 was pinned, or made on another game file (its meta's
+    game_sha256: the one check C5 leaves to the driver's preflight)."""
     nets = dict(net_runs["nets"])
-    path, sha = nets["strike"]
+    path, sha = nets[side]
     if fault == "missing":
-        nets["strike"] = (str(tmp_path / "nowhere" / "skill_net_strike.pt"), sha)
+        nets[side] = (str(tmp_path / "nowhere" / f"skill_net_{side}.pt"), sha)
         why = "missing file"
-    else:
-        edited = tmp_path / "edited" / "skill_net_strike.pt"
+    elif fault == "edited":
+        edited = tmp_path / "edited" / f"skill_net_{side}.pt"
         edited.parent.mkdir()
         edited.write_bytes(path.read_bytes() + b"\0")
-        nets["strike"] = (str(edited), sha)
+        nets[side] = (str(edited), sha)
         why = "file sha256"
+    else:
+        scripts = tmp_path / "scripts_gates.toml"
+        scripts.write_text(H.smoke_two_level_text())
+        meta = skill_net.read_skill_net_meta(path)
+        meta = {**{k: meta[k] for k in skill_net.META_KEYS}, "game_sha256": "0" * 64}
+        other = tmp_path / "other_game" / f"skill_net_{side}.pt"
+        net = H.tiny_net(side, gates=exploit.load_gates(scripts), seed=H.NET_SEED)
+        nets[side] = (str(other), skill_net.save_skill_net(other, net, meta))
+        why = "game_sha256"
     g, _ = net_gate_file(tmp_path / "g", nets=nets, strike_recipe=net_runs["fill"])
     r = tmp_path / "run"
     head = ["--variant", "base", "--side", "guard", "--pilot-json", str(net_runs["pilot"])] if mode == "run" else \
         [mode] + (["--pilot-json", str(net_runs["pilot"])] if mode == "--run0" else [])
     assert driver.main(head + ["--gates", str(g), "--run-dir", str(r), "--cap-h", "1"]) == 2
     err = capsys.readouterr().err
-    assert why in err and "skill network" in err, err
+    assert why in err and "skill network" in err and f"skill_net_{side}.pt" in err, err
     assert not r.exists()
 
 

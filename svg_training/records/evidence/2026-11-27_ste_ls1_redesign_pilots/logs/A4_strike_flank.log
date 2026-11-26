@@ -1,0 +1,8 @@
+[A4_strike_flank] strike strike_flank R4 hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[A4_strike_flank]     strike_flank R4 step 10000: loss 5.575e-07 lr 8.71e-04 (160 s)
+[A4_strike_flank]     strike_flank R4 step 20000: loss 1.786e-06 lr 5.21e-04 (324 s)
+[A4_strike_flank]     strike_flank R4 step 30000: loss 1.770e-07 lr 1.61e-04 (494 s)
+[A4_strike_flank]     strike_flank R4 step 40000: loss 9.849e-09 lr 1.00e-05 (648 s)
+[A4_strike_flank] round 0 (55566 rows): r2 bias [0.0, 0.0] r3 turn 0.00 deg r4 scale 1.0000 r5 [0.0001, 0.0001] r6 0.0000 r7 [0.0001, 0.0001]
+[A4_strike_flank] round 3 (54295 rows): r2 bias [0.0, 0.0] r3 turn -0.00 deg r4 scale 1.0000 r5 [0.0001, 0.0001] r6 0.0000 r7 [0.0001, 0.0001]
+[A4_strike_flank] screen 0.0001 -> eligible; fit 648 s; total 658 s

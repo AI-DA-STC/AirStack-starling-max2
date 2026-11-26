@@ -1,0 +1,128 @@
+[
+ {
+  "codes": [
+   "guard_field",
+   "guard_field",
+   "guard_field"
+  ],
+  "opponent": "strike_sacrifice",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_parked_centre",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_mirror",
+   "guard_mirror"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mark_edge",
+   "guard_mirror",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mirror",
+   "guard_mirror",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_mirror",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mark_edge",
+   "guard_parked_centre",
+   "guard_mirror"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mark_edge",
+   "guard_parked_centre",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_parked_centre",
+   "guard_mark_edge"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mirror",
+   "guard_parked_centre",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mirror",
+   "guard_mark_edge",
+   "guard_parked_centre"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_parked_centre",
+   "guard_mirror"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_parked_centre",
+   "guard_mirror",
+   "guard_mark_edge"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ },
+ {
+  "codes": [
+   "guard_mirror",
+   "guard_parked_centre",
+   "guard_mirror"
+  ],
+  "opponent": "strike_converge",
+  "outcome_differs": 0
+ }
+]

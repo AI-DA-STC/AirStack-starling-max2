@@ -1,0 +1,4 @@
+guard S1_guard_seed1: all codes for 3000 drone rows: 82.7 ms per call (6 threads, features included, measured while 4 to 5 other jobs ran)
+guard S1_guard_seed1: all codes for 49152 drone rows: 889.0 ms per call (6 threads, features included, measured while 4 to 5 other jobs ran)
+strike S2_strike_seed1: all codes for 3000 drone rows: 83.0 ms per call (6 threads, features included, measured while 4 to 5 other jobs ran)
+strike S2_strike_seed1: all codes for 49152 drone rows: 1089.5 ms per call (6 threads, features included, measured while 4 to 5 other jobs ran)

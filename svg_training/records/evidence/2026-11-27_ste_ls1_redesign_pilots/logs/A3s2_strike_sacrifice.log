@@ -1,0 +1,8 @@
+[A3s2_strike_sacrifice] strike strike_sacrifice R3 hidden 128,128,128 steps 40000 seed 151003 cos: 2000000 training rows, loaded in 1 s
+[A3s2_strike_sacrifice]     strike_sacrifice R3 step 10000: loss 2.160e-03 lr 8.71e-04 (137 s)
+[A3s2_strike_sacrifice]     strike_sacrifice R3 step 20000: loss 1.079e-03 lr 5.21e-04 (273 s)
+[A3s2_strike_sacrifice]     strike_sacrifice R3 step 30000: loss 7.189e-04 lr 1.61e-04 (413 s)
+[A3s2_strike_sacrifice]     strike_sacrifice R3 step 40000: loss 4.972e-04 lr 1.00e-05 (552 s)
+[A3s2_strike_sacrifice] round 0 (72771 rows): r2 bias [-0.0001, 0.0001] r3 turn -0.03 deg r4 scale 0.9994 r5 [0.0078, 0.0087] r6 0.0039 r7 [0.0206, 0.0198]
+[A3s2_strike_sacrifice] round 3 (68809 rows): r2 bias [-0.0001, -0.0002] r3 turn -0.01 deg r4 scale 0.9989 r5 [0.0097, 0.0104] r6 0.0057 r7 [0.0282, 0.0239]
+[A3s2_strike_sacrifice] screen 0.0246 -> eligible; fit 552 s; total 561 s

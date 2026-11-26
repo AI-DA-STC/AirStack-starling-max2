@@ -1,0 +1,38 @@
+strike: h 0.0173 bias 0.005 turn 0.5 scale 0.99; active {'strike_straight': [True, True, False, False], 'strike_flank': [True, True, False, False], 'strike_high': [True, True, True, False], 'strike_low': [True, True, True, False], 'strike_sacrifice': [True, True, False, False], 'strike_converge': [True, True, False, False]}
+  r1_net__guard_parked_centre_00: 6 cells 29.3 s, max flips 13
+  r1_net__guard_parked_centre_01: 6 cells 8.2 s, max flips 14
+  r1_net__guard_parked_centre_02: 6 cells 8.9 s, max flips 13
+  r1_net__guard_parked_centre_03: 6 cells 7.3 s, max flips 15
+  r1_net__guard_parked_centre_04: 2 cells 3.2 s, max flips 12
+  r1_net__guard_parked_ring_00: 6 cells 35.1 s, max flips 12
+  r1_net__guard_parked_ring_01: 6 cells 9.4 s, max flips 18
+  r1_net__guard_parked_ring_02: 6 cells 10.1 s, max flips 19
+  r1_net__guard_parked_ring_03: 6 cells 9.5 s, max flips 16
+  r1_net__guard_parked_ring_04: 2 cells 3.9 s, max flips 10
+  r1_net__guard_mark_edge_00: 6 cells 42.2 s, max flips 39
+  r1_net__guard_mark_edge_01: 6 cells 11.7 s, max flips 32
+  r1_net__guard_mark_edge_02: 6 cells 11.1 s, max flips 32
+  r1_net__guard_mark_edge_03: 6 cells 10.3 s, max flips 28
+  r1_net__guard_mark_edge_04: 2 cells 4.6 s, max flips 25
+  r1_net__guard_mirror_00: 6 cells 40.4 s, max flips 35
+  r1_net__guard_mirror_01: 6 cells 11.5 s, max flips 33
+  r1_net__guard_mirror_02: 6 cells 10.8 s, max flips 34
+  r1_net__guard_mirror_03: 6 cells 12.3 s, max flips 24
+  r1_net__guard_mirror_04: 2 cells 6.1 s, max flips 28
+  r1_net__guard_field_00: 6 cells 21.0 s, max flips 13
+  r1_net__guard_field_01: 6 cells 13.2 s, max flips 14
+  r1_net__guard_field_02: 6 cells 12.2 s, max flips 21
+  r1_net__guard_field_03: 6 cells 13.2 s, max flips 18
+  r1_net__guard_field_04: 2 cells 5.9 s, max flips 14
+== 0e strike: 130 gated cells; over 30: 6; over 20: 29; median 13; max 39; interval outside +-0.045: 4
+     39  strike_low,strike_low,strike_low v guard_mark_edge
+     35  strike_low,strike_low,strike_low v guard_mirror
+     34  strike_low,strike_straight,strike_straight v guard_mirror
+     33  strike_flank,strike_straight,strike_straight v guard_mirror
+     32  strike_straight,strike_low,strike_low v guard_mark_edge
+     32  strike_low,strike_straight,strike_straight v guard_mark_edge
+     30  strike_flank,strike_flank,strike_low v guard_mark_edge
+     30  strike_high,strike_low,strike_straight v guard_mark_edge
+     28  strike_low,strike_high,strike_flank v guard_mark_edge
+     28  strike_low,strike_straight,strike_low v guard_mirror
+done

@@ -1,0 +1,28 @@
+== strike: saved LS1.1 network in ['r1_net__guard_mark_edge_04', 'r1_net__guard_mirror_00']
+  r1_net__guard_mark_edge_04: 2 cells, 4.0 s, max flips 57
+  r1_net__guard_mirror_00: 6 cells, 34.2 s, max flips 122
+  strike_high,strike_straight,strike_high v guard_mark_edge: b+c 24+20=44 (T94 24+20=44) SAME  MARK 44: PASS
+  strike_flank,strike_low,strike_high v guard_mark_edge: b+c 37+20=57 (T94 37+20=57) SAME
+  strike_straight,strike_straight,strike_straight v guard_mirror: b+c 16+5=21 (T94 16+5=21) SAME
+  strike_flank,strike_flank,strike_flank v guard_mirror: b+c 70+52=122 (T94 70+52=122) SAME  MARK 122: PASS
+  strike_high,strike_high,strike_high v guard_mirror: b+c 9+25=34 (T94 9+25=34) SAME
+  strike_low,strike_low,strike_low v guard_mirror: b+c 9+14=23 (T94 9+14=23) SAME
+  strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mirror: b+c 33+38=71 (T94 33+38=71) SAME
+  strike_converge,strike_converge,strike_converge v guard_mirror: b+c 27+24=51 (T94 27+24=51) SAME
+== strike: ScriptOracle in the same batches
+  r1_net__guard_mark_edge_04: 2 cells, 4.5 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 41.7 s, max flips 0
+  oracle max flips 0: PASS
+== guard: saved LS1.1 network in ['r1_net__strike_converge_01']
+  r1_net__strike_converge_01: 6 cells, 42.4 s, max flips 64
+  guard_mark_edge,guard_mark_edge,guard_mirror v strike_converge: b+c 12+13=25 (T94 12+13=25) SAME
+  guard_parked_centre,guard_mirror,guard_mirror v strike_converge: b+c 20+27=47 (T94 20+27=47) SAME
+  guard_mark_edge,guard_mirror,guard_mirror v strike_converge: b+c 11+13=24 (T94 11+13=24) SAME
+  guard_mark_edge,guard_mirror,guard_parked_centre v strike_converge: b+c 29+35=64 (T94 29+35=64) SAME  MARK 64: PASS
+  guard_mirror,guard_mirror,guard_parked_centre v strike_converge: b+c 22+32=54 (T94 22+32=54) SAME
+  guard_parked_centre,guard_mirror,guard_parked_centre v strike_converge: b+c 18+16=34 (T94 18+16=34) SAME
+== guard: ScriptOracle in the same batches
+  r1_net__strike_converge_01: 6 cells, 49.4 s, max flips 0
+  oracle max flips 0: PASS
+0a PASS
+exit 0

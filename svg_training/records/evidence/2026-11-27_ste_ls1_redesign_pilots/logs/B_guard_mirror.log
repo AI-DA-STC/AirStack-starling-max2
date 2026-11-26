@@ -1,0 +1,8 @@
+[B_guard_mirror] guard guard_mirror R2 hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[B_guard_mirror]     guard_mirror R2 step 10000: loss 3.215e-03 lr 8.71e-04 (175 s)
+[B_guard_mirror]     guard_mirror R2 step 20000: loss 1.277e-03 lr 5.21e-04 (345 s)
+[B_guard_mirror]     guard_mirror R2 step 30000: loss 6.617e-04 lr 1.61e-04 (513 s)
+[B_guard_mirror]     guard_mirror R2 step 40000: loss 5.602e-04 lr 1.00e-05 (672 s)
+[B_guard_mirror] round 0 (81536 rows): r2 bias [-0.0001, -0.0005] r3 turn -0.02 deg r4 scale 0.9995 r5 [0.023, 0.0232] r6 0.0094 r7 [0.023, 0.0232]
+[B_guard_mirror] round 3 (85951 rows): r2 bias [-0.0002, 0.0003] r3 turn -0.03 deg r4 scale 0.9994 r5 [0.0249, 0.0252] r6 0.0119 r7 [0.0249, 0.0252]
+[B_guard_mirror] screen 0.0243 -> eligible; fit 672 s; total 681 s

@@ -1,0 +1,65 @@
+== strike strike_flank w 0 cm: 30 batches
+  r1_net__guard_parked_centre_00: 6 cells, 50.2 s, max flips 0
+  r1_net__guard_parked_centre_01: 6 cells, 15.4 s, max flips 0
+  r1_net__guard_parked_centre_02: 6 cells, 15.3 s, max flips 0
+  r1_net__guard_parked_centre_03: 6 cells, 14.4 s, max flips 0
+  r1_net__guard_parked_centre_04: 2 cells, 5.5 s, max flips 0
+  r1_net__guard_parked_ring_00: 6 cells, 53.7 s, max flips 0
+  r1_net__guard_parked_ring_01: 6 cells, 15.8 s, max flips 0
+  r1_net__guard_parked_ring_02: 6 cells, 14.0 s, max flips 0
+  r1_net__guard_parked_ring_03: 6 cells, 16.6 s, max flips 0
+  r1_net__guard_parked_ring_04: 2 cells, 6.6 s, max flips 0
+  r1_net__guard_mark_edge_00: 6 cells, 65.2 s, max flips 0
+  r1_net__guard_mark_edge_01: 6 cells, 16.3 s, max flips 0
+  r1_net__guard_mark_edge_02: 6 cells, 16.3 s, max flips 0
+  r1_net__guard_mark_edge_03: 6 cells, 16.9 s, max flips 0
+  r1_net__guard_mark_edge_04: 2 cells, 6.1 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 64.7 s, max flips 0
+  r1_net__guard_mirror_01: 6 cells, 15.0 s, max flips 0
+  r1_net__guard_mirror_02: 6 cells, 17.8 s, max flips 0
+  r1_net__guard_mirror_03: 6 cells, 17.0 s, max flips 0
+  r1_net__guard_mirror_04: 2 cells, 7.5 s, max flips 0
+  r1_net__guard_field_00: 6 cells, 30.6 s, max flips 0
+  r1_net__guard_field_01: 6 cells, 14.9 s, max flips 0
+  r1_net__guard_field_02: 6 cells, 14.1 s, max flips 0
+  r1_net__guard_field_03: 6 cells, 12.6 s, max flips 0
+  r1_net__guard_field_04: 2 cells, 5.7 s, max flips 0
+  r2_net__guard_mark_inside_00: 6 cells, 82.1 s, max flips 0
+  r2_net__guard_mark_inside_01: 6 cells, 17.4 s, max flips 0
+  r2_net__guard_mark_inside_02: 6 cells, 17.9 s, max flips 0
+  r2_net__guard_mark_inside_03: 6 cells, 18.3 s, max flips 0
+  r2_net__guard_mark_inside_04: 2 cells, 8.3 s, max flips 0
+   cells 78 (gated 65): max 0 (strike_flank,strike_flank,strike_flank v guard_parked_centre), median 0, over 20: 0, over 30: 0; DRIVER CHECK PASS
+== strike strike_flank w 1 cm: 30 batches
+  r1_net__guard_parked_centre_00: 6 cells, 58.9 s, max flips 3
+  r1_net__guard_parked_centre_01: 6 cells, 14.6 s, max flips 1
+  r1_net__guard_parked_centre_02: 6 cells, 14.9 s, max flips 0
+  r1_net__guard_parked_centre_03: 6 cells, 13.5 s, max flips 0
+  r1_net__guard_parked_centre_04: 2 cells, 5.3 s, max flips 0
+  r1_net__guard_parked_ring_00: 6 cells, 67.3 s, max flips 3
+  r1_net__guard_parked_ring_01: 6 cells, 18.3 s, max flips 1
+  r1_net__guard_parked_ring_02: 6 cells, 13.8 s, max flips 0
+  r1_net__guard_parked_ring_03: 6 cells, 14.6 s, max flips 0
+  r1_net__guard_parked_ring_04: 2 cells, 7.8 s, max flips 0
+  r1_net__guard_mark_edge_00: 6 cells, 68.2 s, max flips 4
+  r1_net__guard_mark_edge_01: 6 cells, 17.3 s, max flips 2
+  r1_net__guard_mark_edge_02: 6 cells, 14.2 s, max flips 3
+  r1_net__guard_mark_edge_03: 6 cells, 16.7 s, max flips 2
+  r1_net__guard_mark_edge_04: 2 cells, 7.5 s, max flips 1
+  r1_net__guard_mirror_00: 6 cells, 62.9 s, max flips 10
+  r1_net__guard_mirror_01: 6 cells, 17.7 s, max flips 3
+  r1_net__guard_mirror_02: 6 cells, 16.6 s, max flips 2
+  r1_net__guard_mirror_03: 6 cells, 17.8 s, max flips 2
+  r1_net__guard_mirror_04: 2 cells, 8.1 s, max flips 2
+  r1_net__guard_field_00: 6 cells, 31.6 s, max flips 0
+  r1_net__guard_field_01: 6 cells, 16.1 s, max flips 1
+  r1_net__guard_field_02: 6 cells, 14.5 s, max flips 1
+  r1_net__guard_field_03: 6 cells, 15.6 s, max flips 0
+  r1_net__guard_field_04: 2 cells, 6.5 s, max flips 0
+  r2_net__guard_mark_inside_00: 6 cells, 69.8 s, max flips 5
+  r2_net__guard_mark_inside_01: 6 cells, 16.7 s, max flips 2
+  r2_net__guard_mark_inside_02: 6 cells, 15.2 s, max flips 1
+  r2_net__guard_mark_inside_03: 6 cells, 19.2 s, max flips 2
+  r2_net__guard_mark_inside_04: 2 cells, 6.6 s, max flips 1
+   cells 78 (gated 65): max 10 (strike_flank,strike_flank,strike_flank v guard_mirror), median 0, over 20: 0, over 30: 0; width PASSES
+done

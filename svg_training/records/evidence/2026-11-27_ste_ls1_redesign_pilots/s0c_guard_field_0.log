@@ -1,0 +1,33 @@
+== guard guard_field w 0 cm: 6 batches
+  r1_net__strike_straight_00: 5 cells, 14.0 s, max flips 0
+  r1_net__strike_flank_00: 5 cells, 14.2 s, max flips 0
+  r1_net__strike_high_00: 5 cells, 13.4 s, max flips 0
+  r1_net__strike_low_00: 5 cells, 14.4 s, max flips 0
+  r1_net__strike_sacrifice_00: 5 cells, 25.6 s, max flips 0
+  r1_net__strike_converge_00: 5 cells, 51.5 s, max flips 0
+   cells 6 (gated 6): max 0 (guard_field,guard_field,guard_field v strike_straight), median 0, over 20: 0, over 30: 0; DRIVER CHECK PASS
+== guard guard_field w 1 cm: 6 batches
+  r1_net__strike_straight_00: 5 cells, 11.3 s, max flips 0
+  r1_net__strike_flank_00: 5 cells, 12.4 s, max flips 0
+  r1_net__strike_high_00: 5 cells, 12.1 s, max flips 0
+  r1_net__strike_low_00: 5 cells, 12.3 s, max flips 0
+  r1_net__strike_sacrifice_00: 5 cells, 22.8 s, max flips 1
+  r1_net__strike_converge_00: 5 cells, 52.6 s, max flips 1
+   cells 6 (gated 6): max 1 (guard_field,guard_field,guard_field v strike_sacrifice), median 0, over 20: 0, over 30: 0; width PASSES
+== guard guard_field w 3 cm: 6 batches
+  r1_net__strike_straight_00: 5 cells, 12.3 s, max flips 1
+  r1_net__strike_flank_00: 5 cells, 12.8 s, max flips 0
+  r1_net__strike_high_00: 5 cells, 12.7 s, max flips 0
+  r1_net__strike_low_00: 5 cells, 12.7 s, max flips 0
+  r1_net__strike_sacrifice_00: 5 cells, 27.2 s, max flips 1
+  r1_net__strike_converge_00: 5 cells, 52.1 s, max flips 3
+   cells 6 (gated 6): max 3 (guard_field,guard_field,guard_field v strike_converge), median 1, over 20: 0, over 30: 0; width PASSES
+== guard guard_field w 10 cm: 6 batches
+  r1_net__strike_straight_00: 5 cells, 12.4 s, max flips 1
+  r1_net__strike_flank_00: 5 cells, 12.2 s, max flips 2
+  r1_net__strike_high_00: 5 cells, 12.5 s, max flips 1
+  r1_net__strike_low_00: 5 cells, 12.0 s, max flips 0
+  r1_net__strike_sacrifice_00: 5 cells, 23.9 s, max flips 6
+  r1_net__strike_converge_00: 5 cells, 49.5 s, max flips 6
+   cells 6 (gated 6): max 6 (guard_field,guard_field,guard_field v strike_sacrifice), median 2, over 20: 0, over 30: 0; width PASSES
+done

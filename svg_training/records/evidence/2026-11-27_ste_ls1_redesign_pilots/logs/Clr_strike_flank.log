@@ -1,0 +1,8 @@
+[Clr_strike_flank] strike strike_flank R2 hidden 128,128,128 steps 40000 seed 150003 const: 2000000 training rows, loaded in 1 s
+[Clr_strike_flank]     strike_flank R2 step 10000: loss 1.335e-03 lr 1.00e-03 (132 s)
+[Clr_strike_flank]     strike_flank R2 step 20000: loss 7.394e-04 lr 1.00e-03 (258 s)
+[Clr_strike_flank]     strike_flank R2 step 30000: loss 6.354e-04 lr 1.00e-03 (376 s)
+[Clr_strike_flank]     strike_flank R2 step 40000: loss 2.734e-04 lr 1.00e-03 (511 s)
+[Clr_strike_flank] round 0 (55566 rows): r2 bias [-0.0, 0.0004] r3 turn -0.20 deg r4 scale 1.0004 r5 [0.0101, 0.0135] r6 0.0061 r7 [0.0271, 0.0245]
+[Clr_strike_flank] round 3 (54295 rows): r2 bias [0.0, 0.0004] r3 turn -0.22 deg r4 scale 1.0010 r5 [0.0126, 0.0143] r6 0.0046 r7 [0.0209, 0.0228]
+[Clr_strike_flank] screen 0.0242 -> eligible; fit 511 s; total 518 s

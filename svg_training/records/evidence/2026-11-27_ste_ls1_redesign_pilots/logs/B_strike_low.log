@@ -1,0 +1,8 @@
+[B_strike_low] strike strike_low R2 hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[B_strike_low]     strike_low R2 step 10000: loss 1.243e-05 lr 8.71e-04 (186 s)
+[B_strike_low]     strike_low R2 step 20000: loss 8.297e-06 lr 5.21e-04 (360 s)
+[B_strike_low]     strike_low R2 step 30000: loss 1.944e-06 lr 1.61e-04 (530 s)
+[B_strike_low]     strike_low R2 step 40000: loss 1.701e-06 lr 1.00e-05 (699 s)
+[B_strike_low] round 0 (64592 rows): r2 bias [-0.0, 0.0, 0.0001] r3 turn -0.00 deg r4 scale 0.9998 r5 [0.0019, 0.0019, 0.0008] r6 0.0000 r7 [0.0019, 0.0019, 0.0008]
+[B_strike_low] round 3 (63364 rows): r2 bias [-0.0, 0.0, 0.0] r3 turn -0.00 deg r4 scale 0.9998 r5 [0.0028, 0.0026, 0.0009] r6 0.0000 r7 [0.0028, 0.0026, 0.0009]
+[B_strike_low] screen 0.0024 -> eligible; fit 699 s; total 707 s

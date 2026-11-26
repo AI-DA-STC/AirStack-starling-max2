@@ -1,0 +1,8 @@
+[Cin_guard_mirror] guard guard_mirror RAW hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[Cin_guard_mirror]     guard_mirror RAW step 10000: loss 7.726e-03 lr 8.71e-04 (96 s)
+[Cin_guard_mirror]     guard_mirror RAW step 20000: loss 3.348e-03 lr 5.21e-04 (192 s)
+[Cin_guard_mirror]     guard_mirror RAW step 30000: loss 2.541e-03 lr 1.61e-04 (298 s)
+[Cin_guard_mirror]     guard_mirror RAW step 40000: loss 2.220e-03 lr 1.00e-05 (413 s)
+[Cin_guard_mirror] round 0 (81536 rows): r2 bias [0.0013, -0.0011] r3 turn -0.06 deg r4 scale 0.9982 r5 [0.0442, 0.0449] r6 0.0637 r7 [0.0442, 0.0449]
+[Cin_guard_mirror] round 3 (85951 rows): r2 bias [0.0006, 0.0001] r3 turn 0.05 deg r4 scale 0.9983 r5 [0.0465, 0.0469] r6 0.0748 r7 [0.0465, 0.0469]
+[Cin_guard_mirror] screen 0.0459 -> eligible; fit 413 s; total 416 s

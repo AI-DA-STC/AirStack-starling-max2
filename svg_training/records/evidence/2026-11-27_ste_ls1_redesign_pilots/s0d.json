@@ -1,0 +1,347 @@
+{
+ "closed": {
+  "guard_parked_centre": {
+   "rows": 801497,
+   "over_atol": 0,
+   "max_abs": 0.0,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "guard_parked_ring": {
+   "rows": 801497,
+   "over_atol": 0,
+   "max_abs": 4.881620407104492e-05,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "guard_mark_edge": {
+   "rows": 801497,
+   "over_atol": 0,
+   "max_abs": 3.8743019104003906e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "guard_mirror": {
+   "rows": 801497,
+   "over_atol": 0,
+   "max_abs": 5.364418029785156e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "guard_field": {
+   "rows": 801497,
+   "over_atol": 0,
+   "max_abs": 4.246830940246582e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_straight": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 1.1920928955078125e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_flank": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 2.384185791015625e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_high": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 1.7881393432617188e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_low": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 1.7881393432617188e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_sacrifice": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 3.5762786865234375e-07,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  },
+  "strike_converge": {
+   "rows": 798803,
+   "over_atol": 0,
+   "max_abs": 5.185604095458984e-06,
+   "yaw_zero": true,
+   "note": "rows over atol are reported; ties are among them"
+  }
+ },
+ "onnx": {
+  "guard/guard_parked_ring/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.6391277313232422e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mark_edge/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.6391277313232422e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mirror/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.6391277313232422e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_field/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.6391277313232422e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_parked_ring/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mark_edge/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mirror/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_field/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_field/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 3.650784492492676e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_parked_ring/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mark_edge/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 2.682209014892578e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_mirror/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "guard/guard_field/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 3.986060619354248e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_straight/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_flank/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_high/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.9371509552001953e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_low/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 1.9371509552001953e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_sacrifice/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_converge/R1": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_straight/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_flank/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_high/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_low/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_sacrifice/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_converge/R2": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_flank/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 2.086162567138672e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_high/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 1.7881393432617188e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_low/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 1.9371509552001953e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_sacrifice/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 2.384185791015625e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_converge/R3": {
+   "flags_identical": 1.0,
+   "max_abs": 2.0116567611694336e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_flank/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 2.980232238769531e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_sacrifice/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 3.5762786865234375e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  },
+  "strike/strike_converge/R4": {
+   "flags_identical": 1.0,
+   "max_abs": 4.3213367462158203e-07,
+   "rows_over_1e-5_off_margin": 0,
+   "rows_over_1e-3": 0,
+   "masked_zero": true,
+   "pass": true
+  }
+ }
+}

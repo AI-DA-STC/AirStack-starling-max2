@@ -1,0 +1,8 @@
+[B2_guard_mark_edge] guard guard_mark_edge R2 hidden 128,128,128 steps 40000 seed 151003 cos: 2000000 training rows, loaded in 1 s
+[B2_guard_mark_edge]     guard_mark_edge R2 step 10000: loss 3.335e-04 lr 8.71e-04 (149 s)
+[B2_guard_mark_edge]     guard_mark_edge R2 step 20000: loss 1.569e-04 lr 5.21e-04 (283 s)
+[B2_guard_mark_edge]     guard_mark_edge R2 step 30000: loss 5.244e-05 lr 1.61e-04 (417 s)
+[B2_guard_mark_edge]     guard_mark_edge R2 step 40000: loss 3.839e-05 lr 1.00e-05 (554 s)
+[B2_guard_mark_edge] round 0 (79906 rows): r2 bias [0.0002, 0.0] r3 turn 0.01 deg r4 scale 1.0000 r5 [0.0064, 0.0065] r6 0.0002 r7 [0.0064, 0.0065]
+[B2_guard_mark_edge] round 3 (84097 rows): r2 bias [-0.0004, -0.0] r3 turn -0.01 deg r4 scale 1.0001 r5 [0.016, 0.0089] r6 0.0016 r7 [0.016, 0.0089]
+[B2_guard_mark_edge] screen 0.0123 -> eligible; fit 554 s; total 561 s

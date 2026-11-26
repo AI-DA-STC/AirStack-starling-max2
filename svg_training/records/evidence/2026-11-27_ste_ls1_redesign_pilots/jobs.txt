@@ -1,0 +1,62 @@
+s0d.log s0d.py
+c4_guard.log s2run.py c4_guard guard --unfitted
+s0d_v2.log s0d.py
+s0c_strike_converge.log s0c.py strike strike_converge 0 0.01 0.03 0.1
+s0b_guard.log s0b.py guard
+s0b_strike.log s0b.py strike
+s0e_guard.log s0e.py guard
+s0e_strike.log s0e.py strike
+B_strike_high.log s1fit.py B_strike_high strike strike_high R2
+B_strike_flank.log s1fit.py B_strike_flank strike strike_flank R2
+B_strike_straight.log s1fit.py B_strike_straight strike strike_straight R2
+B_strike_low.log s1fit.py B_strike_low strike strike_low R2
+B_strike_sacrifice.log s1fit.py B_strike_sacrifice strike strike_sacrifice R2
+B_strike_converge.log s1fit.py B_strike_converge strike strike_converge R2
+B_guard_mirror.log s1fit.py B_guard_mirror guard guard_mirror R2
+B_guard_field.log s1fit.py B_guard_field guard guard_field R2
+B_guard_parked_ring.log s1fit.py B_guard_parked_ring guard guard_parked_ring R2
+B_guard_mark_edge.log s1fit.py B_guard_mark_edge guard guard_mark_edge R2
+S1_strike_seed1.log s2run.py S1_strike_seed1 strike strike_straight=B_strike_straight strike_flank=B_strike_flank strike_high=B_strike_high strike_low=B_strike_low strike_sacrifice=B_strike_sacrifice strike_converge=B_strike_converge
+Cin_strike_high.log s1fit.py Cin_strike_high strike strike_high RAW
+Clr_strike_high.log s1fit.py Clr_strike_high strike strike_high R2 --schedule const
+Cin_strike_flank.log s1fit.py Cin_strike_flank strike strike_flank RAW
+S1_guard_seed1.log s2run.py S1_guard_seed1 guard guard_parked_ring=B_guard_parked_ring guard_mark_edge=B_guard_mark_edge guard_mirror=B_guard_mirror guard_field=B_guard_field
+Clr_strike_flank.log s1fit.py Clr_strike_flank strike strike_flank R2 --schedule const
+Cin_guard_mirror.log s1fit.py Cin_guard_mirror guard guard_mirror RAW
+Clr_guard_mirror.log s1fit.py Clr_guard_mirror guard guard_mirror R2 --schedule const
+A3_strike_sacrifice.log s1fit.py A3_strike_sacrifice strike strike_sacrifice R3
+A3_strike_converge.log s1fit.py A3_strike_converge strike strike_converge R3
+Cin_guard_field.log s1fit.py Cin_guard_field guard guard_field RAW
+Clr_guard_field.log s1fit.py Clr_guard_field guard guard_field R2 --schedule const
+B2_guard_parked_ring.log s1fit.py B2_guard_parked_ring guard guard_parked_ring R2 --seed 151003
+S2_strike_seed1.log s2run.py S2_strike_seed1 strike strike_straight=B_strike_straight strike_flank=B_strike_flank strike_high=B_strike_high strike_low=B_strike_low strike_sacrifice=A3_strike_sacrifice strike_converge=A3_strike_converge
+B2_guard_mark_edge.log s1fit.py B2_guard_mark_edge guard guard_mark_edge R2 --seed 151003
+B2_guard_mirror.log s1fit.py B2_guard_mirror guard guard_mirror R2 --seed 151003
+B2_guard_field.log s1fit.py B2_guard_field guard guard_field R2 --seed 151003
+A4_strike_flank.log s1fit.py A4_strike_flank strike strike_flank R4
+A4_strike_sacrifice.log s1fit.py A4_strike_sacrifice strike strike_sacrifice R4
+A4_strike_converge.log s1fit.py A4_strike_converge strike strike_converge R4
+S1_guard_seed2.log s2run.py S1_guard_seed2 guard guard_parked_ring=B2_guard_parked_ring guard_mark_edge=B2_guard_mark_edge guard_mirror=B2_guard_mirror guard_field=B2_guard_field 
+B2_strike_flank.log s1fit.py B2_strike_flank strike strike_flank R2 --seed 151003
+B2_strike_straight.log s1fit.py B2_strike_straight strike strike_straight R2 --seed 151003
+B2_strike_high.log s1fit.py B2_strike_high strike strike_high R2 --seed 151003
+B2_strike_low.log s1fit.py B2_strike_low strike strike_low R2 --seed 151003
+A3s2_strike_sacrifice.log s1fit.py A3s2_strike_sacrifice strike strike_sacrifice R3 --seed 151003
+A3s2_strike_converge.log s1fit.py A3s2_strike_converge strike strike_converge R3 --seed 151003
+c4_strike.log s2run.py c4_strike strike --unfitted
+s0d_v3.log s0d.py
+Chead_strike.log s1joint.py Chead_strike strike head
+Chead_guard.log s1joint.py Chead_guard guard head
+S2_strike_seed2.log s2run.py S2_strike_seed2 strike strike_straight=B2_strike_straight strike_flank=B2_strike_flank strike_high=B2_strike_high strike_low=B2_strike_low strike_sacrifice=A3s2_strike_sacrifice strike_converge=A3s2_strike_converge
+Cone_strike.log s1joint.py Cone_strike strike one
+Cone_guard.log s1joint.py Cone_guard guard one
+onnx_strike.log onnx_arm.py onnx_strike strike strike_straight=B_strike_straight strike_flank=B_strike_flank strike_high=B_strike_high strike_low=B_strike_low strike_sacrifice=A3_strike_sacrifice strike_converge=A3_strike_converge
+onnx_guard.log onnx_arm.py onnx_guard guard guard_parked_ring=B_guard_parked_ring guard_mark_edge=B_guard_mark_edge guard_mirror=B_guard_mirror guard_field=B_guard_field
+A4_guard_field.log s1fit.py A4_guard_field guard guard_field R4
+N3_strike_high.log s1fit.py N3_strike_high strike strike_high R3
+N3_strike_low.log s1fit.py N3_strike_low strike strike_low R3
+N4_guard_mark_edge.log s1fit.py N4_guard_mark_edge guard guard_mark_edge R4
+N4_guard_mirror.log s1fit.py N4_guard_mirror guard guard_mirror R4
+N4_guard_parked_ring.log s1fit.py N4_guard_parked_ring guard guard_parked_ring R4
+A3_strike_flank.log s1fit.py A3_strike_flank strike strike_flank R3
+A3_guard_field.log s1fit.py A3_guard_field guard guard_field R3

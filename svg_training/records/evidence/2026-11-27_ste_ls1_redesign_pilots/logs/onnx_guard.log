@@ -1,0 +1,16 @@
+  guard_field,guard_field,guard_field v strike_sacrifice: outcomes differ in 0 games
+  guard_parked_centre,guard_parked_centre,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_parked_centre,guard_mirror,guard_mirror v strike_converge: outcomes differ in 0 games
+  guard_mark_edge,guard_mirror,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_mirror,guard_mirror,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_parked_centre,guard_mirror,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_mark_edge,guard_parked_centre,guard_mirror v strike_converge: outcomes differ in 0 games
+  guard_mark_edge,guard_parked_centre,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_parked_centre,guard_parked_centre,guard_mark_edge v strike_converge: outcomes differ in 0 games
+  guard_mirror,guard_parked_centre,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_mirror,guard_mark_edge,guard_parked_centre v strike_converge: outcomes differ in 0 games
+  guard_parked_centre,guard_parked_centre,guard_mirror v strike_converge: outcomes differ in 0 games
+  guard_parked_centre,guard_mirror,guard_mark_edge v strike_converge: outcomes differ in 0 games
+  guard_mirror,guard_parked_centre,guard_mirror v strike_converge: outcomes differ in 0 games
+[onnx_guard] onnxruntime arm guard: 14 screen cells; largest 0 games differ -> ok
+done

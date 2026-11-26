@@ -1,0 +1,8 @@
+[Cin_strike_high] strike strike_high RAW hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[Cin_strike_high]     strike_high RAW step 10000: loss 8.553e-05 lr 8.71e-04 (132 s)
+[Cin_strike_high]     strike_high RAW step 20000: loss 1.410e-05 lr 5.21e-04 (275 s)
+[Cin_strike_high]     strike_high RAW step 30000: loss 4.298e-06 lr 1.61e-04 (420 s)
+[Cin_strike_high]     strike_high RAW step 40000: loss 3.421e-06 lr 1.00e-05 (522 s)
+[Cin_strike_high] round 0 (61231 rows): r2 bias [0.0001, -0.0001, 0.0] r3 turn -0.00 deg r4 scale 0.9996 r5 [0.0022, 0.0025, 0.0012] r6 0.0000 r7 [0.0022, 0.0025, 0.0012]
+[Cin_strike_high] round 3 (59461 rows): r2 bias [0.0002, -0.0001, 0.0] r3 turn -0.01 deg r4 scale 0.9997 r5 [0.0025, 0.0026, 0.0012] r6 0.0000 r7 [0.0025, 0.0026, 0.0012]
+[Cin_strike_high] screen 0.0025 -> eligible; fit 522 s; total 526 s

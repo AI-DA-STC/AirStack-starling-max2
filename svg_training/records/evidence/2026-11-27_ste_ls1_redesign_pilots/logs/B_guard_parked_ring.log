@@ -1,0 +1,8 @@
+[B_guard_parked_ring] guard guard_parked_ring R2 hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[B_guard_parked_ring]     guard_parked_ring R2 step 10000: loss 9.355e-04 lr 8.71e-04 (181 s)
+[B_guard_parked_ring]     guard_parked_ring R2 step 20000: loss 6.922e-04 lr 5.21e-04 (369 s)
+[B_guard_parked_ring]     guard_parked_ring R2 step 30000: loss 4.428e-04 lr 1.61e-04 (514 s)
+[B_guard_parked_ring]     guard_parked_ring R2 step 40000: loss 3.235e-04 lr 1.00e-05 (655 s)
+[B_guard_parked_ring] round 0 (79388 rows): r2 bias [-0.0, -0.0001] r3 turn 0.04 deg r4 scale 0.9988 r5 [0.0104, 0.0079] r6 0.0004 r7 [0.0104, 0.0079]
+[B_guard_parked_ring] round 3 (78022 rows): r2 bias [0.0001, 0.0001] r3 turn 0.05 deg r4 scale 0.9987 r5 [0.0103, 0.0109] r6 0.0006 r7 [0.0103, 0.0109]
+[B_guard_parked_ring] screen 0.0103 -> eligible; fit 655 s; total 664 s

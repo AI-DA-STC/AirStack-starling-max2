@@ -1,0 +1,14 @@
+[Chead_guard] C-head guard: 2000000 rows, steps 40000, seed 150003
+[Chead_guard] step 5000: loss 1.924e-02 (210 s)
+[Chead_guard] step 10000: loss 6.517e-03 (397 s)
+[Chead_guard] step 15000: loss 5.169e-03 (577 s)
+[Chead_guard] step 20000: loss 3.738e-03 (759 s)
+[Chead_guard] step 25000: loss 2.554e-03 (936 s)
+[Chead_guard] step 30000: loss 1.926e-03 (1114 s)
+[Chead_guard] step 35000: loss 1.938e-03 (1278 s)
+[Chead_guard] step 40000: loss 2.294e-03 (1449 s)
+[Chead_guard] guard_parked_ring: screen 0.0166; round 0 r5 [0.0167, 0.0142] r7 [0.0167, 0.0142]
+[Chead_guard] guard_mark_edge: screen 0.0168; round 0 r5 [0.011, 0.0112] r7 [0.011, 0.0112]
+[Chead_guard] guard_mirror: screen 0.0221; round 0 r5 [0.0212, 0.021] r7 [0.0212, 0.021]
+[Chead_guard] guard_field: screen 0.0204; round 0 r5 [0.0063, 0.0064] r7 [0.0129, 0.0097]
+[Chead_guard] done in 1457 s

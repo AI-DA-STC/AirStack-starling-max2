@@ -1,0 +1,8 @@
+[Cin_guard_field] guard guard_field RAW hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[Cin_guard_field]     guard_field RAW step 10000: loss 4.358e-02 lr 8.71e-04 (128 s)
+[Cin_guard_field]     guard_field RAW step 20000: loss 3.446e-02 lr 5.21e-04 (254 s)
+[Cin_guard_field]     guard_field RAW step 30000: loss 3.104e-02 lr 1.61e-04 (372 s)
+[Cin_guard_field]     guard_field RAW step 40000: loss 2.900e-02 lr 1.00e-05 (497 s)
+[Cin_guard_field] round 0 (60527 rows): r2 bias [0.0001, -0.0002] r3 turn 0.02 deg r4 scale 0.9901 r5 [0.1033, 0.1015] r6 0.2961 r7 [0.1113, 0.11]
+[Cin_guard_field] round 3 (58916 rows): r2 bias [-0.0015, -0.0002] r3 turn -0.04 deg r4 scale 0.9625 r5 [0.1367, 0.135] r6 0.3782 r7 [0.1604, 0.1541]
+[Cin_guard_field] screen 0.1377 -> NOT eligible; fit 497 s; total 501 s

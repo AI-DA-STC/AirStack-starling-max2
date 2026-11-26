@@ -1,0 +1,8 @@
+[A3s2_strike_converge] strike strike_converge R3 hidden 128,128,128 steps 40000 seed 151003 cos: 2000000 training rows, loaded in 1 s
+[A3s2_strike_converge]     strike_converge R3 step 10000: loss 3.387e-03 lr 8.71e-04 (184 s)
+[A3s2_strike_converge]     strike_converge R3 step 20000: loss 2.128e-03 lr 5.21e-04 (357 s)
+[A3s2_strike_converge]     strike_converge R3 step 30000: loss 1.482e-03 lr 1.61e-04 (500 s)
+[A3s2_strike_converge]     strike_converge R3 step 40000: loss 8.567e-04 lr 1.00e-05 (647 s)
+[A3s2_strike_converge] round 0 (97502 rows): r2 bias [-0.0003, 0.0001] r3 turn -0.01 deg r4 scale 0.9979 r5 [0.0171, 0.0167] r6 0.0126 r7 [0.0315, 0.031]
+[A3s2_strike_converge] round 3 (103494 rows): r2 bias [-0.0002, -0.0001] r3 turn -0.05 deg r4 scale 0.9965 r5 [0.0196, 0.0175] r6 0.0171 r7 [0.0398, 0.0384]
+[A3s2_strike_converge] screen 0.0360 -> eligible; fit 647 s; total 657 s

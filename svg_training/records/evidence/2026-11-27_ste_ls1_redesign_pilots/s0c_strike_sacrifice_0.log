@@ -1,0 +1,33 @@
+== strike strike_sacrifice w 0 cm: 6 batches
+  r1_net__guard_parked_centre_00: 6 cells, 56.2 s, max flips 0
+  r1_net__guard_parked_ring_00: 6 cells, 60.2 s, max flips 0
+  r1_net__guard_mark_edge_00: 6 cells, 71.8 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 67.9 s, max flips 0
+  r1_net__guard_field_00: 6 cells, 28.7 s, max flips 0
+  r2_net__guard_mark_inside_00: 6 cells, 67.8 s, max flips 0
+   cells 6 (gated 5): max 0 (strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_centre), median 0, over 20: 0, over 30: 0; DRIVER CHECK PASS
+== strike strike_sacrifice w 1 cm: 6 batches
+  r1_net__guard_parked_centre_00: 6 cells, 55.1 s, max flips 1
+  r1_net__guard_parked_ring_00: 6 cells, 57.9 s, max flips 1
+  r1_net__guard_mark_edge_00: 6 cells, 62.9 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 79.5 s, max flips 1
+  r1_net__guard_field_00: 6 cells, 29.0 s, max flips 0
+  r2_net__guard_mark_inside_00: 6 cells, 71.6 s, max flips 1
+   cells 6 (gated 5): max 1 (strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_centre), median 1, over 20: 0, over 30: 0; width PASSES
+== strike strike_sacrifice w 3 cm: 6 batches
+  r1_net__guard_parked_centre_00: 6 cells, 59.7 s, max flips 1
+  r1_net__guard_parked_ring_00: 6 cells, 65.4 s, max flips 2
+  r1_net__guard_mark_edge_00: 6 cells, 70.1 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 66.5 s, max flips 2
+  r1_net__guard_field_00: 6 cells, 29.6 s, max flips 1
+  r2_net__guard_mark_inside_00: 6 cells, 69.1 s, max flips 2
+   cells 6 (gated 5): max 2 (strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_ring), median 1, over 20: 0, over 30: 0; width PASSES
+== strike strike_sacrifice w 10 cm: 6 batches
+  r1_net__guard_parked_centre_00: 6 cells, 58.4 s, max flips 8
+  r1_net__guard_parked_ring_00: 6 cells, 57.5 s, max flips 2
+  r1_net__guard_mark_edge_00: 6 cells, 65.6 s, max flips 0
+  r1_net__guard_mirror_00: 6 cells, 65.6 s, max flips 12
+  r1_net__guard_field_00: 6 cells, 28.3 s, max flips 3
+  r2_net__guard_mark_inside_00: 6 cells, 74.3 s, max flips 8
+   cells 6 (gated 5): max 12 (strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mirror), median 3, over 20: 0, over 30: 0; width PASSES
+done

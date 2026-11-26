@@ -1,0 +1,487 @@
+{
+ "0.0": {
+  "w_m": 0.0,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 0,
+  "worst": "strike_converge,strike_converge,strike_converge v guard_parked_centre",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 0,
+  "passes": true,
+  "rows": [
+   {
+    "index": 5,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.012100009804897848,
+     0.012100009804897848
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 31,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.012025318386349088,
+     0.012025318386349088
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 57,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011801244130702845,
+     0.011801244130702845
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 83,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mirror",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011651861293605336,
+     0.011651861293605336
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 109,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.00923683876052905,
+     0.00923683876052905
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 135,
+    "kind": "info",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011153918503280319,
+     0.011153918503280319
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ],
+  "driver_check": true
+ },
+ "0.01": {
+  "w_m": 0.01,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 4,
+  "worst": "strike_converge,strike_converge,strike_converge v guard_mirror",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 1,
+  "passes": true,
+  "rows": [
+   {
+    "index": 5,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.011199772527338012,
+     0.013968435742118484
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 31,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.012025318386349088,
+     0.012025318386349088
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 57,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.012812747658043492,
+     0.012812747658043496
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 83,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mirror",
+    "b": 1,
+    "c": 3,
+    "flips": 4,
+    "ci": [
+     -0.011133961295919367,
+     0.01604621161112101
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 109,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.00923683876052905,
+     0.00923683876052905
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 135,
+    "kind": "info",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 4,
+    "c": 2,
+    "flips": 6,
+    "ci": [
+     -0.016457456486301585,
+     0.011790169222460817
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ },
+ "0.03": {
+  "w_m": 0.03,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 8,
+  "worst": "strike_converge,strike_converge,strike_converge v guard_mark_edge",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 4,
+  "passes": true,
+  "rows": [
+   {
+    "index": 5,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 3,
+    "c": 0,
+    "flips": 3,
+    "ci": [
+     -0.017623970577859485,
+     0.009426443143666691
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 31,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 4,
+    "c": 0,
+    "flips": 4,
+    "ci": [
+     -0.01920138094289031,
+     0.00859700327401962
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 57,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 5,
+    "c": 3,
+    "flips": 8,
+    "ci": [
+     -0.017905665470063083,
+     0.013023510819566677
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 83,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mirror",
+    "b": 3,
+    "c": 3,
+    "flips": 6,
+    "ci": [
+     -0.014507146175391299,
+     0.014507146175391299
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 109,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.00923683876052905,
+     0.00923683876052905
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 135,
+    "kind": "info",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 7,
+    "c": 7,
+    "flips": 14,
+    "ci": [
+     -0.01728264663156584,
+     0.01728264663156584
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ },
+ "0.1": {
+  "w_m": 0.1,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 19,
+  "worst": "strike_converge,strike_converge,strike_converge v guard_mark_edge",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 15,
+  "passes": true,
+  "rows": [
+   {
+    "index": 5,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 9,
+    "c": 4,
+    "flips": 13,
+    "ci": [
+     -0.023636950754067694,
+     0.011438084074967624
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 31,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 12,
+    "c": 3,
+    "flips": 15,
+    "ci": [
+     -0.028939767543976428,
+     0.007269530642279299
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 57,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 7,
+    "c": 12,
+    "flips": 19,
+    "ci": [
+     -0.0135911234100899,
+     0.025050653187735198
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 83,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mirror",
+    "b": 7,
+    "c": 9,
+    "flips": 16,
+    "ci": [
+     -0.01598039354098638,
+     0.020581746984739607
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 109,
+    "kind": "fixed",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.008261936991750757,
+     0.012681872548612041
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 135,
+    "kind": "info",
+    "codes": [
+     "strike_converge",
+     "strike_converge",
+     "strike_converge"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 15,
+    "c": 14,
+    "flips": 29,
+    "ci": [
+     -0.02312785424247624,
+     0.020948134361675703
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ }
+}

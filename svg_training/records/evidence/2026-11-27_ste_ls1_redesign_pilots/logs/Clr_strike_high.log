@@ -1,0 +1,8 @@
+[Clr_strike_high] strike strike_high R2 hidden 128,128,128 steps 40000 seed 150003 const: 2000000 training rows, loaded in 1 s
+[Clr_strike_high]     strike_high R2 step 10000: loss 8.369e-06 lr 1.00e-03 (156 s)
+[Clr_strike_high]     strike_high R2 step 20000: loss 3.255e-06 lr 1.00e-03 (300 s)
+[Clr_strike_high]     strike_high R2 step 30000: loss 3.352e-06 lr 1.00e-03 (423 s)
+[Clr_strike_high]     strike_high R2 step 40000: loss 1.309e-05 lr 1.00e-03 (551 s)
+[Clr_strike_high] round 0 (61231 rows): r2 bias [-0.0001, 0.0001, 0.0016] r3 turn -0.04 deg r4 scale 1.0087 r5 [0.0049, 0.0047, 0.0021] r6 0.0000 r7 [0.0049, 0.0047, 0.0026]
+[Clr_strike_high] round 3 (59461 rows): r2 bias [-0.0001, 0.0001, 0.0018] r3 turn -0.03 deg r4 scale 1.0084 r5 [0.0048, 0.0048, 0.0022] r6 0.0000 r7 [0.0048, 0.0048, 0.0029]
+[Clr_strike_high] screen 0.0049 -> eligible; fit 551 s; total 558 s

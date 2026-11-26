@@ -1,0 +1,7 @@
+  r1_net__guard_parked_centre_00: 6 cells, 612.1 s, max flips 573
+  r1_net__guard_parked_ring_00: 6 cells, 648.1 s, max flips 571
+  r1_net__guard_mark_edge_00: 6 cells, 271.6 s, max flips 192
+  r1_net__guard_mirror_00: 6 cells, 175.8 s, max flips 204
+  r1_net__guard_field_00: 6 cells, 769.1 s, max flips 284
+[c4_strike] C4 analogue strike: 28 of 30 fixed cells miss -> PASS
+done

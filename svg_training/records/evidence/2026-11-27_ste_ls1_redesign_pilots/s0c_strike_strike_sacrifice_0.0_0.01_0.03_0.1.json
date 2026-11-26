@@ -1,0 +1,487 @@
+{
+ "0.0": {
+  "w_m": 0.0,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 0,
+  "worst": "strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_centre",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 0,
+  "passes": true,
+  "rows": [
+   {
+    "index": 4,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0006224284879063735,
+     0.0006224284879063735
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 30,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -7.46914185468046e-05,
+     7.46914185468046e-05
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 56,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011452684177475327,
+     0.011452684177475327
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 82,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mirror",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.01063107857343906,
+     0.01063107857343906
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 108,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.009012764504882764,
+     0.009012764504882764
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 134,
+    "kind": "info",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011029432805699057,
+     0.011029432805699055
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ],
+  "driver_check": true
+ },
+ "0.01": {
+  "w_m": 0.01,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 1,
+  "worst": "strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_centre",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 1,
+  "passes": true,
+  "rows": [
+   {
+    "index": 4,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.002578321797744352,
+     0.004579386208411937
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 30,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.00252742147460064,
+     0.004526654089304041
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 56,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011452684177475327,
+     0.011452684177475327
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 82,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mirror",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.012379909756405098,
+     0.010042437826852844
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 108,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.009012764504882764,
+     0.009012764504882764
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 134,
+    "kind": "info",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.010371872160931264,
+     0.012759876920576658
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ },
+ "0.03": {
+  "w_m": 0.03,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 2,
+  "worst": "strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_ring",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 1,
+  "passes": true,
+  "rows": [
+   {
+    "index": 4,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.002578321797744352,
+     0.004579386208411937
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 30,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.002986063462403366,
+     0.006983856486057948
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 56,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011452684177475327,
+     0.011452684177475327
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 82,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mirror",
+    "b": 2,
+    "c": 0,
+    "flips": 2,
+    "ci": [
+     -0.014081315132237565,
+     0.009437694519489441
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 108,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.010795964024404837,
+     0.008582235145531048
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 134,
+    "kind": "info",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.012105599015814187,
+     0.012105599015814185
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ },
+ "0.1": {
+  "w_m": 0.1,
+  "cells": 6,
+  "gated": 5,
+  "max_flips": 12,
+  "worst": "strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mirror",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 3,
+  "passes": true,
+  "rows": [
+   {
+    "index": 4,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 1,
+    "c": 7,
+    "flips": 8,
+    "ci": [
+     -0.003977059655014966,
+     0.015966908609864543
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 30,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.002986063462403366,
+     0.006983856486057948
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 56,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.011452684177475327,
+     0.011452684177475327
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 82,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mirror",
+    "b": 6,
+    "c": 6,
+    "flips": 12,
+    "ci": [
+     -0.016198847759397558,
+     0.016198847759397565
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 108,
+    "kind": "fixed",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_field",
+    "b": 3,
+    "c": 0,
+    "flips": 3,
+    "ci": [
+     -0.014195909911446786,
+     0.007626311890881291
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 134,
+    "kind": "info",
+    "codes": [
+     "strike_sacrifice",
+     "strike_sacrifice",
+     "strike_sacrifice"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 5,
+    "c": 3,
+    "flips": 8,
+    "ci": [
+     -0.01718147483359301,
+     0.012593611948049012
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   }
+  ]
+ }
+}

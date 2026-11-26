@@ -1,0 +1,5 @@
+[S1_guard_seed1] guard: guard_parked_ring@R2, guard_mark_edge@R2, guard_mirror@R2, guard_field@R2
+  [S1_guard_seed1] screen: 14 screen cells, 0 over 30 (555 s)
+  [S1_guard_seed1] guard: PASS; gated played 150; over 30 0; max 25; median 3.0; over 20 1; pooled ci [-0.0005, 0.0003]; failures 0 (1277 s)
+[S1_guard_seed1] trigger set []
+done

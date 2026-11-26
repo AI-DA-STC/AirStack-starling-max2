@@ -1,0 +1,52 @@
+== 0d part 1: closed forms from the feature code against the stored labels
+  guard_parked_centre: 801497 rows, max |closed - label| 0.00e+00, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  guard_parked_ring: 801497 rows, max |closed - label| 4.88e-05, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  guard_mark_edge: 801497 rows, max |closed - label| 3.87e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  guard_mirror: 801497 rows, max |closed - label| 5.36e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  guard_field: 801497 rows, max |closed - label| 4.25e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_straight: 798803 rows, max |closed - label| 1.19e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_flank: 798803 rows, max |closed - label| 2.38e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_high: 798803 rows, max |closed - label| 1.79e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_low: 798803 rows, max |closed - label| 1.79e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_sacrifice: 798803 rows, max |closed - label| 3.58e-07, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+  strike_converge: 798803 rows, max |closed - label| 5.19e-06, rows over 5e-05: 0 (0.0 per million); yaw labels all 0: True
+0d part 1: PASS on the zero rules; per-skill rows over atol listed above
+== 0d part 2: ONNX parity, unfitted pilot networks
+  guard/guard_parked_ring/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_mark_edge/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_mirror/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_field/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_parked_ring/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_mark_edge/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_mirror/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_field/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_field/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_parked_ring/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_11'
+  guard/guard_mark_edge/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_mirror/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  guard/guard_field/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_straight/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_flank/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_high/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_low/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_sacrifice/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_converge/R1: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_straight/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_flank/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_high/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_low/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_sacrifice/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_converge/R2: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_flank/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_high/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_low/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_sacrifice/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_converge/R3: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_11'
+  strike/strike_flank/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_7'
+  strike/strike_sacrifice/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_22'
+  strike/strike_converge/R4: EXPORT FAILED NotImplemented: [ONNXRuntimeError] : 9 : NOT_IMPLEMENTED : Could not find an implementation for Where(16) node with name '/Where_11'
+0d rung R1: FAIL (0 of 10)
+0d rung R2: FAIL (0 of 10)
+0d rung R3: FAIL (0 of 6)
+0d rung R4: FAIL (0 of 7)
+done

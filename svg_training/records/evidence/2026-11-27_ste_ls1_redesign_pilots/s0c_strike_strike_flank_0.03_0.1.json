@@ -1,0 +1,2836 @@
+{
+ "0.03": {
+  "w_m": 0.03,
+  "cells": 78,
+  "gated": 65,
+  "max_flips": 16,
+  "worst": "strike_low,strike_high,strike_flank v guard_mirror",
+  "over20": 0,
+  "over30": 0,
+  "median_flips": 1,
+  "passes": true,
+  "rows": [
+   {
+    "index": 1,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 3,
+    "c": 3,
+    "flips": 6,
+    "ci": [
+     -0.00873161425161355,
+     0.00873161425161355
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 6,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0011950626967799011,
+     0.0011950626967799011
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 8,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0007718113250034702,
+     0.0007718113250034702
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 9,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.005155042529133081,
+     0.00313516224918926
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 10,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0006224284879063735,
+     0.0006224284879063735
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 14,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 1,
+    "c": 2,
+    "flips": 3,
+    "ci": [
+     -0.005402989085518062,
+     0.007412050986190121
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 15,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0003983542322604509,
+     0.0003983542322604509
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 16,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0011452684177472492,
+     0.0011452684177472492
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 19,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.001767696905653737,
+     0.001767696905653737
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 20,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0003734570927438937,
+     0.0003734570927438937
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 21,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0021162568588813132,
+     0.0021162568588813132
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 22,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.001867285463718772,
+     0.001867285463718772
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 25,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0015934169290400344,
+     0.0015934169290400344
+    ],
+    "batch": "r1_net__guard_parked_centre_04"
+   },
+   {
+    "index": 27,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 1,
+    "c": 3,
+    "flips": 4,
+    "ci": [
+     -0.0050789231098029445,
+     0.009077563762822134
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 32,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0027488297467686677,
+     0.004755875311691948
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 34,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0008962970225848805,
+     0.0008962970225848805
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 35,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.005336430878427622,
+     0.005336430878427622
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 36,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0006224284879063735,
+     0.0006224284879063735
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 40,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0016930054871050352,
+     0.0016930054871050352
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 41,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0025403443622551386,
+     0.004540044211546239
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 42,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0012697541153288085,
+     0.0012697541153288085
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 45,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0018423883242025202,
+     0.0018423883242025202
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 46,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0003734570927438937,
+     0.0003734570927438937
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 47,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0030970159705558187,
+     0.005115665614625015
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 48,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0019170797427512625,
+     0.0019170797427512625
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 51,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0028898868845106756,
+     0.004901721474506848
+    ],
+    "batch": "r1_net__guard_parked_ring_04"
+   },
+   {
+    "index": 53,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 5,
+    "c": 2,
+    "flips": 7,
+    "ci": [
+     -0.01671740897418702,
+     0.010152588039358836
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 58,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 2,
+    "flips": 4,
+    "ci": [
+     -0.010925150594609112,
+     0.010925150594609112
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 60,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.00791361819089266,
+     0.012290453239856986
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 61,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 3,
+    "flips": 5,
+    "ci": [
+     -0.010595622104858267,
+     0.012746873954676113
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 62,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.0078114147960625865,
+     0.012176658424313215
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 66,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.007841098889155285,
+     0.010016923972542308
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 67,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 3,
+    "c": 1,
+    "flips": 4,
+    "ci": [
+     -0.012852457332575735,
+     0.008576067854211463
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 68,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.0071783022731568506,
+     0.013665602591213442
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 71,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 1,
+    "flips": 3,
+    "ci": [
+     -0.011263952778163028,
+     0.00911367944193092
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 72,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.010439992468038452,
+     0.00824465876870899
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 73,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 4,
+    "c": 2,
+    "flips": 6,
+    "ci": [
+     -0.014288615478078743,
+     0.010005154647495728
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 74,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 1,
+    "flips": 3,
+    "ci": [
+     -0.011141987373326195,
+     0.008997392168174835
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 77,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 2,
+    "flips": 4,
+    "ci": [
+     -0.010736283791176677,
+     0.010736283791176677
+    ],
+    "batch": "r1_net__guard_mark_edge_04"
+   },
+   {
+    "index": 79,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 11,
+    "c": 4,
+    "flips": 15,
+    "ci": [
+     -0.023854604720668585,
+     0.008985692151371238
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 84,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 1,
+    "c": 2,
+    "flips": 3,
+    "ci": [
+     -0.00923064367169127,
+     0.01138681399088518
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 86,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 2,
+    "c": 3,
+    "flips": 5,
+    "ci": [
+     -0.010453642431891483,
+     0.012596885227051092
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 87,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 7,
+    "c": 2,
+    "flips": 9,
+    "ci": [
+     -0.01892451481396562,
+     0.008291828671106038
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 88,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mirror",
+    "b": 4,
+    "c": 5,
+    "flips": 9,
+    "ci": [
+     -0.012289977676320252,
+     0.01440088840551549
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 92,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 4,
+    "c": 2,
+    "flips": 6,
+    "ci": [
+     -0.014160095511809051,
+     0.009890067685390577
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 93,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 8,
+    "c": 2,
+    "flips": 10,
+    "ci": [
+     -0.020012275415685333,
+     0.007396081809740813
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 94,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 2,
+    "c": 0,
+    "flips": 2,
+    "ci": [
+     -0.011883555455365343,
+     0.007546545077235248
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 97,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 2,
+    "c": 3,
+    "flips": 5,
+    "ci": [
+     -0.010278141331083212,
+     0.012411969691227624
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 98,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 2,
+    "c": 6,
+    "flips": 8,
+    "ci": [
+     -0.00873580224656881,
+     0.017223743880317284
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 99,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 13,
+    "c": 3,
+    "flips": 16,
+    "ci": [
+     -0.026901386057738747,
+     0.005920180152771185
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 100,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 3,
+    "c": 1,
+    "flips": 4,
+    "ci": [
+     -0.013231277879393185,
+     0.008917778784375508
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 103,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 4,
+    "c": 1,
+    "flips": 5,
+    "ci": [
+     -0.014655937092481471,
+     0.00823747612597823
+    ],
+    "batch": "r1_net__guard_mirror_04"
+   },
+   {
+    "index": 105,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 2,
+    "c": 1,
+    "flips": 3,
+    "ci": [
+     -0.0108808997415014,
+     0.008747935037581665
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 110,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006373667716160104,
+     0.006373667716160104
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 112,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.006345071945011153,
+     0.008463093453216771
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 113,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.008838107791782348,
+     0.008838107791782335
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 114,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0058971616496202,
+     0.008000555766003958
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 118,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.009322123954875482,
+     0.007174265005751801
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 119,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0062805682502704765,
+     0.008396431216246567
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 120,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006647536250838983,
+     0.006647536250838983
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 123,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006498153413741552,
+     0.006498153413741552
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 124,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.006088057785065637,
+     0.008197587373448749
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 125,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.006198104535713999,
+     0.010418081016450422
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 126,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006796919087936439,
+     0.006796919087936439
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 129,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006547947692773945,
+     0.006547947692773945
+    ],
+    "batch": "r1_net__guard_field_04"
+   },
+   {
+    "index": 131,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 5,
+    "c": 6,
+    "flips": 11,
+    "ci": [
+     -0.013739630743118236,
+     0.015876068810921032
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   },
+   {
+    "index": 136,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 3,
+    "flips": 4,
+    "ci": [
+     -0.008451848906716535,
+     0.012715662075356777
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 138,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.009970195150119215,
+     0.007796394251304628
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 139,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 2,
+    "c": 3,
+    "flips": 5,
+    "ci": [
+     -0.010087806815507116,
+     0.012211951858428133
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 140,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 4,
+    "c": 1,
+    "flips": 5,
+    "ci": [
+     -0.014482262201694261,
+     0.008088659745131066
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 144,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 2,
+    "c": 2,
+    "flips": 4,
+    "ci": [
+     -0.010347944679803234,
+     0.010347944679803244
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 145,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.009086270902943486,
+     0.009086270902943476
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 146,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 5,
+    "flips": 5,
+    "ci": [
+     -0.0057594991684525795,
+     0.016364493463177237
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 149,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.006373070188277629,
+     0.01273977335257494
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 150,
+    "kind": "info",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.008465027435525253,
+     0.008465027435525239
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 151,
+    "kind": "info",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.007240542947508541,
+     0.009390992321374586
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 152,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 4,
+    "flips": 5,
+    "ci": [
+     -0.007604121134244815,
+     0.013923972076027516
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 155,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.006783355722249461,
+     0.011049942815317041
+    ],
+    "batch": "r2_net__guard_mark_inside_04"
+   }
+  ]
+ },
+ "0.1": {
+  "w_m": 0.1,
+  "cells": 78,
+  "gated": 65,
+  "max_flips": 47,
+  "worst": "strike_flank,strike_flank,strike_flank v guard_mirror",
+  "over20": 12,
+  "over30": 3,
+  "median_flips": 4,
+  "passes": false,
+  "rows": [
+   {
+    "index": 1,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 5,
+    "c": 3,
+    "flips": 8,
+    "ci": [
+     -0.012051613812230631,
+     0.008050830201724037
+    ],
+    "batch": "r1_net__guard_parked_centre_00"
+   },
+   {
+    "index": 6,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0011950626967799011,
+     0.0011950626967799011
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 8,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.0031545628298888188,
+     0.00915614848784765
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 9,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 2,
+    "c": 1,
+    "flips": 3,
+    "ci": [
+     -0.007492742001998474,
+     0.005480935652701917
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 10,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 4,
+    "flips": 4,
+    "ci": [
+     -0.003067120055026855,
+     0.011064124622119025
+    ],
+    "batch": "r1_net__guard_parked_centre_01"
+   },
+   {
+    "index": 14,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 2,
+    "c": 3,
+    "flips": 5,
+    "ci": [
+     -0.007117953599114383,
+     0.009124393934752716
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 15,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.003003124053682425,
+     0.007002172102009533
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 16,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.0032115126038510886,
+     0.009219451281170169
+    ],
+    "batch": "r1_net__guard_parked_centre_02"
+   },
+   {
+    "index": 19,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0029435038451099986,
+     0.004957125635457961
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 20,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 4,
+    "flips": 4,
+    "ci": [
+     -0.0030524299704122538,
+     0.011047196854265497
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 21,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0021162568588813132,
+     0.0021162568588813132
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 22,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0029886239294928726,
+     0.00500373672018359
+    ],
+    "batch": "r1_net__guard_parked_centre_03"
+   },
+   {
+    "index": 25,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_centre",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0028693326444558043,
+     0.004880477471107635
+    ],
+    "batch": "r1_net__guard_parked_centre_04"
+   },
+   {
+    "index": 27,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 1,
+    "c": 5,
+    "flips": 6,
+    "ci": [
+     -0.004655573301528122,
+     0.012651034804795729
+    ],
+    "batch": "r1_net__guard_parked_ring_00"
+   },
+   {
+    "index": 32,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0027488297467686677,
+     0.004755875311691948
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 34,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.003067247192244137,
+     0.007070984634413275
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 35,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 1,
+    "c": 2,
+    "flips": 3,
+    "ci": [
+     -0.005395665109943101,
+     0.007404468446076681
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 36,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.0031304816079578386,
+     0.009129370911657119
+    ],
+    "batch": "r1_net__guard_parked_ring_01"
+   },
+   {
+    "index": 40,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 3,
+    "flips": 3,
+    "ci": [
+     -0.0033318918507648483,
+     0.009353158884436052
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 41,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.0029959478331892907,
+     0.006994468364912515
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 42,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0027488297467686677,
+     0.004755875311691948
+    ],
+    "batch": "r1_net__guard_parked_ring_02"
+   },
+   {
+    "index": 45,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0029771625263330243,
+     0.004991897661778481
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 46,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.0029975633920721395,
+     0.006996202730595769
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 47,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.0030970159705558187,
+     0.005115665614625015
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 48,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.0019170797427512625,
+     0.0019170797427512625
+    ],
+    "batch": "r1_net__guard_parked_ring_03"
+   },
+   {
+    "index": 51,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_parked_ring",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.0032480378948813596,
+     0.0072647810413553155
+    ],
+    "batch": "r1_net__guard_parked_ring_04"
+   },
+   {
+    "index": 53,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 13,
+    "c": 8,
+    "flips": 21,
+    "ci": [
+     -0.024160175201895846,
+     0.013524294980619703
+    ],
+    "batch": "r1_net__guard_mark_edge_00"
+   },
+   {
+    "index": 58,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 8,
+    "c": 3,
+    "flips": 11,
+    "ci": [
+     -0.01967212473248088,
+     0.009112808008828254
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 60,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 2,
+    "c": 8,
+    "flips": 10,
+    "ci": [
+     -0.007766781833190626,
+     0.020534696229566753
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 61,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 10,
+    "c": 5,
+    "flips": 15,
+    "ci": [
+     -0.021442956616890243,
+     0.010906379995942808
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 62,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 6,
+    "c": 5,
+    "flips": 11,
+    "ci": [
+     -0.015643039914111485,
+     0.013520955982521208
+    ],
+    "batch": "r1_net__guard_mark_edge_01"
+   },
+   {
+    "index": 66,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 10,
+    "c": 7,
+    "flips": 17,
+    "ci": [
+     -0.019855349077113307,
+     0.013587836292348825
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 67,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 6,
+    "c": 4,
+    "flips": 10,
+    "ci": [
+     -0.01587055067954846,
+     0.011660884959891418
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 68,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 3,
+    "c": 5,
+    "flips": 8,
+    "ci": [
+     -0.01095624696011125,
+     0.015210741576843156
+    ],
+    "batch": "r1_net__guard_mark_edge_02"
+   },
+   {
+    "index": 71,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 8,
+    "c": 2,
+    "flips": 10,
+    "ci": [
+     -0.020164739653093136,
+     0.007506297927488437
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 72,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 6,
+    "c": 8,
+    "flips": 14,
+    "ci": [
+     -0.013653222114621683,
+     0.017869785744383148
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 73,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 7,
+    "c": 3,
+    "flips": 10,
+    "ci": [
+     -0.018299040628782966,
+     0.009813171918952271
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 74,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 7,
+    "c": 5,
+    "flips": 12,
+    "ci": [
+     -0.01671106649206431,
+     0.01251857784844903
+    ],
+    "batch": "r1_net__guard_mark_edge_03"
+   },
+   {
+    "index": 77,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_edge",
+    "b": 8,
+    "c": 6,
+    "flips": 14,
+    "ci": [
+     -0.01758815554857606,
+     0.013401998696622673
+    ],
+    "batch": "r1_net__guard_mark_edge_04"
+   },
+   {
+    "index": 79,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 37,
+    "c": 10,
+    "flips": 47,
+    "ci": [
+     -0.05375692427871129,
+     -0.0022608635887684594
+    ],
+    "batch": "r1_net__guard_mirror_00"
+   },
+   {
+    "index": 84,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 19,
+    "c": 8,
+    "flips": 27,
+    "ci": [
+     -0.031562310780170175,
+     0.008728562045257876
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 86,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 11,
+    "c": 9,
+    "flips": 20,
+    "ci": [
+     -0.019980294180156545,
+     0.01580508832902315
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 87,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 34,
+    "c": 12,
+    "flips": 46,
+    "ci": [
+     -0.04804255699887687,
+     0.0026809905498600614
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 88,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mirror",
+    "b": 13,
+    "c": 9,
+    "flips": 22,
+    "ci": [
+     -0.022613714329087903,
+     0.014304354308507888
+    ],
+    "batch": "r1_net__guard_mirror_01"
+   },
+   {
+    "index": 92,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 30,
+    "c": 10,
+    "flips": 40,
+    "ci": [
+     -0.044429455831174955,
+     0.0031609908515850098
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 93,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 23,
+    "c": 6,
+    "flips": 29,
+    "ci": [
+     -0.03812992179944906,
+     0.0030088260260824062
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 94,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 15,
+    "c": 4,
+    "flips": 19,
+    "ci": [
+     -0.02899536281127126,
+     0.006000317331452534
+    ],
+    "batch": "r1_net__guard_mirror_02"
+   },
+   {
+    "index": 97,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 21,
+    "c": 6,
+    "flips": 27,
+    "ci": [
+     -0.03561982467314125,
+     0.004515426790854888
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 98,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 12,
+    "c": 11,
+    "flips": 23,
+    "ci": [
+     -0.019921087461536258,
+     0.017840889794891044
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 99,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mirror",
+    "b": 19,
+    "c": 8,
+    "flips": 27,
+    "ci": [
+     -0.031576012981677296,
+     0.00873561250675279
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 100,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mirror",
+    "b": 16,
+    "c": 5,
+    "flips": 21,
+    "ci": [
+     -0.029793155291448412,
+     0.006783709363776376
+    ],
+    "batch": "r1_net__guard_mirror_03"
+   },
+   {
+    "index": 103,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mirror",
+    "b": 21,
+    "c": 7,
+    "flips": 28,
+    "ci": [
+     -0.03494035609707631,
+     0.005901982746277526
+    ],
+    "batch": "r1_net__guard_mirror_04"
+   },
+   {
+    "index": 105,
+    "kind": "fixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 2,
+    "c": 4,
+    "flips": 6,
+    "ci": [
+     -0.009424505015716839,
+     0.013644992862258329
+    ],
+    "batch": "r1_net__guard_field_00"
+   },
+   {
+    "index": 110,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006373667716160104,
+     0.006373667716160104
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 112,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.006083436155211574,
+     0.010294797589091142
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 113,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.008838107791782348,
+     0.008838107791782335
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 114,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.007803823873051539,
+     0.007803823873051539
+    ],
+    "batch": "r1_net__guard_field_01"
+   },
+   {
+    "index": 118,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 2,
+    "flips": 3,
+    "ci": [
+     -0.008558564323414853,
+     0.010683136429346447
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 119,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 1,
+    "flips": 2,
+    "ci": [
+     -0.008153433328753956,
+     0.008153433328753902
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 120,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.006178932354419532,
+     0.010397458353481898
+    ],
+    "batch": "r1_net__guard_field_02"
+   },
+   {
+    "index": 123,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 0,
+    "flips": 0,
+    "ci": [
+     -0.006498153413741552,
+     0.006498153413741552
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 124,
+    "kind": "mixed",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 2,
+    "flips": 2,
+    "ci": [
+     -0.005856866754530267,
+     0.01005159735378282
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 125,
+    "kind": "mixed",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 3,
+    "flips": 4,
+    "ci": [
+     -0.007598145833626344,
+     0.011784829843976843
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 126,
+    "kind": "mixed",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_field",
+    "b": 0,
+    "c": 1,
+    "flips": 1,
+    "ci": [
+     -0.006582902506466587,
+     0.008709059617708001
+    ],
+    "batch": "r1_net__guard_field_03"
+   },
+   {
+    "index": 129,
+    "kind": "mixed",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_field",
+    "b": 1,
+    "c": 0,
+    "flips": 1,
+    "ci": [
+     -0.008507637032573078,
+     0.006388162633066336
+    ],
+    "batch": "r1_net__guard_field_04"
+   },
+   {
+    "index": 131,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 15,
+    "c": 19,
+    "flips": 34,
+    "ci": [
+     -0.01830525735277304,
+     0.02662575456393307
+    ],
+    "batch": "r2_net__guard_mark_inside_00"
+   },
+   {
+    "index": 136,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 2,
+    "c": 9,
+    "flips": 11,
+    "ci": [
+     -0.0067236843634734065,
+     0.021384262244823326
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 138,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 7,
+    "c": 7,
+    "flips": 14,
+    "ci": [
+     -0.015510054626566612,
+     0.015510054626566598
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 139,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 11,
+    "c": 9,
+    "flips": 20,
+    "ci": [
+     -0.019726454954363024,
+     0.015577854700691798
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 140,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_straight"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 8,
+    "c": 4,
+    "flips": 12,
+    "ci": [
+     -0.018846685305462553,
+     0.01045271984104948
+    ],
+    "batch": "r2_net__guard_mark_inside_01"
+   },
+   {
+    "index": 144,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 12,
+    "c": 12,
+    "flips": 24,
+    "ci": [
+     -0.018869323100174407,
+     0.018869323100174404
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 145,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_straight",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 5,
+    "c": 1,
+    "flips": 6,
+    "ci": [
+     -0.015747231586579997,
+     0.007305898825782203
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 146,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 11,
+    "flips": 12,
+    "ci": [
+     -0.00396324547214579,
+     0.02484571382257244
+    ],
+    "batch": "r2_net__guard_mark_inside_02"
+   },
+   {
+    "index": 149,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_high",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 2,
+    "c": 8,
+    "flips": 10,
+    "ci": [
+     -0.007073209615486738,
+     0.01957608484483139
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 150,
+    "kind": "info",
+    "codes": [
+     "strike_straight",
+     "strike_straight",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 1,
+    "c": 5,
+    "flips": 6,
+    "ci": [
+     -0.007777015700821588,
+     0.016325070515891958
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 151,
+    "kind": "info",
+    "codes": [
+     "strike_low",
+     "strike_high",
+     "strike_flank"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 8,
+    "c": 3,
+    "flips": 11,
+    "ci": [
+     -0.01916364727783473,
+     0.008723368306072463
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 152,
+    "kind": "info",
+    "codes": [
+     "strike_high",
+     "strike_flank",
+     "strike_low"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 4,
+    "c": 9,
+    "flips": 13,
+    "ci": [
+     -0.009471746806093943,
+     0.019845640382373003
+    ],
+    "batch": "r2_net__guard_mark_inside_03"
+   },
+   {
+    "index": 155,
+    "kind": "info",
+    "codes": [
+     "strike_flank",
+     "strike_low",
+     "strike_high"
+    ],
+    "opponent": "guard_mark_inside",
+    "b": 3,
+    "c": 7,
+    "flips": 10,
+    "ci": [
+     -0.009192758548889644,
+     0.017532865034142066
+    ],
+    "batch": "r2_net__guard_mark_inside_04"
+   }
+  ]
+ }
+}

@@ -1,0 +1,8 @@
+  r1_net__strike_straight_00: 5 cells, 21.8 s, max flips 442
+  r1_net__strike_flank_00: 5 cells, 24.9 s, max flips 546
+  r1_net__strike_high_00: 5 cells, 22.2 s, max flips 528
+  r1_net__strike_low_00: 5 cells, 18.3 s, max flips 569
+  r1_net__strike_sacrifice_00: 5 cells, 38.9 s, max flips 451
+  r1_net__strike_converge_00: 5 cells, 115.0 s, max flips 158
+[c4_guard] C4 analogue guard: 30 of 30 fixed cells miss -> PASS
+done

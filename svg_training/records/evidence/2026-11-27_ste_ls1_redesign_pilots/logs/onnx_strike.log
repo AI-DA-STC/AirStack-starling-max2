@@ -1,0 +1,21 @@
+  strike_flank,strike_flank,strike_flank v guard_parked_centre: outcomes differ in 0 games
+  strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_parked_centre: outcomes differ in 0 games
+  strike_flank,strike_flank,strike_flank v guard_parked_ring: outcomes differ in 0 games
+  strike_low,strike_low,strike_low v guard_mark_edge: outcomes differ in 0 games
+  strike_straight,strike_low,strike_low v guard_mark_edge: outcomes differ in 0 games
+  strike_low,strike_straight,strike_straight v guard_mark_edge: outcomes differ in 0 games
+  strike_flank,strike_flank,strike_low v guard_mark_edge: outcomes differ in 0 games
+  strike_high,strike_low,strike_straight v guard_mark_edge: outcomes differ in 0 games
+  strike_low,strike_high,strike_flank v guard_mark_edge: outcomes differ in 0 games
+  strike_flank,strike_flank,strike_flank v guard_mirror: outcomes differ in 0 games
+  strike_low,strike_low,strike_low v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_high,strike_high v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_low,strike_flank v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_straight,strike_straight v guard_mirror: outcomes differ in 0 games
+  strike_low,strike_straight,strike_straight v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_flank,strike_low v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_high,strike_low v guard_mirror: outcomes differ in 0 games
+  strike_high,strike_flank,strike_low v guard_mirror: outcomes differ in 0 games
+  strike_flank,strike_low,strike_high v guard_mirror: outcomes differ in 0 games
+[onnx_strike] onnxruntime arm strike: 19 screen cells; largest 0 games differ -> ok
+done

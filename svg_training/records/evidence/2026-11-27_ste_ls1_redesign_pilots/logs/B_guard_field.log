@@ -1,0 +1,8 @@
+[B_guard_field] guard guard_field R2 hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[B_guard_field]     guard_field R2 step 10000: loss 4.268e-04 lr 8.71e-04 (187 s)
+[B_guard_field]     guard_field R2 step 20000: loss 7.140e-04 lr 5.21e-04 (380 s)
+[B_guard_field]     guard_field R2 step 30000: loss 1.281e-05 lr 1.61e-04 (565 s)
+[B_guard_field]     guard_field R2 step 40000: loss 8.081e-04 lr 1.00e-05 (725 s)
+[B_guard_field] round 0 (60527 rows): r2 bias [0.0, 0.0002] r3 turn -0.01 deg r4 scale 1.0003 r5 [0.002, 0.0022] r6 0.0001 r7 [0.0114, 0.0075]
+[B_guard_field] round 3 (58916 rows): r2 bias [0.0001, 0.0001] r3 turn 0.01 deg r4 scale 1.0001 r5 [0.0023, 0.0021] r6 0.0004 r7 [0.0251, 0.0189]
+[B_guard_field] screen 0.0194 -> eligible; fit 725 s; total 733 s

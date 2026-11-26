@@ -1,0 +1,5 @@
+[S1_strike_seed1] strike: strike_straight@R2, strike_flank@R2, strike_high@R2, strike_low@R2, strike_sacrifice@R2, strike_converge@R2
+  [S1_strike_seed1] screen: 19 screen cells, 0 over 30 (757 s)
+  [S1_strike_seed1] strike: FAIL; gated played 130; over 30 1; max 31; median 3.0; over 20 3; pooled ci [0.0008, 0.0018]; failures 5 (1302 s)
+[S1_strike_seed1] trigger set ['strike_converge', 'strike_sacrifice']
+done

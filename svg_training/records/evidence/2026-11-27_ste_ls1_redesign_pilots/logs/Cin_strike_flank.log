@@ -1,0 +1,8 @@
+[Cin_strike_flank] strike strike_flank RAW hidden 128,128,128 steps 40000 seed 150003 cos: 2000000 training rows, loaded in 1 s
+[Cin_strike_flank]     strike_flank RAW step 10000: loss 2.059e-01 lr 8.71e-04 (119 s)
+[Cin_strike_flank]     strike_flank RAW step 20000: loss 3.383e-02 lr 5.21e-04 (227 s)
+[Cin_strike_flank]     strike_flank RAW step 30000: loss 2.792e-02 lr 1.61e-04 (334 s)
+[Cin_strike_flank]     strike_flank RAW step 40000: loss 2.573e-02 lr 1.00e-05 (438 s)
+[Cin_strike_flank] round 0 (55566 rows): r2 bias [-0.0007, -0.0007] r3 turn -0.07 deg r4 scale 0.9768 r5 [0.1328, 0.1357] r6 0.3921 r7 [0.1493, 0.152]
+[Cin_strike_flank] round 3 (54295 rows): r2 bias [0.0005, 0.0015] r3 turn 0.13 deg r4 scale 0.9698 r5 [0.1449, 0.1419] r6 0.3732 r7 [0.1511, 0.1513]
+[Cin_strike_flank] screen 0.1517 -> NOT eligible; fit 438 s; total 442 s

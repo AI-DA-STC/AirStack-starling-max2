@@ -1,0 +1,1 @@
+S1_guard_seed2 after B2_guard_* : s2run.py S1_guard_seed2 guard guard_parked_ring=B2_guard_parked_ring guard_mark_edge=B2_guard_mark_edge guard_mirror=B2_guard_mirror guard_field=B2_guard_field

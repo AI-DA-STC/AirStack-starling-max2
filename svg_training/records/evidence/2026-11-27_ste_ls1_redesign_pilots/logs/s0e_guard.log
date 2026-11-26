@@ -1,0 +1,43 @@
+guard: h 0.026 bias 0.003 turn 0.5 scale 0.99; active {'guard_parked_centre': [False, False, False, False], 'guard_parked_ring': [True, True, False, False], 'guard_mark_edge': [True, True, False, False], 'guard_mirror': [True, True, False, False], 'guard_field': [True, True, False, False]}
+  r1_net__strike_straight_00: 5 cells 8.8 s, max flips 10
+  r1_net__strike_straight_01: 6 cells 11.3 s, max flips 18
+  r1_net__strike_straight_02: 6 cells 11.1 s, max flips 10
+  r1_net__strike_straight_03: 6 cells 11.1 s, max flips 15
+  r1_net__strike_straight_04: 2 cells 5.0 s, max flips 11
+  r1_net__strike_flank_00: 5 cells 8.4 s, max flips 15
+  r1_net__strike_flank_01: 6 cells 11.7 s, max flips 18
+  r1_net__strike_flank_02: 6 cells 10.9 s, max flips 10
+  r1_net__strike_flank_03: 6 cells 10.9 s, max flips 10
+  r1_net__strike_flank_04: 2 cells 5.1 s, max flips 12
+  r1_net__strike_high_00: 5 cells 7.9 s, max flips 12
+  r1_net__strike_high_01: 6 cells 11.6 s, max flips 13
+  r1_net__strike_high_02: 6 cells 11.7 s, max flips 7
+  r1_net__strike_high_03: 6 cells 11.3 s, max flips 9
+  r1_net__strike_high_04: 2 cells 5.9 s, max flips 7
+  r1_net__strike_low_00: 5 cells 8.9 s, max flips 12
+  r1_net__strike_low_01: 6 cells 11.9 s, max flips 9
+  r1_net__strike_low_02: 6 cells 11.3 s, max flips 10
+  r1_net__strike_low_03: 6 cells 10.8 s, max flips 11
+  r1_net__strike_low_04: 2 cells 5.2 s, max flips 8
+  r1_net__strike_sacrifice_00: 5 cells 17.4 s, max flips 8
+  r1_net__strike_sacrifice_01: 6 cells 22.6 s, max flips 12
+  r1_net__strike_sacrifice_02: 6 cells 21.0 s, max flips 9
+  r1_net__strike_sacrifice_03: 6 cells 20.1 s, max flips 10
+  r1_net__strike_sacrifice_04: 2 cells 10.6 s, max flips 5
+  r1_net__strike_converge_00: 5 cells 32.5 s, max flips 19
+  r1_net__strike_converge_01: 6 cells 57.4 s, max flips 21
+  r1_net__strike_converge_02: 6 cells 54.1 s, max flips 17
+  r1_net__strike_converge_03: 6 cells 55.6 s, max flips 22
+  r1_net__strike_converge_04: 2 cells 20.7 s, max flips 18
+== 0e guard: 150 gated cells; over 30: 0; over 20: 2; median 6; max 22; interval outside +-0.045: 0
+     22  guard_mirror,guard_mark_edge,guard_parked_centre v strike_converge
+     21  guard_mark_edge,guard_mirror,guard_parked_centre v strike_converge
+     20  guard_mark_edge,guard_mark_edge,guard_mirror v strike_converge
+     20  guard_mirror,guard_mirror,guard_parked_centre v strike_converge
+     19  guard_mark_edge,guard_mark_edge,guard_mark_edge v strike_converge
+     19  guard_parked_centre,guard_mark_edge,guard_mark_edge v strike_converge
+     18  guard_mark_edge,guard_mirror,guard_mirror v strike_straight
+     18  guard_mark_edge,guard_mark_edge,guard_mirror v strike_flank
+     18  guard_parked_centre,guard_mirror,guard_mark_edge v strike_converge
+     18  guard_mirror,guard_mark_edge,guard_mark_edge v strike_converge
+done

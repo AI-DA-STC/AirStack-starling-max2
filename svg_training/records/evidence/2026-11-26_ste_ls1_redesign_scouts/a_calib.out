@@ -1,0 +1,44 @@
+
+== guard
+identity                         kind=identity size=1.0 ch=[0, 1, 2, 3] cells=150 med=  0.0 p90=  0.0 max=   0 n>30=  0 n>20=  0 ci_out=0 pooled=+0.0000 [+0.0000,+0.0000] rmse=0.0000
+noise=0.01                       kind=noise    size=0.01 ch=[0, 1, 2, 3] cells=150 med=  1.0 p90=  4.0 max=   6 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0003 [-0.0005,-0.0000] rmse=0.0058
+noise=0.02                       kind=noise    size=0.02 ch=[0, 1, 2, 3] cells=150 med=  3.0 p90=  6.1 max=  11 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0005 [-0.0009,-0.0002] rmse=0.0116
+noise=0.05                       kind=noise    size=0.05 ch=[0, 1, 2, 3] cells=150 med=  7.5 p90= 13.1 max=  21 n>30=  0 n>20=  1 ci_out=0 pooled=-0.0015 [-0.0021,-0.0009] rmse=0.0289
+noise=0.1                        kind=noise    size=0.1 ch=[0, 1, 2, 3] cells=150 med= 15.0 p90= 25.1 max=  37 n>30=  4 n>20= 31 ci_out=0 pooled=-0.0034 [-0.0044,-0.0024] rmse=0.0578
+noise_active=0.05                kind=noise_active size=0.05 ch=[] cells=150 med=  6.0 p90= 13.0 max=  20 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0016 [-0.0022,-0.0011] rmse=0.0289
+bias=0.01                        kind=bias     size=0.01 ch=[0, 1] cells=150 med=  9.0 p90= 18.0 max=  31 n>30=  2 n>20=  9 ci_out=0 pooled=-0.0001 [-0.0010,+0.0008] rmse=0.0100
+bias=0.02                        kind=bias     size=0.02 ch=[0, 1] cells=150 med= 17.0 p90= 31.1 max=  63 n>30= 16 n>20= 44 ci_out=1 pooled=-0.0009 [-0.0023,+0.0004] rmse=0.0200
+bias=0.05                        kind=bias     size=0.05 ch=[0, 1] cells=150 med= 38.0 p90= 81.1 max= 150 n>30=113 n>20=139 ci_out=11 pooled=-0.0044 [-0.0070,-0.0017] rmse=0.0500
+zero_bias=0.0025                 kind=zero_bias size=0.0025 ch=[0, 1] cells=  6 med=  2.0 p90=  7.5 max=   9 n>30=  0 n>20=  0 ci_out=0 pooled=+0.0000 [-0.0015,+0.0015] rmse=0.0000
+zero_bias=0.005                  kind=zero_bias size=0.005 ch=[0, 1] cells=  6 med=  5.5 p90= 12.0 max=  15 n>30=  0 n>20=  0 ci_out=0 pooled=+0.0003 [-0.0017,+0.0024] rmse=0.0000
+zero_bias=0.01                   kind=zero_bias size=0.01 ch=[0, 1] cells=  6 med= 12.5 p90= 19.5 max=  21 n>30=  0 n>20=  1 ci_out=0 pooled=-0.0017 [-0.0047,+0.0014] rmse=0.0000
+scale=0.95                       kind=scale    size=0.95 ch=[0, 1, 2] cells=150 med= 17.0 p90= 32.1 max=  49 n>30= 19 n>20= 57 ci_out=6 pooled=-0.0066 [-0.0080,-0.0051] rmse=0.0354
+turn=1.5                         kind=turn     size=1.5 ch=[0, 1] cells=150 med=  9.0 p90= 22.0 max=  34 n>30=  2 n>20= 17 ci_out=0 pooled=-0.0001 [-0.0010,+0.0009] rmse=0.0185
+turn=3.0                         kind=turn     size=3.0 ch=[0, 1] cells=150 med= 17.0 p90= 35.0 max=  52 n>30= 28 n>20= 60 ci_out=0 pooled=-0.0005 [-0.0020,+0.0011] rmse=0.0371
+turn=6.0                         kind=turn     size=6.0 ch=[0, 1] cells=150 med= 30.5 p90= 58.0 max=  94 n>30= 75 n>20=109 ci_out=4 pooled=-0.0020 [-0.0043,+0.0002] rmse=0.0741
+field_range_m=1.2                kind=switch   size=1.2 ch=[] cells=  6 med=  1.0 p90=  2.5 max=   3 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0005 [-0.0014,+0.0004] rmse=0.0217
+field_range_m=1.3                kind=switch   size=1.3 ch=[] cells=  6 med=  7.0 p90=  8.5 max=   9 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0050 [-0.0075,-0.0025] rmse=0.0523
+
+== strike
+identity                         kind=identity size=1.0 ch=[0, 1, 2, 3] cells=130 med=  0.0 p90=  0.0 max=   0 n>30=  0 n>20=  0 ci_out=0 pooled=+0.0000 [+0.0000,+0.0000] rmse=0.0000
+noise=0.01                       kind=noise    size=0.01 ch=[0, 1, 2, 3] cells=130 med=  5.0 p90=  9.1 max=  18 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0004 [-0.0009,+0.0001] rmse=0.0057
+noise=0.02                       kind=noise    size=0.02 ch=[0, 1, 2, 3] cells=130 med=  8.0 p90= 15.0 max=  27 n>30=  0 n>20=  3 ci_out=0 pooled=-0.0029 [-0.0036,-0.0022] rmse=0.0114
+noise=0.05                       kind=noise    size=0.05 ch=[0, 1, 2, 3] cells=130 med= 13.0 p90= 27.1 max=  37 n>30=  8 n>20= 34 ci_out=3 pooled=-0.0050 [-0.0061,-0.0039] rmse=0.0284
+noise=0.1                        kind=noise    size=0.1 ch=[0, 1, 2, 3] cells=130 med= 18.0 p90= 40.0 max=  56 n>30= 38 n>20= 57 ci_out=8 pooled=-0.0062 [-0.0077,-0.0047] rmse=0.0564
+noise_active=0.05                kind=noise_active size=0.05 ch=[] cells=130 med= 13.0 p90= 27.1 max=  37 n>30=  9 n>20= 33 ci_out=4 pooled=-0.0050 [-0.0061,-0.0039] rmse=0.0284
+bias=0.01                        kind=bias     size=0.01 ch=[0, 1] cells=130 med=  9.0 p90= 14.0 max=  20 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0029 [-0.0040,-0.0018] rmse=0.0099
+bias=0.02                        kind=bias     size=0.02 ch=[0, 1] cells=130 med= 13.0 p90= 20.0 max=  24 n>30=  0 n>20= 11 ci_out=0 pooled=-0.0042 [-0.0055,-0.0029] rmse=0.0198
+bias=0.05                        kind=bias     size=0.05 ch=[0, 1] cells=130 med= 31.0 p90= 43.0 max=  58 n>30= 67 n>20=107 ci_out=1 pooled=-0.0071 [-0.0095,-0.0046] rmse=0.0492
+zero_bias=0.0025                 no gated cells
+zero_bias=0.005                  no gated cells
+zero_bias=0.01                   no gated cells
+scale=0.95                       kind=scale    size=0.95 ch=[0, 1, 2] cells=130 med= 17.0 p90= 36.0 max=  43 n>30= 31 n>20= 58 ci_out=17 pooled=-0.0096 [-0.0113,-0.0080] rmse=0.0355
+turn=1.5                         kind=turn     size=1.5 ch=[0, 1] cells=130 med= 10.0 p90= 16.0 max=  21 n>30=  0 n>20=  2 ci_out=0 pooled=+0.0003 [-0.0008,+0.0015] rmse=0.0186
+turn=3.0                         kind=turn     size=3.0 ch=[0, 1] cells=130 med= 19.5 p90= 27.0 max=  38 n>30=  5 n>20= 54 ci_out=0 pooled=+0.0009 [-0.0008,+0.0026] rmse=0.0371
+turn=6.0                         kind=turn     size=6.0 ch=[0, 1] cells=130 med= 38.0 p90= 53.0 max=  75 n>30= 87 n>20=104 ci_out=4 pooled=+0.0001 [-0.0027,+0.0028] rmse=0.0742
+sacrifice_entry_rad=0.6109       kind=switch   size=0.6109 ch=[] cells=  5 med=  7.0 p90= 11.2 max=  12 n>30=  0 n>20=  0 ci_out=0 pooled=+0.0024 [-0.0001,+0.0049] rmse=0.1298
+sacrifice_entry_rad=0.6981       kind=switch   size=0.6981 ch=[] cells=  5 med= 17.0 p90= 20.4 max=  22 n>30=  0 n>20=  1 ci_out=0 pooled=-0.0016 [-0.0056,+0.0024] rmse=0.1756
+converge_gather_rad=0.15         kind=switch   size=0.15 ch=[] cells=  5 med= 14.0 p90= 22.2 max=  23 n>30=  0 n>20=  2 ci_out=0 pooled=-0.0004 [-0.0042,+0.0034] rmse=0.1329
+converge_gather_rad=0.2          kind=switch   size=0.2 ch=[] cells=  5 med= 29.0 p90= 29.6 max=  30 n>30=  0 n>20=  4 ci_out=0 pooled=+0.0040 [-0.0011,+0.0091] rmse=0.2327
+flank_margin_m=0.35              kind=switch   size=0.35 ch=[] cells= 65 med=  4.0 p90=  9.0 max=  15 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0004 [-0.0010,+0.0001] rmse=0.0095
+flank_margin_m=0.4               kind=switch   size=0.4 ch=[] cells= 65 med=  5.0 p90= 12.0 max=  20 n>30=  0 n>20=  0 ci_out=0 pooled=-0.0012 [-0.0019,-0.0005] rmse=0.0188

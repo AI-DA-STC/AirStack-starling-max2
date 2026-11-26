@@ -1,0 +1,26 @@
+== guard saved
+  guard_parked_centre  OWN ROWS n 71430 xy rmse/ch 0.0082 |bias| 0.0099 per-ch (+0.0085,+0.0051) bias share 0.730
+  guard_parked_ring    OWN ROWS n 58196 xy rmse/ch 0.0618 |bias| 0.0251 per-ch (+0.0212,+0.0134) bias share 0.082
+  guard_mark_edge      OWN ROWS n 63642 xy rmse/ch 0.0349 |bias| 0.0040 per-ch (+0.0037,-0.0015) bias share 0.006
+  guard_mirror         OWN ROWS n 62880 xy rmse/ch 0.0535 |bias| 0.0108 per-ch (+0.0038,-0.0101) bias share 0.020
+  guard_field          OWN ROWS n 43852 xy rmse/ch 0.1518 |bias| 0.0338 per-ch (-0.0166,+0.0295) bias share 0.025
+== guard after 300 steps Adam lr 1e-4
+  guard_parked_centre  OWN ROWS n 71430 xy rmse/ch 0.0042 |bias| 0.0008 per-ch (+0.0002,+0.0008) bias share 0.017
+  guard_parked_ring    OWN ROWS n 58196 xy rmse/ch 0.0569 |bias| 0.0031 per-ch (+0.0003,+0.0031) bias share 0.001
+  guard_mark_edge      OWN ROWS n 63642 xy rmse/ch 0.0317 |bias| 0.0026 per-ch (+0.0019,+0.0018) bias share 0.003
+  guard_mirror         OWN ROWS n 62880 xy rmse/ch 0.0494 |bias| 0.0026 per-ch (-0.0018,+0.0019) bias share 0.001
+  guard_field          OWN ROWS n 43852 xy rmse/ch 0.1478 |bias| 0.0056 per-ch (+0.0055,-0.0011) bias share 0.001
+== strike saved
+  strike_straight      OWN ROWS n 35650 xy rmse/ch 0.0195 |bias| 0.0168 per-ch (+0.0164,+0.0040) bias share 0.372
+  strike_flank         OWN ROWS n 40665 xy rmse/ch 0.3422 |bias| 0.0075 per-ch (+0.0067,-0.0034) bias share 0.000
+  strike_high          OWN ROWS n 43139 xy rmse/ch 0.0323 |bias| 0.0240 per-ch (+0.0191,+0.0145) bias share 0.276
+  strike_low           OWN ROWS n 47281 xy rmse/ch 0.0315 |bias| 0.0138 per-ch (+0.0136,+0.0026) bias share 0.096
+  strike_sacrifice     OWN ROWS n 51031 xy rmse/ch 0.3159 |bias| 0.0119 per-ch (+0.0073,-0.0094) bias share 0.001
+  strike_converge      OWN ROWS n 82234 xy rmse/ch 0.2133 |bias| 0.0600 per-ch (-0.0597,+0.0064) bias share 0.040
+== strike after 300 steps Adam lr 1e-4
+  strike_straight      OWN ROWS n 35650 xy rmse/ch 0.0145 |bias| 0.0029 per-ch (+0.0022,-0.0019) bias share 0.020
+  strike_flank         OWN ROWS n 40665 xy rmse/ch 0.3395 |bias| 0.0028 per-ch (+0.0028,-0.0003) bias share 0.000
+  strike_high          OWN ROWS n 43139 xy rmse/ch 0.0264 |bias| 0.0012 per-ch (-0.0000,-0.0012) bias share 0.001
+  strike_low           OWN ROWS n 47281 xy rmse/ch 0.0275 |bias| 0.0044 per-ch (+0.0033,+0.0029) bias share 0.013
+  strike_sacrifice     OWN ROWS n 51031 xy rmse/ch 0.3138 |bias| 0.0121 per-ch (-0.0045,+0.0112) bias share 0.001
+  strike_converge      OWN ROWS n 82234 xy rmse/ch 0.2022 |bias| 0.0011 per-ch (-0.0009,-0.0006) bias share 0.000

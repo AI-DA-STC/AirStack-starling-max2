@@ -1,0 +1,8 @@
+delta 1 mm: rows with |dlabel|>0.2: 0.00006; share of sq change in them 0.767
+   whole team: rows 0.773, big jumps 0, |own| q [], |Guard0| q [], |3-fold sum| q [], jump p50 0.000
+   after loss: rows 0.227, big jumps 18, |own| q [0.424, 0.604, 1.197], |Guard0| q [0.101, 0.598, 1.117], |3-fold sum| q [0.001, 0.007, 0.024], jump p50 1.737
+   RMS of the rows without a big jump 0.0071
+delta 10 mm: rows with |dlabel|>0.2: 0.01144; share of sq change in them 0.362
+   whole team: rows 0.773, big jumps 3177, |own| q [0.666, 0.738, 0.818], |Guard0| q [0.615, 0.72, 0.799], |3-fold sum| q [2.81, 2.997, 3.0], jump p50 0.223
+   after loss: rows 0.227, big jumps 255, |own| q [0.062, 0.687, 1.16], |Guard0| q [0.058, 0.631, 1.194], |3-fold sum| q [0.014, 0.085, 1.55], jump p50 1.517
+   RMS of the rows without a big jump 0.0663

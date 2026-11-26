@@ -1,0 +1,95 @@
+
+== guard z_cell 3.5879146722879613 m {'guard': 150}
+ arm oracle     cells 150 flips median   0.0 max    0 >30:   0  ci-out: 0
+ arm net        cells 150 flips median  16.0 max   64 >30:  12  ci-out: 1
+ arm unfitted   cells  30 flips median 244.5 max  592 >30:  30  ci-out: 25
+ arm permuted   cells  30 flips median 162.5 max  580 >30:  24  ci-out: 21
+ arm noise      cells   4 flips median   2.0 max    5 >30:   0  ci-out: 0
+ arm bias       cells   4 flips median  34.5 max   46 >30:   2  ci-out: 0
+ arm rotate_deg cells   4 flips median  18.5 max   48 >30:   1  ci-out: 0
+ net cells passing only: 12, flips median 17.0, max 27, >30 0, ci-out 0
+    27 b 14 c 13 parked_ring,parked_ring,parked_ring v strike_flank ci [-0.0195, 0.0175] kind fixed
+    23 b 11 c 12 mark_edge,mark_edge,mark_edge v strike_converge ci [-0.0198, 0.0221] kind fixed
+    21 b 10 c 11 parked_ring,parked_ring,parked_ring v strike_converge ci [-0.0193, 0.0216] kind fixed
+    20 b 12 c 8 mark_edge,mark_edge,mark_edge v strike_flank ci [-0.023, 0.0144] kind fixed
+    18 b 8 c 10 parked_ring,parked_ring,parked_ring v strike_high ci [-0.0132, 0.0172] kind fixed
+    17 b 14 c 3 mark_edge,mark_edge,mark_edge v strike_straight ci [-0.0279, 0.0051] kind fixed
+    17 b 8 c 9 parked_ring,parked_ring,parked_ring v strike_sacrifice ci [-0.0137, 0.0157] kind fixed
+    16 b 11 c 5 parked_ring,parked_ring,parked_ring v strike_low ci [-0.0204, 0.0084] kind fixed
+    13 b 8 c 5 parked_ring,parked_ring,parked_ring v strike_straight ci [-0.0159, 0.0099] kind fixed
+    13 b 9 c 4 mark_edge,mark_edge,mark_edge v strike_high ci [-0.0209, 0.0103] kind fixed
+ net cells passing+parked_centre: 42, flips median 12.5, max 32, >30 1, ci-out 0
+    32 b 14 c 18 parked_centre,parked_centre,mark_edge v strike_converge ci [-0.0162, 0.0242] kind mixed
+    30 b 21 c 9 mark_edge,parked_centre,mark_edge v strike_converge ci [-0.0318, 0.0077] kind mixed
+    28 b 16 c 12 parked_centre,mark_edge,mark_edge v strike_converge ci [-0.0233, 0.0153] kind mixed
+    27 b 14 c 13 parked_ring,parked_ring,parked_ring v strike_flank ci [-0.0195, 0.0175] kind fixed
+    25 b 15 c 10 mark_edge,parked_centre,parked_centre v strike_converge ci [-0.0228, 0.0128] kind mixed
+    23 b 11 c 12 mark_edge,mark_edge,mark_edge v strike_converge ci [-0.0198, 0.0221] kind fixed
+    21 b 10 c 11 parked_ring,parked_ring,parked_ring v strike_converge ci [-0.0193, 0.0216] kind fixed
+    20 b 12 c 8 mark_edge,mark_edge,mark_edge v strike_flank ci [-0.023, 0.0144] kind fixed
+    19 b 15 c 4 parked_centre,parked_centre,parked_centre v strike_converge ci [-0.0324, 0.0068] kind fixed
+    18 b 15 c 3 parked_centre,mark_edge,mark_edge v strike_flank ci [-0.0282, 0.0038] kind mixed
+  ctrl bias c6_bias__strike_straight_00 fixed guard_field,guard_field,guard_field v strike_straight flips 14 diff -0.008
+  ctrl bias c6_bias__strike_straight_00 fixed guard_mark_edge,guard_mark_edge,guard_mark_edge v strike_straight flips 27 diff -0.009
+  ctrl bias c6_bias__strike_straight_00 fixed guard_parked_centre,guard_parked_centre,guard_parked_centre v strike_straight flips 46 diff -0.01
+  ctrl bias c6_bias__strike_straight_01 mixed guard_mark_edge,guard_mirror,guard_parked_centre v strike_straight flips 42 diff -0.008
+  ctrl rotate_deg c6_rotate_deg__strike_straight_00 fixed guard_field,guard_field,guard_field v strike_straight flips 14 diff -0.002
+  ctrl rotate_deg c6_rotate_deg__strike_straight_00 fixed guard_mark_edge,guard_mark_edge,guard_mark_edge v strike_straight flips 48 diff -0.008
+  ctrl rotate_deg c6_rotate_deg__strike_straight_00 fixed guard_parked_centre,guard_parked_centre,guard_parked_centre v strike_straight flips 0 diff 0.0
+  ctrl rotate_deg c6_rotate_deg__strike_straight_01 mixed guard_mark_edge,guard_mirror,guard_parked_centre v strike_straight flips 23 diff -0.003
+  ctrl field_range_m c6_field_range_m__strike_straight_00 fixed guard_field,guard_field,guard_field v strike_straight flips 42 diff -0.042
+  ctrl noise c7_noise__strike_straight_00 fixed guard_field,guard_field,guard_field v strike_straight flips 3 diff -0.001
+  ctrl noise c7_noise__strike_straight_00 fixed guard_mark_edge,guard_mark_edge,guard_mark_edge v strike_straight flips 5 diff -0.005
+  ctrl noise c7_noise__strike_straight_00 fixed guard_parked_centre,guard_parked_centre,guard_parked_centre v strike_straight flips 0 diff 0.0
+  ctrl noise c7_noise__strike_straight_01 mixed guard_mark_edge,guard_mirror,guard_parked_centre v strike_straight flips 1 diff 0.001
+
+== strike z_cell 3.5504211131541403 m {'strike': 130}
+ arm oracle     cells 130 flips median   0.0 max    0 >30:   0  ci-out: 0
+ arm net        cells 130 flips median  29.0 max  130 >30:  64  ci-out: 27
+ arm unfitted   cells  30 flips median 192.0 max  569 >30:  27  ci-out: 28
+ arm permuted   cells  30 flips median 127.0 max  494 >30:  29  ci-out: 23
+ arm noise      cells   5 flips median   9.0 max   16 >30:   0  ci-out: 0
+ arm bias       cells   5 flips median  33.0 max   36 >30:   3  ci-out: 0
+ arm rotate_deg cells   5 flips median  30.0 max   38 >30:   1  ci-out: 0
+ net cells passing only: 55, flips median 18.0, max 44, >30 4, ci-out 0
+    44 b 24 c 20 high,straight,high v guard_mark_edge ci [-0.0288, 0.0206] kind mixed
+    41 b 20 c 21 high,straight,high v guard_mirror ci [-0.0229, 0.0249] kind mixed
+    38 b 17 c 21 high,low,straight v guard_mirror ci [-0.0193, 0.0276] kind mixed
+    34 b 9 c 25 high,high,high v guard_mirror ci [-0.0056, 0.0387] kind fixed
+    29 b 24 c 5 high,low,straight v guard_parked_ring ci [-0.0379, -0.0] kind mixed
+    29 b 18 c 11 low,straight,straight v guard_mark_edge ci [-0.028, 0.0135] kind mixed
+    29 b 13 c 16 low,high,straight v guard_mirror ci [-0.0177, 0.0239] kind mixed
+    29 b 14 c 15 straight,low,high v guard_mirror ci [-0.0197, 0.0217] kind mixed
+    28 b 17 c 11 low,straight,straight v guard_mirror ci [-0.0267, 0.0142] kind mixed
+    25 b 22 c 3 high,low,straight v guard_parked_centre ci [-0.0366, -0.0014] kind mixed
+ net cells passing+parked_centre: 55, flips median 18.0, max 44, >30 4, ci-out 0
+    44 b 24 c 20 high,straight,high v guard_mark_edge ci [-0.0288, 0.0206] kind mixed
+    41 b 20 c 21 high,straight,high v guard_mirror ci [-0.0229, 0.0249] kind mixed
+    38 b 17 c 21 high,low,straight v guard_mirror ci [-0.0193, 0.0276] kind mixed
+    34 b 9 c 25 high,high,high v guard_mirror ci [-0.0056, 0.0387] kind fixed
+    29 b 24 c 5 high,low,straight v guard_parked_ring ci [-0.0379, -0.0] kind mixed
+    29 b 18 c 11 low,straight,straight v guard_mark_edge ci [-0.028, 0.0135] kind mixed
+    29 b 13 c 16 low,high,straight v guard_mirror ci [-0.0177, 0.0239] kind mixed
+    29 b 14 c 15 straight,low,high v guard_mirror ci [-0.0197, 0.0217] kind mixed
+    28 b 17 c 11 low,straight,straight v guard_mirror ci [-0.0267, 0.0142] kind mixed
+    25 b 22 c 3 high,low,straight v guard_parked_centre ci [-0.0366, -0.0014] kind mixed
+ info passing-only [(17, ['strike_straight', 'strike_straight', 'strike_straight']), (37, ['strike_high', 'strike_high', 'strike_high']), (24, ['strike_low', 'strike_low', 'strike_low']), (10, ['strike_straight', 'strike_low', 'strike_low']), (20, ['strike_low', 'strike_straight', 'strike_low']), (19, ['strike_low', 'strike_straight', 'strike_straight']), (8, ['strike_straight', 'strike_low', 'strike_straight']), (26, ['strike_high', 'strike_low', 'strike_straight']), (19, ['strike_low', 'strike_high', 'strike_straight']), (25, ['strike_straight', 'strike_low', 'strike_high']), (35, ['strike_high', 'strike_straight', 'strike_high'])]
+  ctrl bias c6_bias__guard_mark_edge_00 fixed strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mark_edge flips 17 diff -0.005
+  ctrl bias c6_bias__guard_mark_edge_00 fixed strike_converge,strike_converge,strike_converge v guard_mark_edge flips 36 diff 0.008
+  ctrl bias c6_bias__guard_mark_edge_00 fixed strike_flank,strike_flank,strike_flank v guard_mark_edge flips 33 diff -0.005
+  ctrl bias c6_bias__guard_mark_edge_00 fixed strike_straight,strike_straight,strike_straight v guard_mark_edge flips 33 diff -0.005
+  ctrl bias c6_bias__guard_mark_edge_01 mixed strike_high,strike_straight,strike_flank v guard_mark_edge flips 25 diff 0.003
+  ctrl rotate_deg c6_rotate_deg__guard_mark_edge_00 fixed strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mark_edge flips 15 diff -0.001
+  ctrl rotate_deg c6_rotate_deg__guard_mark_edge_00 fixed strike_converge,strike_converge,strike_converge v guard_mark_edge flips 30 diff 0.004
+  ctrl rotate_deg c6_rotate_deg__guard_mark_edge_00 fixed strike_flank,strike_flank,strike_flank v guard_mark_edge flips 30 diff 0.006
+  ctrl rotate_deg c6_rotate_deg__guard_mark_edge_00 fixed strike_straight,strike_straight,strike_straight v guard_mark_edge flips 38 diff -0.008
+  ctrl rotate_deg c6_rotate_deg__guard_mark_edge_01 mixed strike_high,strike_straight,strike_flank v guard_mark_edge flips 29 diff 0.005
+  ctrl sacrifice_entry_rad c6_sacrifice_entry_rad__guard_mark_edge_00 fixed strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mark_edge flips 7 diff 0.001
+  ctrl converge_gather_rad c6_converge_gather_rad__guard_mark_edge_00 fixed strike_converge,strike_converge,strike_converge v guard_mark_edge flips 23 diff 0.005
+  ctrl flank_margin_m c6_flank_margin_m__guard_mark_edge_00 fixed strike_flank,strike_flank,strike_flank v guard_mark_edge flips 52 diff -0.024
+  ctrl flank_margin_m c6_flank_margin_m__guard_mark_edge_01 mixed strike_high,strike_straight,strike_flank v guard_mark_edge flips 29 diff -0.015
+  ctrl noise c7_noise__guard_mark_edge_00 fixed strike_sacrifice,strike_sacrifice,strike_sacrifice v guard_mark_edge flips 5 diff -0.001
+  ctrl noise c7_noise__guard_mark_edge_00 fixed strike_converge,strike_converge,strike_converge v guard_mark_edge flips 8 diff 0.002
+  ctrl noise c7_noise__guard_mark_edge_00 fixed strike_flank,strike_flank,strike_flank v guard_mark_edge flips 12 diff -0.008
+  ctrl noise c7_noise__guard_mark_edge_00 fixed strike_straight,strike_straight,strike_straight v guard_mark_edge flips 16 diff -0.008
+  ctrl noise c7_noise__guard_mark_edge_01 mixed strike_high,strike_straight,strike_flank v guard_mark_edge flips 9 diff 0.005

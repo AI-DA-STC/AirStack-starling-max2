@@ -1,0 +1,13 @@
+== guard rows 300000
+  guard_parked_centre  rmse/ch 0.0083 bias 0.0101 (no moving labels)
+  guard_parked_ring    rmse/ch 0.1070  bias (+0.0214,+0.0133) |b| 0.0252 share 0.028 | rows |label|>0.3 0.60: speed ratio mean 0.9650 median 0.9872 | angle deg mean +0.17 rms 12.02 p50|.| 3.57 p99|.| 52.4 | along-rms 0.1597 across-rms 0.1002
+  guard_mark_edge      rmse/ch 0.0343  bias (+0.0041,-0.0018) |b| 0.0044 share 0.008 | rows |label|>0.3 1.00: speed ratio mean 0.9956 median 0.9993 | angle deg mean +0.03 rms 2.12 p50|.| 1.24 p99|.| 6.5 | along-rms 0.0320 across-rms 0.0365
+  guard_mirror         rmse/ch 0.0521  bias (+0.0034,-0.0098) |b| 0.0104 share 0.020 | rows |label|>0.3 1.00: speed ratio mean 0.9914 median 0.9964 | angle deg mean +0.03 rms 3.27 p50|.| 1.93 p99|.| 10.0 | along-rms 0.0483 across-rms 0.0557
+  guard_field          rmse/ch 0.1881  bias (-0.0150,+0.0286) |b| 0.0324 share 0.015 | rows |label|>0.3 1.00: speed ratio mean 0.9319 median 0.9884 | angle deg mean -0.16 rms 16.76 p50|.| 3.32 p99|.| 78.8 | along-rms 0.2310 across-rms 0.1318
+== strike rows 300000
+  strike_straight      rmse/ch 0.0206  bias (+0.0160,+0.0043) |b| 0.0166 share 0.324 | rows |label|>0.3 1.00: speed ratio mean 0.9995 median 1.0010 | angle deg mean -0.09 rms 1.25 p50|.| 0.83 p99|.| 3.3 | along-rms 0.0194 across-rms 0.0217
+  strike_flank         rmse/ch 0.3473  bias (+0.0043,-0.0065) |b| 0.0078 share 0.000 | rows |label|>0.3 1.00: speed ratio mean 0.8613 median 0.8466 | angle deg mean -0.16 rms 30.25 p50|.| 19.62 p99|.| 71.9 | along-rms 0.3222 across-rms 0.3706
+  strike_high          rmse/ch 0.0229  bias (+0.0128,+0.0172) |b| 0.0214 share 0.437 | rows |label|>0.3 0.12: speed ratio mean 0.9956 median 1.0012 | angle deg mean +0.03 rms 2.41 p50|.| 1.59 p99|.| 6.5 | along-rms 0.0385 across-rms 0.0331
+  strike_low           rmse/ch 0.0242  bias (+0.0236,-0.0043) |b| 0.0240 share 0.490 | rows |label|>0.3 0.09: speed ratio mean 0.9888 median 0.9968 | angle deg mean +0.05 rms 2.04 p50|.| 1.24 p99|.| 5.8 | along-rms 0.0338 across-rms 0.0307
+  strike_sacrifice     rmse/ch 0.3275  bias (+0.0094,-0.0087) |b| 0.0128 share 0.001 | rows |label|>0.3 1.00: speed ratio mean 0.8523 median 0.9460 | angle deg mean +0.14 rms 34.91 p50|.| 7.44 p99|.| 156.9 | along-rms 0.3918 across-rms 0.2470
+  strike_converge      rmse/ch 0.2170  bias (-0.0593,+0.0119) |b| 0.0604 share 0.039 | rows |label|>0.3 0.90: speed ratio mean 0.9048 median 0.9599 | angle deg mean +0.38 rms 26.54 p50|.| 5.10 p99|.| 154.8 | along-rms 0.2728 across-rms 0.1645

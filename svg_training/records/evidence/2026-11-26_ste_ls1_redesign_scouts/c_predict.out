@@ -1,0 +1,80 @@
+<scratch>/redesign/c_predict.py:56: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  rho = spearmanr(v, F).correlation
+<scratch>/redesign/c_predict.py:64: ConstantInputWarning: An input array is constant; the correlation coefficient is not defined.
+  print(f'    spearman {spearmanr([preds[k][i] for i in idx], F[idx]).correlation:+.2f} {k}')
+
+== guard arms in layout Counter({'scripts': 30, 'oracle': 30, 'net': 30, 'unfitted': 6, 'permuted': 6, 'bias': 2, 'rotate_deg': 2, 'noise': 2, 'field_range_m': 1})
+cells 150 flip code mismatches 0 example {1: 4, 2: 4} 4
+  spearman +0.41  open-loop mean skill RMSE
+  spearman +0.32  open-loop max skill RMSE
+  spearman +0.67  games whose end tick differs
+  spearman +0.46  share games diverged >0.01 m at 1s
+  spearman +0.13  share games diverged >0.05 m at 1s
+  spearman +0.13  share games diverged >0.2 m at 1s
+  spearman +nan  share games diverged >0.5 m at 1s
+  spearman +0.42  p90 divergence at 1s
+  spearman +nan  games still compared at 1s
+  spearman +0.38  share games diverged >0.01 m at 3s
+  spearman +0.50  share games diverged >0.05 m at 3s
+  spearman +0.12  share games diverged >0.2 m at 3s
+  spearman +0.12  share games diverged >0.5 m at 3s
+  spearman +0.55  p90 divergence at 3s
+  spearman +0.23  games still compared at 3s
+  spearman +0.57  share games diverged >0.01 m at 10s
+  spearman +0.57  share games diverged >0.05 m at 10s
+  spearman +0.57  share games diverged >0.2 m at 10s
+  spearman +0.52  share games diverged >0.5 m at 10s
+  spearman +0.57  p90 divergence at 10s
+  spearman +0.57  games still compared at 10s
+  passing-only cells 12
+    spearman +0.40 games whose end tick differs
+    spearman +0.41 share games diverged >0.05 m at 3s
+    spearman -0.48 share games diverged >0.2 m at 3s
+    spearman +0.51 share games diverged >0.05 m at 10s
+    spearman +0.07 p90 divergence at 3s
+    spearman +0.29 open-loop mean skill RMSE
+  scripts end_step quantiles (ticks) [37. 53. 61.] game_ticks 2400
+  example worst cells:
+    flips 64 endd 802 diverged>0.05 at 1/3/10s [0, 122, 188] guard_mark_edge,guard_mirror,guard_parked_centre strike_converge
+    flips 56 endd 821 diverged>0.05 at 1/3/10s [0, 158, 87] guard_parked_centre,guard_mirror,guard_mark_edge strike_converge
+    flips 54 endd 786 diverged>0.05 at 1/3/10s [0, 155, 193] guard_mirror,guard_mirror,guard_parked_centre strike_converge
+    flips 47 endd 852 diverged>0.05 at 1/3/10s [0, 232, 99] guard_parked_centre,guard_mirror,guard_mirror strike_converge
+    flips 41 endd 643 diverged>0.05 at 1/3/10s [137, 195, 0] guard_field,guard_field,guard_field strike_sacrifice
+
+== strike arms in layout Counter({'scripts': 30, 'net': 30, 'oracle': 25, 'unfitted': 5, 'permuted': 5, 'bias': 2, 'rotate_deg': 2, 'flank_margin_m': 2, 'noise': 2, 'sacrifice_entry_rad': 1, 'converge_gather_rad': 1})
+cells 130 flip code mismatches 0 example {1: 13, 2: 13} 13
+  spearman +0.68  open-loop mean skill RMSE
+  spearman +0.67  open-loop max skill RMSE
+  spearman +0.63  games whose end tick differs
+  spearman +0.64  share games diverged >0.01 m at 1s
+  spearman +0.71  share games diverged >0.05 m at 1s
+  spearman +0.64  share games diverged >0.2 m at 1s
+  spearman +nan  share games diverged >0.5 m at 1s
+  spearman +0.67  p90 divergence at 1s
+  spearman +nan  games still compared at 1s
+  spearman +0.13  share games diverged >0.01 m at 3s
+  spearman +0.51  share games diverged >0.05 m at 3s
+  spearman +0.66  share games diverged >0.2 m at 3s
+  spearman +0.61  share games diverged >0.5 m at 3s
+  spearman +0.63  p90 divergence at 3s
+  spearman +0.13  games still compared at 3s
+  spearman +0.04  share games diverged >0.01 m at 10s
+  spearman +0.04  share games diverged >0.05 m at 10s
+  spearman +0.04  share games diverged >0.2 m at 10s
+  spearman +0.04  share games diverged >0.5 m at 10s
+  spearman +0.04  p90 divergence at 10s
+  spearman +0.04  games still compared at 10s
+  passing-only cells 55
+    spearman +0.41 games whose end tick differs
+    spearman +0.35 share games diverged >0.05 m at 3s
+    spearman +nan share games diverged >0.2 m at 3s
+    spearman +nan share games diverged >0.05 m at 10s
+    spearman +0.36 p90 divergence at 3s
+    spearman +0.19 open-loop mean skill RMSE
+  scripts end_step quantiles (ticks) [50. 68. 79.] game_ticks 2400
+  example worst cells:
+    flips 130 endd 823 diverged>0.05 at 1/3/10s [765, 174, 0] strike_flank,strike_low,strike_flank guard_mirror
+    flips 122 endd 903 diverged>0.05 at 1/3/10s [871, 291, 0] strike_flank,strike_flank,strike_flank guard_mirror
+    flips 116 endd 837 diverged>0.05 at 1/3/10s [802, 195, 0] strike_flank,strike_flank,strike_low guard_mirror
+    flips 107 endd 926 diverged>0.05 at 1/3/10s [852, 534, 0] strike_flank,strike_flank,strike_flank guard_parked_centre
+    flips 99 endd 829 diverged>0.05 at 1/3/10s [608, 186, 0] strike_flank,strike_high,strike_high guard_mirror

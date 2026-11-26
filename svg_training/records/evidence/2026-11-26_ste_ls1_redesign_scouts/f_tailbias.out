@@ -1,0 +1,26 @@
+== guard saved
+  guard_parked_centre  xy rmse/ch 0.0083 |bias| 0.0101 bias share 0.734 | max|out| ch z,yaw 0.0002,0.0078 mean z -0.0001
+  guard_parked_ring    xy rmse/ch 0.1070 |bias| 0.0252 bias share 0.028 | max|out| ch z,yaw 0.0014,0.0133 mean z -0.0003
+  guard_mark_edge      xy rmse/ch 0.0343 |bias| 0.0044 bias share 0.008 | max|out| ch z,yaw 0.0006,0.0073 mean z +0.0002
+  guard_mirror         xy rmse/ch 0.0521 |bias| 0.0104 bias share 0.020 | max|out| ch z,yaw 0.0007,0.0103 mean z +0.0003
+  guard_field          xy rmse/ch 0.1881 |bias| 0.0324 bias share 0.015 | max|out| ch z,yaw 0.0018,0.0137 mean z -0.0008
+== guard after 300 steps Adam lr 1e-4
+  guard_parked_centre  xy rmse/ch 0.0042 |bias| 0.0008 bias share 0.019 | max|out| ch z,yaw 0.0000,0.0000 mean z +0.0000
+  guard_parked_ring    xy rmse/ch 0.1040 |bias| 0.0032 bias share 0.000 | max|out| ch z,yaw 0.0001,0.0002 mean z -0.0000
+  guard_mark_edge      xy rmse/ch 0.0314 |bias| 0.0026 bias share 0.004 | max|out| ch z,yaw 0.0001,0.0001 mean z +0.0000
+  guard_mirror         xy rmse/ch 0.0481 |bias| 0.0026 bias share 0.001 | max|out| ch z,yaw 0.0001,0.0001 mean z -0.0000
+  guard_field          xy rmse/ch 0.1846 |bias| 0.0067 bias share 0.001 | max|out| ch z,yaw 0.0001,0.0001 mean z +0.0000
+== strike saved
+  strike_straight      xy rmse/ch 0.0206 |bias| 0.0166 bias share 0.324 | max|out| ch z,yaw 0.0468,0.0000 mean z +0.0034
+  strike_flank         xy rmse/ch 0.3473 |bias| 0.0078 bias share 0.000 | max|out| ch z,yaw 0.0565,0.0001 mean z -0.0001
+  strike_high          xy rmse/ch 0.0229 |bias| 0.0214 bias share 0.437 | max|out| ch z,yaw 1.0000,0.0001 mean z +0.0004
+  strike_low           xy rmse/ch 0.0242 |bias| 0.0240 bias share 0.490 | max|out| ch z,yaw 1.0000,0.0001 mean z +0.0027
+  strike_sacrifice     xy rmse/ch 0.3275 |bias| 0.0128 bias share 0.001 | max|out| ch z,yaw 0.0552,0.0001 mean z +0.0001
+  strike_converge      xy rmse/ch 0.2170 |bias| 0.0604 bias share 0.039 | max|out| ch z,yaw 0.0497,0.0002 mean z -0.0038
+== strike after 300 steps Adam lr 1e-4
+  strike_straight      xy rmse/ch 0.0158 |bias| 0.0029 bias share 0.017 | max|out| ch z,yaw 0.0424,0.0001 mean z -0.0002
+  strike_flank         xy rmse/ch 0.3436 |bias| 0.0034 bias share 0.000 | max|out| ch z,yaw 0.0491,0.0002 mean z -0.0004
+  strike_high          xy rmse/ch 0.0159 |bias| 0.0014 bias share 0.004 | max|out| ch z,yaw 1.0000,0.0001 mean z -0.0020
+  strike_low           xy rmse/ch 0.0156 |bias| 0.0034 bias share 0.024 | max|out| ch z,yaw 1.0000,0.0001 mean z +0.0023
+  strike_sacrifice     xy rmse/ch 0.3255 |bias| 0.0117 bias share 0.001 | max|out| ch z,yaw 0.0539,0.0002 mean z -0.0001
+  strike_converge      xy rmse/ch 0.2052 |bias| 0.0011 bias share 0.000 | max|out| ch z,yaw 0.0474,0.0002 mean z +0.0002

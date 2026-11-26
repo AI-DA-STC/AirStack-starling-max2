@@ -1,0 +1,35 @@
+=== strike: |own xy| quantiles [1.7446, 2.234, 2.6363, 2.75, 2.75]
+  strike_straight    label in zone-line frame: along mean 1.0000 sd 0.0000; side mean 0.0000 sd 0.0000
+  strike_flank       label in zone-line frame: along mean 0.7542 sd 0.0727; side mean -0.0012 sd 0.6526
+  strike_high        label in zone-line frame: along mean 0.1069 sd 0.2891; side mean -0.0000 sd 0.0000
+  strike_low         label in zone-line frame: along mean 0.0888 sd 0.2771; side mean -0.0000 sd 0.0000
+  strike_sacrifice   label in zone-line frame: along mean 0.5821 sd 0.4768; side mean -0.0018 sd 0.6586
+  strike_converge    label in zone-line frame: along mean 0.2686 sd 0.4495; side mean -0.0149 sd 0.6862
+  strike_high: max|along - sqrt(1-vz^2)| 3.58e-07, max|side| 8.94e-08; share of rows inside the 0.25 m height ramp 0.128
+  strike_low: max|along - sqrt(1-vz^2)| 2.98e-07, max|side| 8.94e-08; share of rows inside the 0.25 m height ramp 0.097
+flank: blocked share 0.948; in-way count dist [15547, 154066, 130375, 12]
+  selected Guard: along q [1.4985, 1.6664, 1.9863, 2.2345, 2.3778] |off| q [0.0076, 0.0853, 0.3897, 0.6241, 0.804]
+  Guards present: |pos from zone centre| q [0.4196, 0.6526, 0.7511, 0.8305, 1.0397] ; share of present Guards within 1.4 m of centre 1.0
+  absent Guard slot encodes along=0, off=0 (on two boundaries at once); present-but-absent rows: share of rows with <3 Guards 0.225
+  flank side (off_sel = 0)           within 1/5/10 mm: 0.00125 0.00626 0.01223; rho 0.611 /m; E[J^2] 1.42; w for 0.05: 69.3 mm, for 0.01: 2.77 mm
+  flank nearest-in-way swap          within 1/5/10 mm: 0.00103 0.00463 0.00991; rho 0.495 /m; E[J^2] 1.42; w for 0.05: 85.5 mm, for 0.01: 3.42 mm
+  flank corridor edge |off|=1.4 (any Guard) within 1/5/10 mm: 0.00000 0.00001 0.00002; rho 0.001 /m; E[J^2] 0.52; w for 0.05: 115740.7 mm, for 0.01: 4629.63 mm
+  flank along=0 (any Guard)          within 1/5/10 mm: 0.00000 0.00000 0.00000; rho 0.000 /m; E[J^2] 0.52; w for 0.05: 60000000000000.0 mm, for 0.01: 2400000000000.00 mm
+  flank along=dist_zone (any Guard)  within 1/5/10 mm: 0.00238 0.01143 0.02299; rho 1.149 /m; E[J^2] 0.52; w for 0.05: 100.7 mm, for 0.01: 4.03 mm
+sacrifice: rows of a non-decoy with the decoy live 0.544; decoy rows with a Guard 0.284
+  sacrifice go_in edge (arc, m)      within 1/5/10 mm: 0.00015 0.00078 0.00156; rho 0.078 /m; E[J^2] 1.82; w for 0.05: 421.2 mm, for 0.01: 16.85 mm
+  sacrifice direction flip at pi (arc, m) within 1/5/10 mm: 0.00005 0.00021 0.00044; rho 0.022 /m; E[J^2] 3.92; w for 0.05: 701.0 mm, for 0.01: 28.04 mm
+  sacrifice drawn-Guard swap (J~1 assumed) within 1/5/10 mm: 0.00074 0.00305 0.00640; rho 0.320 /m; E[J^2] 1.00; w for 0.05: 187.4 mm, for 0.01: 7.50 mm
+  sacrifice decoy nearest-Guard swap (J~1) within 1/5/10 mm: 0.00039 0.00145 0.00316; rho 0.158 /m; E[J^2] 1.00; w for 0.05: 379.7 mm, for 0.01: 15.19 mm
+converge: rows n_live>=2 0.904; go 0.109; committed 0.089; gathered-not-committed 0.020
+  converge committed (min live rho = 2.3) within 1/5/10 mm: 0.00053 0.00567 0.01127; rho 0.563 /m; E[J^2] 2.40; w for 0.05: 44.3 mm, for 0.01: 1.77 mm
+  converge gathered (max err = 0.1 rad, arc) within 1/5/10 mm: 0.00012 0.00049 0.00102; rho 0.051 /m; E[J^2] 1.44; w for 0.05: 814.3 mm, for 0.01: 32.57 mm
+  run-in pace q [0.3929, 0.6465, 1.0, 1.0, 1.0] ; team's max edge distance (m) q (run-in rows):
+    [0.2468, 0.5078, 0.7899, 1.0816, 1.1471]
+=== guard: |own xy| q [0.3292, 0.6285, 0.7515, 0.8722, 1.1348] ; share < 0.1/0.25/0.5 m [0.0008, 0.0052, 0.0366]
+  marked Strike |pos| q [1.7446, 2.2448, 2.641, 2.75, 2.75] ; found share 1.0
+  field nearest-Strike swap          within 1/5/10 mm: 0.00131 0.00706 0.01408; rho 0.704 /m; E[J^2] 2.56; w for 0.05: 33.3 mm, for 0.01: 1.33 mm
+  field push active (a mate within 1.1 m) share 0.029 ; mate distance q [1.0897, 1.1298, 1.2904, 1.4475, 1.79]
+  ring: whole team live 0.773; |Guard 0 pos| q (whole team) [0.4969, 0.6626, 0.7514, 0.8476, 1.0161]
+   after a loss: |sum of 3-fold unit vectors| q [0.1463, 1.0, 1.0363, 2.0, 2.0] (small = phase ill-defined)
+  ring after-loss station round() (arc, m) within 1/5/10 mm: 0.00000 0.00000 0.00001; rho 0.000 /m; E[J^2] 2.25; w for 0.05: 80000.0 mm, for 0.01: 3200.00 mm

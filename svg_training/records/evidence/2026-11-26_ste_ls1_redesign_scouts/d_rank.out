@@ -1,0 +1,52 @@
+
+== guard net cells 150
+ all: 150 cells; net flips median 16.0, max 64
+   v noise=0.02  n 150 spearman +0.52  arm median   3.0 max  11 | net/arm median ratio 5.33
+   v noise=0.05  n 150 spearman +0.61  arm median   7.5 max  21 | net/arm median ratio 2.13
+   v noise=0.1   n 150 spearman +0.56  arm median  15.0 max  37 | net/arm median ratio 1.07
+   v bias=0.01   n 150 spearman +0.31  arm median   9.0 max  31 | net/arm median ratio 1.78
+   v bias=0.02   n 150 spearman +0.28  arm median  17.0 max  63 | net/arm median ratio 0.94
+   v turn=1.5    n 150 spearman +0.63  arm median   9.0 max  34 | net/arm median ratio 1.78
+   v turn=3.0    n 150 spearman +0.59  arm median  17.0 max  52 | net/arm median ratio 0.94
+   v scale=0.95  n 150 spearman +0.59  arm median  17.0 max  49 | net/arm median ratio 0.94
+ passing-only: 12 cells; net flips median 17.0, max 27
+   v noise=0.02  n  12 spearman +0.36  arm median   1.5 max   7 | net/arm median ratio 11.33
+   v noise=0.05  n  12 spearman -0.01  arm median   5.5 max  13 | net/arm median ratio 3.09
+   v noise=0.1   n  12 spearman -0.08  arm median  14.0 max  27 | net/arm median ratio 1.21
+   v bias=0.01   n  12 spearman +0.77  arm median   6.5 max  17 | net/arm median ratio 2.62
+   v bias=0.02   n  12 spearman +0.85  arm median  14.5 max  25 | net/arm median ratio 1.17
+   v turn=1.5    n  12 spearman +0.20  arm median   4.5 max  26 | net/arm median ratio 3.78
+   v turn=3.0    n  12 spearman -0.02  arm median  10.5 max  38 | net/arm median ratio 1.62
+   v scale=0.95  n  12 spearman -0.05  arm median   8.5 max  36 | net/arm median ratio 2.00
+  top-10 overlap: noise0.05 v bias0.02 2 ; noise0.05 v turn3 6 ; net v noise0.05 3 ; net v bias0.02 7 ; net v turn3 5
+  spearman noise0.05 v noise0.1 (same cells): 0.83 ; bias0.02 v turn3: 0.06
+  mean flips by opponent noise=0.05 {'converge': 12.0, 'flank': 8.5, 'high': 6.1, 'low': 6.4, 'sacrifice': 7.2, 'straight': 7.6}
+  mean flips by opponent bias=0.02  {'converge': 34.5, 'flank': 18.4, 'high': 15.1, 'low': 15.3, 'sacrifice': 15.2, 'straight': 16.1}
+  mean flips by opponent turn=3.0   {'converge': 31.4, 'flank': 14.6, 'high': 16.3, 'low': 21.2, 'sacrifice': 14.4, 'straight': 15.0}
+  mean flips by opponent net        {'converge': 32.8, 'flank': 17.7, 'high': 12.6, 'low': 14.8, 'sacrifice': 17.2, 'straight': 15.3}
+
+== strike net cells 130
+ all: 130 cells; net flips median 29.0, max 130
+   v noise=0.02  n 130 spearman +0.14  arm median   8.0 max  27 | net/arm median ratio 3.62
+   v noise=0.05  n 130 spearman +0.23  arm median  13.0 max  37 | net/arm median ratio 2.23
+   v noise=0.1   n 130 spearman +0.23  arm median  18.0 max  56 | net/arm median ratio 1.61
+   v bias=0.01   n 130 spearman +0.37  arm median   9.0 max  20 | net/arm median ratio 3.22
+   v bias=0.02   n 130 spearman +0.46  arm median  13.0 max  24 | net/arm median ratio 2.23
+   v turn=1.5    n 130 spearman +0.51  arm median  10.0 max  21 | net/arm median ratio 2.90
+   v turn=3.0    n 130 spearman +0.42  arm median  19.5 max  38 | net/arm median ratio 1.49
+   v scale=0.95  n 130 spearman +0.22  arm median  17.0 max  43 | net/arm median ratio 1.71
+ passing-only: 55 cells; net flips median 18.0, max 44
+   v noise=0.02  n  55 spearman +0.34  arm median   9.0 max  27 | net/arm median ratio 2.00
+   v noise=0.05  n  55 spearman +0.48  arm median  14.0 max  37 | net/arm median ratio 1.29
+   v noise=0.1   n  55 spearman +0.59  arm median  21.0 max  56 | net/arm median ratio 0.86
+   v bias=0.01   n  55 spearman +0.47  arm median   8.0 max  18 | net/arm median ratio 2.25
+   v bias=0.02   n  55 spearman +0.68  arm median  14.0 max  24 | net/arm median ratio 1.29
+   v turn=1.5    n  55 spearman +0.54  arm median  10.0 max  21 | net/arm median ratio 1.80
+   v turn=3.0    n  55 spearman +0.58  arm median  20.0 max  38 | net/arm median ratio 0.90
+   v scale=0.95  n  55 spearman +0.47  arm median  17.0 max  43 | net/arm median ratio 1.06
+  top-10 overlap: noise0.05 v bias0.02 3 ; noise0.05 v turn3 1 ; net v noise0.05 1 ; net v bias0.02 2 ; net v turn3 3
+  spearman noise0.05 v noise0.1 (same cells): 0.84 ; bias0.02 v turn3: 0.47
+  mean flips by opponent noise=0.05 {'field': 11.6, 'mark_edge': 22.7, 'mirror': 23.5, 'parked_centre': 9.9, 'parked_ring': 10.2}
+  mean flips by opponent bias=0.02  {'field': 8.5, 'mark_edge': 17.3, 'mirror': 17.3, 'parked_centre': 13.0, 'parked_ring': 11.6}
+  mean flips by opponent turn=3.0   {'field': 6.0, 'mark_edge': 15.9, 'mirror': 26.2, 'parked_centre': 20.5, 'parked_ring': 21.5}
+  mean flips by opponent net        {'field': 14.4, 'mark_edge': 41.7, 'mirror': 64.8, 'parked_centre': 39.5, 'parked_ring': 35.7}

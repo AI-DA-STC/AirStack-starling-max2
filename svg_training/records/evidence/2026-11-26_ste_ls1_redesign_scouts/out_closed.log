@@ -1,0 +1,14 @@
+=== strike (zone-line frame)
+  strike_straight      max|closed form - label| xy 1.19e-07 
+  strike_flank         max|closed form - label| xy 2.38e-07 
+  strike_high          max|closed form - label| xy 1.79e-07 vz 0.00e+00
+  strike_low           max|closed form - label| xy 1.79e-07 vz 0.00e+00
+  strike_sacrifice     max|closed form - label| xy 3.58e-07 
+  strike_converge      max|closed form - label| xy 8.75e-06 
+  converge: rows where the unwrapped and wrapped direction differ (circle branch, n_live>=2, not go): 0.00056
+=== guard (Strike-anchored radial frames)
+  guard_mark_edge      max|closed form - label| xy 3.13e-07 
+  guard_mirror         max|closed form - label| xy 5.36e-07 
+  guard_field          max|closed form - label| xy 3.58e-07 
+  guard_parked_ring    max|closed form - label| xy 1.93e-05 (station delta then steer; the script's own computation)
+  guard_parked_centre  max|closed form - label| xy 0.00e+00 all 4 channels max 0.0

@@ -68,6 +68,8 @@ help: flank alone reached 0.045 with them.
 
 ## 0b. The lead's recommendation (26 Nov 2026, after the review): stop LS1 now
 
+**Owner's ruling R49 (26 Nov 2026): "yes go ahead, stop LS1 and redesign".** The fix round is not spent; LS1 closes on T94.
+
 The lead read the reviewed page against its own pilot numbers and **recommends stopping LS1 now, not spending the fix
 round**. This changes recommendation 1 of section 7; the diagnosis and the costed round below are unchanged.
 

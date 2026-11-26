@@ -24,8 +24,9 @@ note disagree, this file wins.
   the allowed levers, one skill alone stays 2–3x over the limit. Guard's parked-centre offset has no allowed lever.
   **The lead recommends stopping LS1** (section 0b). The re-scoped build: own-frame inputs, a network or head per skill,
   a fit schedule, an exact zero.
-- **Waiting on the owner:** spend the fix round (section 5: five gate keys, 0.62 GPU-h, new gate hash) or stop LS1.
-  Nothing launches before the answer. LS1.4 needs both teams DISTILLED.
+- **Owner ruled R49 (~15:20): stop LS1 and redesign.** The fix round is not spent. The redesign note (lead) comes next,
+  with pilot pass marks set before any CPU trial, then the owner's approval before a build. Note: the real target is
+  near 0.01 command error (the 30-changed-games limit), not 0.05: high, straight and low passed 0.05 yet changed up to 44 games.
 - LS1.2 ran with an uncommitted (likely docs-only) diff; launch any further run from a clean tree.
 
 ### 26 November 2026 ~10:00 — RTX 5090: M1–M3 MERGED, LIMITS SET (R48), LS1.1 DISTILLATION RUNNING ON THE GPU (read this first)

@@ -1,8 +1,8 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-26 15:30 (+08:00) (event: owner ruling R49, LS1 stopped; redesign started)** · RTX 5090 · GPU 1 % / 36 W / 1.2 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-26 18:10 (+08:00) (event: redesign note written and reviewed; owner go needed for Stage 0)** · RTX 5090 · GPU 1 % / 36 W / 1.2 of 32 GB · 0 training processes (0 paused)
 
-**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); the skill network's redesign is being drafted (design note, then CPU trials of every skill) · **Side track:** none
+**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); asking the owner for a go on Stage 0 (no training, about 1 to 2 h of CPU) · **Side track:** none
 
 **Plain summary.** One network per team was trained to copy its hand-written skills (LS1.1, T93, 0.17 GPU-h) and played against the scripts in the copy check (LS1.2, T94, CPU). Every control passed, so the result is real: **NOT DISTILLED on both teams.** Strike's flank, sacrifice and converge are 4 to 7 times over the 0.05 command-error limit. Guard misses mirror narrowly, field by about 2 times, and the parked-at-centre skill (which must output zero) by about 7 times. The diagnosis says the network is under-trained, not misled. Its scratch trials show that even one skill alone in its own network stays 2 to 3 times over the limit with the levers the fix round may use. **The lead recommends stopping LS1 now** and re-scoping the next build. That build would use inputs in each drone's own frame (flank reached 0.045 alone with them), a network or output head per skill, a fit schedule, and an exact zero for the parked skills.
 
@@ -42,7 +42,8 @@ INTERNAL · the latest status of STE's own learning track and the NUS port, over
 | LS1.2 | Copy check against the scripts | **NOT DISTILLED** both teams (T94); every control PASS | tier 1 (CPU) | Guard 18 limit failures, Strike 98 |
 | — | Diagnosis and the fix-round proposal | DONE, two reviewers (numbers, reasoning) | CPU scratch pilots | [proposal](../drafts/LS1_FIX_ROUND_PROPOSAL.md), section 0b the lead's recommendation |
 | LS1.1-fix, LS1.2-fix | The one fix round the stop rules allow (R47) | NOT SPENT (owner R49) | — | — |
-| — | Redesign of the skill network: design note, pilot marks, two reviewers | RUNNING | none (CPU trials after the note) | then CPU trials of every skill, then the owner's approval before any build |
+| — | Redesign of the skill network: design note, pilot marks, two reviewers | DONE (`c1bebc9a`); rules added after review in focused re-review | none | [LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md) |
+| P0 | Stage 0 of the pilots: harness check, de-bias and mask replay, blended-switch replay, ONNX check (no training) | WAITING ON THE OWNER (go) | tier 1 (CPU) | about 1.5 to 2 h one at a time, 0 GPU-h; decides whether a learnable copy can pass at all |
 
 GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
@@ -55,7 +56,7 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
 **Next.** The redesign note (inputs, network shape, fit schedule, the exact zero, and a scripts-plus-correction option), with pilot pass marks written before any trial; two reviewers; then CPU trials of every skill of both teams. One finding shapes it: moves that passed the command check (0.02 to 0.035) still changed up to 44 games in a cell, and the calibration puts the 30-game limit near a random error of 0.01 or a steady bias under 0.01, so the real target is near 0.01, not 0.05.
 
-**Waiting on you.** Nothing now. Next: the redesign note and its trial results, before any build.
+**Waiting on you.** A go for Stage 0 of the pilots (no training, CPU only, about 1 to 2 h). The later decisions wait for its result.
 
 **Usage:** GPU 0.172 h on route 3 (LS1.1 and the probe). The diagnosis workflow: 5 agents, 859k tokens, 2.6 h (analyst, record writer, two reviewers, reviser). The M4 full suite took about 40 min of CPU. Advisor (Fable 5.2, advisor tool) once after the diagnosis. Checks: the docs check and the document test set for this docs-only commit.
 

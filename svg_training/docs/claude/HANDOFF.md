@@ -28,6 +28,10 @@ note disagree, this file wins.
   with pilot pass marks set before any CPU trial, then the owner's approval before a build. Note: the real target is
   near 0.01 command error (the 30-changed-games limit), not 0.05: high, straight and low passed 0.05 yet changed up to 44 games.
 - LS1.2 ran with an uncommitted (likely docs-only) diff; launch any further run from a clean tree.
+- **Redesign note** `ste_learning/drafts/LS1_REDESIGN.md` (`c1bebc9a`), two reviewers; the rules added after review (4.3
+  to 4.5, decisions 8 to 10) are draft and in a focused re-review. Scout evidence `records/evidence/2026-11-26_ste_ls1_redesign_scouts/`.
+  Asked the owner for a go on Stage 0 only (no training, CPU). Stage 0c (blended switches) decides whether a learnable
+  copy can pass; the later decisions wait for it.
 
 ### 26 November 2026 ~10:00 — RTX 5090: M1–M3 MERGED, LIMITS SET (R48), LS1.1 DISTILLATION RUNNING ON THE GPU (read this first)
 

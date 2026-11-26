@@ -1,8 +1,8 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-27 01:50 (+08:00) (event: owner ruling R50, overnight trials approved; start waits for the owner's account switch)** · RTX 5090 · GPU 6 % / 49 W / 1.8 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-27 01:59 (+08:00) (event: R50 trials started; Stage 0a PASS)** · RTX 5090 · GPU 6 % / 49 W / 1.8 of 32 GB · 0 training processes (0 paused)
 
-**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); owner ruled R50 (A): Stage 0 and the full pilot trials, CPU only; NOT STARTED, waiting for the owner's Claude account switch · **Side track:** none
+**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); R50 pilot trials RUNNING (CPU only, up to 4 jobs): Stage 0a PASS; 0b to 0e and Stage 1 fits queued or running · **Side track:** none
 
 **Plain summary.** One network per team was trained to copy its hand-written skills (LS1.1, T93, 0.17 GPU-h) and played against the scripts in the copy check (LS1.2, T94, CPU). Every control passed, so the result is real: **NOT DISTILLED on both teams.** Strike's flank, sacrifice and converge are 4 to 7 times over the 0.05 command-error limit. Guard misses mirror narrowly, field by about 2 times, and the parked-at-centre skill (which must output zero) by about 7 times. The diagnosis says the network is under-trained, not misled. Its scratch trials show that even one skill alone in its own network stays 2 to 3 times over the limit with the levers the fix round may use. **The lead recommends stopping LS1 now** and re-scoping the next build. That build would use inputs in each drone's own frame (flank reached 0.045 alone with them), a network or output head per skill, a fit schedule, and an exact zero for the parked skills.
 
@@ -48,7 +48,7 @@ The route 3 flowchart, redrawn 26 Nov: LS1 stopped, the redesign's CPU trials be
 | LS1.1-fix, LS1.2-fix | The one fix round the stop rules allow (R47) | NOT SPENT (owner R49) | — | — |
 | — | Redesign of the skill network: design note, pilot marks, two reviewers | DONE (`c1bebc9a`); rules fixed after the focused re-review (`6625cf82`) | none | [LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md) |
 | — | Route 3 flowcharts redrawn: LS1 stopped, the redesign trials (owner asked) | DONE, one review round (numbers: no finding; completeness: 1 blocker, 4 minor, all fixed) | none | [route page](../LEARNED_SKILLS_ROUTE.md) |
-| P0 | Stage 0 of the pilots: harness check, de-bias and mask replay, blended-switch replay, ONNX check (no training) | APPROVED (R50), NOT STARTED: waits for the owner's account switch | tier 1 (CPU) | about 1.5 to 2 h one at a time, 0 GPU-h; decides whether a learnable copy can pass at all |
+| P0 | Stage 0 of the pilots: harness check, de-bias and mask replay, blended-switch replay, ONNX check (no training) | RUNNING: 0a PASS (the saved networks reproduce T94 cell for cell: 44, 122, 64; the script oracle 0 changed games); 0c field passes at 1 and 3 cm; 0b, 0c flank/sacrifice/converge, 0d, 0e running or queued | tier 1 (CPU) | about 1.5 to 2 h one at a time, 0 GPU-h; decides whether a learnable copy can pass at all |
 
 GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
@@ -61,8 +61,8 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
 **Next.** The redesign note (inputs, network shape, fit schedule, the exact zero, and a scripts-plus-correction option), with pilot pass marks written before any trial; two reviewers; then CPU trials of every skill of both teams. One finding shapes it: moves that passed the command check (0.02 to 0.035) still changed up to 44 games in a cell, and the calibration puts the 30-game limit near a random error of 0.01 or a steady bias under 0.01, so the real target is near 0.01, not 0.05.
 
-**Waiting on you.** Switch the Claude account, then say start. The session then writes the scratch code (5 to 7 h), runs Stage 0, Stage 1 and Stage 2 (up to 4 jobs at 6 threads), stops if 0a fails or a result needs decisions 2, 3, 8, 9 or 10.
+**Waiting on you.** Nothing tonight. The trials run on the CPU; a result that needs decisions 2, 3, 8, 9 or 10 waits for your morning read. Please leave the PC alone overnight (24 of 32 threads in use).
 
 **Usage:** GPU 0.172 h on route 3 (LS1.1 and the probe). The redraw review: 2 Sonnet agents, 171k tokens, under 1 min. The diagnosis workflow: 5 agents, 859k tokens, 2.6 h (analyst, record writer, two reviewers, reviser). The M4 full suite took about 40 min of CPU. Advisor (Fable 5.2, advisor tool) once after the diagnosis. Checks: the docs check (13 PASS, 0 FAIL) and the document test set (151 passed, 2 skipped) for this docs-only commit.
 
-**Ready to push.** 45 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 46 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.

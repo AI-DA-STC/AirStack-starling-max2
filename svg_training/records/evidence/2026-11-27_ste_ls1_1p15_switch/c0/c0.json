@@ -1,0 +1,182 @@
+[
+ {
+  "guard": "guard_field",
+  "strike": "strike_converge",
+  "exact": true,
+  "text": "holds 768 v T44 768, reaches 232 v 232; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_field",
+  "strike": "strike_flank",
+  "exact": true,
+  "text": "holds 766 v T44 766, reaches 234 v 234; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_field",
+  "strike": "strike_high",
+  "exact": true,
+  "text": "holds 645 v T44 645, reaches 355 v 355; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_field",
+  "strike": "strike_low",
+  "exact": true,
+  "text": "holds 645 v T44 645, reaches 355 v 355; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_field",
+  "strike": "strike_sacrifice",
+  "exact": true,
+  "text": "holds 716 v T44 716, reaches 284 v 284; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_field",
+  "strike": "strike_straight",
+  "exact": true,
+  "text": "holds 645 v T44 645, reaches 355 v 355; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_converge",
+  "exact": true,
+  "text": "holds 727 v T44 727, reaches 273 v 273; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_flank",
+  "exact": true,
+  "text": "holds 607 v T44 607, reaches 393 v 393; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_high",
+  "exact": true,
+  "text": "holds 402 v T44 402, reaches 598 v 598; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_low",
+  "exact": true,
+  "text": "holds 407 v T44 407, reaches 593 v 593; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_sacrifice",
+  "exact": true,
+  "text": "holds 610 v T44 610, reaches 390 v 390; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mark_edge",
+  "strike": "strike_straight",
+  "exact": true,
+  "text": "holds 422 v T44 422, reaches 578 v 578; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_converge",
+  "exact": true,
+  "text": "holds 727 v T44 727, reaches 273 v 273; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_flank",
+  "exact": true,
+  "text": "holds 549 v T44 549, reaches 451 v 451; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_high",
+  "exact": true,
+  "text": "holds 396 v T44 396, reaches 604 v 604; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_low",
+  "exact": true,
+  "text": "holds 407 v T44 407, reaches 593 v 593; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_sacrifice",
+  "exact": true,
+  "text": "holds 483 v T44 483, reaches 517 v 517; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_mirror",
+  "strike": "strike_straight",
+  "exact": true,
+  "text": "holds 425 v T44 425, reaches 575 v 575; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_converge",
+  "exact": true,
+  "text": "holds 673 v T44 673, reaches 327 v 327; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_flank",
+  "exact": true,
+  "text": "holds 331 v T44 331, reaches 669 v 669; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_high",
+  "exact": true,
+  "text": "holds 31 v T44 31, reaches 969 v 969; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_low",
+  "exact": true,
+  "text": "holds 16 v T44 16, reaches 984 v 984; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_sacrifice",
+  "exact": true,
+  "text": "holds 210 v T44 210, reaches 790 v 790; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_centre",
+  "strike": "strike_straight",
+  "exact": true,
+  "text": "holds 101 v T44 101, reaches 899 v 899; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_converge",
+  "exact": true,
+  "text": "holds 692 v T44 692, reaches 308 v 308; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_flank",
+  "exact": true,
+  "text": "holds 331 v T44 331, reaches 669 v 669; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_high",
+  "exact": true,
+  "text": "holds 55 v T44 55, reaches 945 v 945; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_low",
+  "exact": true,
+  "text": "holds 34 v T44 34, reaches 966 v 966; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_sacrifice",
+  "exact": true,
+  "text": "holds 289 v T44 289, reaches 711 v 711; 0 of 1000 games differ (0 in outcome)"
+ },
+ {
+  "guard": "guard_parked_ring",
+  "strike": "strike_straight",
+  "exact": true,
+  "text": "holds 127 v T44 127, reaches 873 v 873; 0 of 1000 games differ (0 in outcome)"
+ }
+]

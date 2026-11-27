@@ -1,10 +1,10 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-27 09:25 (+08:00) (event: R51, route 3 moves to the 1.15 m tag; steps C0, A, C done; B's first finding; D restarted with a thread cap)** · RTX 5090 · GPU idle · CPU jobs: calibration (2), pilot replays (2), run 0 ceiling, test suite
+**Status, 2026-11-27 14:10 (+08:00) (event: 1.15 m calibration done; the 1.15 m limits page is ready for your ruling; full suite PASS)** · RTX 5090 · GPU idle · CPU idle (E finished, sealed)
 
-**Main track:** route 3 (the learned-skills route), LS1 redesign: 1.6 m pilots PASS both teams (R50); **owner R51: route 3 moves to the 1.15 m tag before the build** ([plan](../drafts/LS1_1P15_SWITCH.md), advisor read); CPU steps C0, A, C done, B partly, D and E running · **Side track:** none
+**Main track:** route 3 (the learned-skills route) at the 1.15 m tag (R51): CPU steps C0, A, C, B, D done, E done and sealed; **the 1.15 m copy limits wait on your ruling** ([options page](../drafts/LS1_1P15_LIMIT_OPTIONS.md)) · **Side track:** none
 
-**Plain summary.** Route 3 now plays at the 1.15 m tag (the bubble-touch tag). The 1.15 m reference games of T50 replay exactly on the CPU (30 of 30 cells), the 1.15 m gate files are built and tested, and the scripts' games at 1.15 m are stored (every control PASS). First finding: at 1.15 m the game swings hard to the Strike team: **every one of the 150 Guard cells loses wins (median 423 of 1,000) and every one of the 156 Strike cells gains (median 376)**; 22 Guard and 31 Strike cells are within 100 games of all or nothing, where a copy can change few games. Observed in the training simulator. The copy-limit calibration (D) runs on both teams; the replay of last night's networks (E) runs too and stays sealed until you set the 1.15 m limits.
+**Plain summary.** The copy-limit calibration was played again at the 1.15 m tag (T95, T96; every control PASS). Under the limits you set at 1.6 m (R48), every check the gate runs on itself still comes out as it must, but the same small errors change more games at 1.15 m: a Strike copy as accurate as random noise 0.02 now changes 31 games in its worst cell, against a limit of 30 (27 at 1.6 m). **Recommended: keep R48, with the games-changed limit 31 instead of 30**: R48's own rule applied to the 1.15 m numbers. Run 0 against the parked Guard is close to trivial at 1.15 m (ceiling 984 of 1,000, untrained 899; T97). Observed in the training simulator. Step E (last night's networks at 1.15 m) has finished and stays unread until you rule.
 
 ## Watch
 
@@ -52,7 +52,7 @@ The route 3 flowchart, redrawn 26 Nov: LS1 stopped, the redesign's CPU trials be
 
 | P1 | Stage 1: row-level fits (B, A3, A4, next rungs, control arms) | DONE for the ladder (all B fits eligible; R3: sacrifice 0.077 to 0.025, converge 0.096 to 0.036); control arms by the 4.3 rule: own frame needed on flank, mirror, field; the slow finish on high and field; C-head and C-one qualify on neither team (C-one misses on all four skills), so S-shared does not play; reported-only fits done | tier 1 (CPU) | scratch |
 | P2 | Stage 2: closed-loop replay of every gated cell | **PASS both teams, two seeds**: Guard S1 (25 / 24, median 3 / 4); Strike S1 FAIL (one cell 31, sacrifice and converge command error), S2 PASS (16 / 15, median 3 / 2); C4 analogue PASS both; onnxruntime arm 0 games different (both teams) | tier 1 (CPU) | [results](../drafts/LS1_REDESIGN_PILOT_RESULTS.md) |
-| P3 | Route 3 to the 1.15 m tag (R51): C0 reference replay, A files and fix, C script games, B screen, D calibration, E sealed replay | C0 PASS (30/30 exact); A done (`20fbd511`, QC: 1 blocker fixed `fd3bbeca`); C PASS both teams; B: table done, run 0 ceiling running; D running (relaunched 09:20 with 8 threads after thrashing); E running, sealed | tier 1 (CPU) | [plan](../drafts/LS1_1P15_SWITCH.md) |
+| P3 | Route 3 to the 1.15 m tag (R51): C0 reference replay, A files and fix, C script games, B screen, D calibration, E sealed replay | C0 PASS (30/30 exact); A done (`20fbd511`, QC: 1 blocker fixed `fd3bbeca`); C PASS both teams; B done (Guard median −423, Strike +368 a cell; run 0 ceiling 984, mark 0.934, T97); D done (T95, T96, every control PASS); **limits page ready, two reviewers** (numbers: 2 should-fix; completeness: 11 should-fix; all fixed); E done, sealed | tier 1 (CPU) | [plan](../drafts/LS1_1P15_SWITCH.md), [limits](../drafts/LS1_1P15_LIMIT_OPTIONS.md), [record](../../records/2026-11-27_ste_ls1_1p15_switch_record.md) |
 
 GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
@@ -63,10 +63,10 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 | — | Learner v2 note | NOT STARTED: after LS1 (R37) |
 | NEAR-962 | Planned-pushes flight; the Crazyflie commanded gaps | unchanged from 24 Nov |
 
-**Next.** D finishes (about 3 h); then a 1.15 m limits page for you (from D alone; E stays sealed until you rule); then E is judged once and decisions 2 and 8 come back to you.
+**Next.** Your ruling on the 1.15 m limits; then the gate file is filled and hashed, E is judged once (as a transfer test), and decisions 2 and 8 come back to you with E's numbers.
 
-**Waiting on you.** Nothing right now. Coming: the 1.15 m copy limits (after D), then decisions 2 and 8 (after E), run 0 at 1.15 m (the parked Guard holds only 101 of 1,000 against strike_straight), and the LS1.4 GPU cap (about 5.3 against 4.0) before the build.
+**Waiting on you.** **The 1.15 m copy limits**: answer "31, rest as R48" (recommended), or "30" (R48's number) or "35" for the games-changed limit ([options page](../drafts/LS1_1P15_LIMIT_OPTIONS.md), section 3). Coming after: decisions 2 and 8 (after E), run 0 at 1.15 m (the ceiling is 984 of 1,000 and the untrained team gets 899, so the check is close to trivial: keep it with the new mark 0.934, or replace it), and the LS1.4 GPU cap (about 5.3 against 4.0) before the build.
 
-**Usage:** 0 GPU-h (CPU only). The CPU was oversubscribed from about 08:35 (calibration uncapped beside step C, the suite, the run 0 ceiling and two leftover test runs of the QC reviewer: load 98 on 32 threads; one 1-cell batch took 279 s); the reviewer's test runs were stopped and the calibration relaunched at 09:20 with 8 threads each (as T90 was). Agents: advisor (Fable 5.2, plan read), mapping agent (Opus, 301k tokens), QC reviewer of step A (Sonnet). Checks: tests of the touched files; full suite running.
+**Usage:** 0 GPU-h (CPU only). D: about 8.8 CPU-h (4.4 a team, slowed by the shared CPU this morning); top-up seconds; run 0 ceiling about 3 h wall clock. Agents: two reviewers of the limits page (Sonnet; numbers 133k tokens, completeness 70k), one reviewer of the record (Sonnet). Checks: full suite on `fd3bbeca` PASS (3,444 passed, 51 skipped, 4 h 54 min under the shared CPU); this commit is documents and evidence only (document check).
 
-**Ready to push.** 54 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 55 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.

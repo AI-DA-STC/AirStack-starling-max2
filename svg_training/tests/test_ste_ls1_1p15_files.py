@@ -103,3 +103,7 @@ def test_the_distil_gate_file_differs_only_in_the_named_keys():
     assert n == o
     for k, v in new["controls"]["near_miss"]["switch"].items():
         assert v == "FILL_R51", k
+    owner = {**new["limits"], **{k: v for k, v in new["controls"].items() if not isinstance(v, dict)},
+             **{k: v for k, v in new["controls"]["near_miss"].items() if not isinstance(v, dict)}}
+    assert {k for k, v in owner.items() if v != "FILL_R51"} == {"end_time_max_ticks"}
+    assert new["limits"]["end_time_max_ticks"] == old["limits"]["end_time_max_ticks"]

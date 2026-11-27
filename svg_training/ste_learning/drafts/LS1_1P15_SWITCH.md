@@ -58,8 +58,10 @@ Up to 4 jobs at 6 threads at once. Total about 8 to 11 CPU job-hours, 4 to 5 h w
   a FAIL is reported with its cells and goes to the build as a known risk, and decisions 2 and 8 are then read from
   the 1.15 m replay where it informs them. Reported beside each cell's changed games: its hold rate at 1.15 m and at
   1.6 m (lopsided cells, such as parked Guards holding 101 or 31 of 1,000, flip less and pull the median down), and D's
-  noise 0.02 arm on the same cell (does the ruler still see changes at 1.15 m). Command error is also reported
-  separately for rows with an opposite drone between 1.15 and 1.6 m.
+  noise 0.02 arm on the same cell (does the ruler still see changes at 1.15 m). **Dropped (27 Nov, before any E
+  run):** command error reported separately for rows with an opposite drone between 1.15 and 1.6 m; the read's
+  recorder bins error only by drones alive, and a distance bin needs a change in `source/` that scratch pilots do not
+  make. The build's own row marks, on 1.15 m rows, cover those states.
 - **Step B:** INFO, no mark.
 
 ## 4. What it asks of the owner

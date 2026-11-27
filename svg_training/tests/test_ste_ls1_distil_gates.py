@@ -287,8 +287,10 @@ def test_the_seeds_are_new():
     assert len(set(mine)) == len(mine) and all(isinstance(s, int) and not isinstance(s, bool) for s in mine)
     assert _seeds(GATES.read_text()) == set(mine)          # the regex of the other tests sees exactly these
     used = set()
+    twin = ROOT / "configs" / "ste_ls1" / "distil_gates_1p15.toml"   # R51: the 1.15 m twin keeps these seeds on purpose
+    assert _seeds(twin.read_text()) == set(mine)                       # (the same draws at both tags), and only these
     for path in (ROOT / "configs").glob("ste_*/*.toml"):
-        if path != GATES:
+        if path not in (GATES, twin):
             used |= _seeds(path.read_text())
     t44_seed = int(exploit.load_reference(ROOT / g.skills_gates.reference["file"]).meta["seed"])   # the read's starts
     pool_seed = int(g.skills_gates.pool["seed"])                                               # the skills route's pool

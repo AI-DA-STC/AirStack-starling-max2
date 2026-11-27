@@ -1,0 +1,158 @@
+# Route 3 at the 1.15 m tag (owner R51, 27 Nov 2026; plan ste_learning/drafts/LS1_1P15_SWITCH.md, step A): the skills
+# gate file of configs/ste_l3/skills_gates.toml (sha256 e16e77298833ca1a74b8154a175f88fe5b71f87c9559e565994db1a881060f5e)
+# moved to the bubble-touch tag. tests/test_ste_ls1_1p15_files.py checks it equals that file except: this header,
+# [reference] (T50's reference: the 30 fixed scripted cells at 1.15 m on T44's starts, replayed exactly on the CPU in
+# step C0), [games] (tag_1p15 only), [variants] base (game tag_1p15, reference_variant tag_1p15, g* guard_field: T50's
+# maximin script at 1.15 m) and [run0] (no skills_reach_min: the 1.6 m mark 0.554 does not hold at 1.15 m; a skills
+# run 0 refuses until the owner rules decision 3 of the plan). The variant keeps the name base (distil.VARIANT).
+# NOT PILOTED AT 1.15 m: [trainer] side_overrides and game_steps_per_run are route 2's 1.6 m values; route 2's pilot is
+# redone at 1.15 m before any LS1.4 run (plan section 4). Below: the 1.6 m file's own header, unchanged.
+#
+# STE L3-L6 pipeline check (owner, 24 Nov 2026, R23: cap 20 GPU-h; "pipeline check, not for flight"), the skills route (two-level choice, R30), pool and absent-drone mask.
+# Spec, pre-registered before any run: ste_learning/drafts/L3_L6_PIPELINE_SPEC.md. Driver: scripts/ste_exploit_l012.py.
+#
+# The four files configs/ste_l3/{velocity,skills}{,_poolonly}_gates.toml are one template (tests/test_ste_l3_pipeline_gates.py
+# checks they differ only in [run] task, [learner] and [run0] skills_reach_min): the same game, recipe, step budget,
+# seeds and pool draws for both routes (R19: compared on the same budget). Values from configs/ste_l1/l110_gates.toml
+# (T46's recipe) except: [games] T44's base.toml only (3v3, the 1-for-1 tag at 1.6 m of G0, landing off (R32, no
+# [landing] table: off by default), the even filter split (R31: configs/ste_game.toml share = "equal")); [variants] the one
+# variant base (T44's maximin opponents g* guard_mark_edge, s* strike_straight, new seeds); [learner]; [pool]; [run0]
+# new seed (and, for the skills route, its mark). The reference is T44's (no screen).
+#
+# FILL STEP (each route's own pilot, before its run 0): [trainer] side_overrides.strike = the pilot's Strike recipe
+# (the pre-registered rule over the probes against g*: scripts/ste_exploit_l012.py --pilot), and [trainer]
+# game_steps_per_run confirmed to fit the run caps of the spec (section 1) at the pilot's measured rate; the same
+# number in all four files (the same budget per route). The gate file changes at the fill (its sha256 too): pilot.json
+# records the sha it ran under and the [learner] table it ran with (the run checks the table, not the sha).
+#
+# Simulator: training simulator, tier 1 (fast engine), Starling layer on; study tag on; observed in the training
+# simulator. A pipeline check, not for flight.
+
+[run]
+task = "L5.2"                     # the budget key ([budget_l3_l4_l5_l6], configs/ste_learning.toml)
+kind = "INFO"                      # a pipeline check (R23): the reads are INFO; the CONTROLS are gated (exit 6)
+device = "cuda"
+size = "3v3"                       # G0's main game
+eval_games = 1000                  # VALIDATION_QC section 0 rule 2; T44's 1,000 starts (the skills run 0 mark needs 1,000)
+ticks_cap = 2400                   # the game length (120 s): no evaluation game is cut short
+curve_seed = 140900                # learning-curve evaluations: their own starts (never the scoring starts)
+curve_games = 256
+clip_seed = 140950                 # videos: their own starts (CPU)
+cap_check_every_ticks = 100
+
+[reference]
+file = "configs/ste_l012b/screen_reference.npz"
+sha256 = "49014000d07e8b52ae579deb325dad53d98c5020f533026dfbff778f306b2296"
+start_sha256 = "5aeba7ab2b582f2973034c8203c17ed3e8239fef7029a1f991fe95b82369843c"
+t44_gates_sha256 = "881375f054a78ae33c7fd330e271a4e3b27a0a1cf3d58eca4b893cdca8ce2479"
+t44_record = "records/2026-11-21_ste_l012b_screen_record.md"
+t44_run = "2026-11-21_ste_l012b_screen"
+
+[games]
+tag_1p15 = { file = "configs/ste_l011/tag_1p15.toml", sha256 = "b2e09683f7088964a7d1ca15dfc9c98d1e04c15e96b14196d6971afb75f27580" }
+
+[players]
+guards = ["guard_parked_centre", "guard_parked_ring", "guard_mark_edge", "guard_mirror", "guard_field"]
+strikes = ["strike_straight", "strike_flank", "strike_high", "strike_low", "strike_sacrifice", "strike_converge"]
+z_up_info = ["strike_high", "strike_low"]
+z_up_label = "tier 1 vertical response not fitted (s2b.toml z_up_info)"
+
+[variants]
+base = { game = "tag_1p15", reference_variant = "tag_1p15", g_star = "guard_field", s_star = "strike_straight", role = "route 3 at the 1.15 m tag (R51)", train_seed = { strike = 140201, guard = 140202 }, extra_eval_opponents = { strike = [], guard = [] } }
+
+[trainer]
+# T46's recipe (configs/ste_l1/l110_gates.toml, record T46): skrl IPPO, one network per drone slot.
+algorithm = "IPPO"
+decision_ticks = 12                # one learner decision per 0.6 s (finding L011-F1); the skills route holds its choice
+num_games = 16384                  # T46 and L1.10's size (fits the laptop's 12 GB and the RTX 5090)
+game_steps_per_run = 550_000_000  # PROPOSED (spec section 1): T46's and L1.10's budget, the same for both routes; confirmed by each pilot
+rollouts = 32
+learning_epochs = 5
+mini_batches = 4
+learning_rate = 3.0e-4
+hidden = [128, 128]
+init_log_std = -1.6
+frozen_log_std_axes = ["yaw"]
+zero_mean_init = true              # the skills route then sets p(free) = 0.5 (ste/two_level.free_start_bias)
+discount_factor = 0.99
+gae_lambda = 0.95
+entropy_loss_scale = 0.0           # the velocity route's (the T41 recipe); the skills route uses [learner.entropy_scale]
+value_loss_scale = 2.5
+ratio_clip = 0.2
+value_clip = 0.2
+grad_norm_clip = 0.5
+shaping_weight = 0.0
+strike_fallback = { shaping_weight = 1.0 }
+strike_fallback_label = "shaped Strike recipe"
+side_overrides = { strike = {}, guard = {} }   # FILL STEP (header): strike from this route's pilot before run 0
+checkpoint_every_updates = 1
+curve_every_updates = 10
+final_reserve_s = 600
+final_reserve_factor = 2.0
+clip_reserve_s = 120
+
+[controls]
+stop_on_fail = true
+replay_count_tol_cuda_games = 10
+replay_differ_tol_cuda_games = 20
+
+[verdict]
+band = 0.2
+gain_rule = "intervals_disjoint"
+learned_rule = "trained_low_above_untrained_high"
+order = ["base"]
+strike_not_launched = "run 0 FAIL: the trainer did not learn the easy Strike task (against the parked Guard) at the run budget; no Strike run was launched"
+follow_up_seeds = []
+
+[videos]
+games = 4
+keep = 2
+max_ticks = 2400
+speed = 8
+fps = 10
+dpi = 50
+
+[pilot]
+variant = "base"
+num_games = [8192, 16384, 32768]
+updates = 1
+warmup_updates = 1
+probes = [{ side = "strike" }, { side = "strike", opponent = "guard_parked_centre" }, { side = "strike", shaping_weight = 1.0 },
+          { side = "strike", shaping_weight = 1.0, opponent = "guard_parked_centre" }]
+probe_num_games = 16384
+timing_batches = [{ variant = "base", side = "strike" }]
+probe_updates = 3
+
+[run0]
+variant = "base"
+opponent = "guard_parked_centre"
+script = "strike_straight"
+margin = 0.05                      # the velocity route's criterion (L0.12's): scripted strike_straight's reach - 0.05
+train_seed = 140203                # its own: not the scoring starts' 110000, curve_seed, clip_seed or a run's train_seed
+# skills_reach_min: none at 1.15 m (header); the 1.6 m file's mark and its rule stay in configs/ste_l3/skills_gates.toml
+
+[pool]
+# Both routes train against every script of the other team except random, one drawn per game (lead's answers 2-3 of
+# slice 3; ste/pool.OpponentPool), the same draw per (slot, game number) in every file. Run 0 keeps its parked Guard.
+enabled = true
+seed = 140001
+
+[learner]
+action = "skills"
+choice = "two_level"              # owner R30: a team strategy, with individual drone skills
+mask_absent = true                # the absent-drone mask on (both routes alike)
+
+[learner.team_strategies]
+strike = ["strike_sacrifice", "strike_converge"]
+guard = ["guard_parked_ring", "guard_field"]
+
+[learner.drone_skills]
+strike = ["strike_straight", "strike_flank", "strike_high", "strike_low"]   # strike_straight first: run 0's known answer
+guard = ["guard_parked_centre", "guard_mark_edge", "guard_mirror"]          # list A (lead, 24 Nov 2026)
+
+[learner.entropy_scale]
+# 0.01 per head (lead, 24 Nov 2026), fixed before the pilot. No kl_threshold is set (the recipe's 0, off); if one is
+# ever set for this route, it is set for the SUM of the two per-head KLs (each a mean over its masked-in samples), which
+# triggers earlier than the same number in stock skrl (ste/two_level.py; L3_SLICE3_DESIGN.md revision, QC S1).
+team = 0.01
+drone = 0.01

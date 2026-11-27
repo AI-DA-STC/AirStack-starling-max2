@@ -419,8 +419,10 @@ class Ctx:
 
 
 def t44_of(ctx: Ctx, cell: Cell, code: str | None = None) -> dict:
-    """T44's per-game record of a gated fixed cell (``code`` instead of the cell's own script: the permuted read)."""
-    pg = ctx.ref.cell(ctx.variant, *cells.cell_of(ctx.spec.side, code or cell.choice["script"], cell.opponent))
+    """T44's per-game record of a gated fixed cell (``code`` instead of the cell's own script: the permuted read), read
+    under the variant's reference name (``exploit.ref_variant``: R51, the 1.15 m variant ``base`` reads T50's
+    ``tag_1p15`` cells; the game config stays the variant's own)."""
+    pg = ctx.ref.cell(exploit.ref_variant(ctx.gates, ctx.variant), *cells.cell_of(ctx.spec.side, code or cell.choice["script"], cell.opponent))
     return {k: np.asarray(v)[:ctx.n] for k, v in pg.items()}
 
 

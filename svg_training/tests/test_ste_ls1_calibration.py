@@ -581,3 +581,22 @@ def test_the_info_cells_never_ask_t44_for_a_cell(tmp_path, monkeypatch):
     assert all(c["b"] == c["c"] == 0 for c in res["cells"])
     assert res["arms"][cal.IDENTITY]["pooled"]["all"] is None and res["arms"][cal.IDENTITY]["pooled"]["info"]["diff"] == 0.0
     assert {v["status"] for v in res["controls"].values()} == {scoring.PASS}
+
+
+def test_the_reference_is_read_under_the_variants_reference_name():
+    """R51 (route 3 at the 1.15 m tag, ste_learning/drafts/LS1_1P15_SWITCH.md step A): the 1.15 m skills gate file keeps
+    the variant name ``base`` (``distil.VARIANT``) with ``reference_variant = "tag_1p15"`` (T50's reference file). The
+    calibration reads its reference cells under that name, as the copy check does (``exploit.ref_variant``)."""
+    from types import SimpleNamespace as NS
+    pg = {"outcome": np.arange(6), "end_step": np.arange(6)}
+    ref = exploit.Reference(np.zeros((6, 6, 3), np.float32), np.zeros(6, bool),
+                            {("tag_1p15", "guard_field", "strike_straight"): pg}, {})
+    gates = NS(variants={"base": {"game": "tag_1p15", "reference_variant": "tag_1p15"}})
+    ctx = NS(ref=ref, variant="base", gates=gates, spec=NS(side="guard"), n=4)
+    cell = NS(choice={"script": "guard_field"}, opponent="strike_straight")
+    got = cal.t44_of(ctx, cell)
+    assert got["outcome"].tolist() == [0, 1, 2, 3]
+    # without a reference_variant the variant's own name is read, as before
+    ref_base = exploit.Reference(ref.starts_m, ref.start_miss, {("base", "guard_field", "strike_straight"): pg}, {})
+    ctx_base = NS(ref=ref_base, variant="base", gates=NS(variants={"base": {"game": "base"}}), spec=NS(side="guard"), n=4)
+    assert cal.t44_of(ctx_base, cell)["end_step"].tolist() == [0, 1, 2, 3]

@@ -1,0 +1,32 @@
+[S1_guard_seed1] guard: 30 batches; guard_parked_ring@R2, guard_mark_edge@R2, guard_mirror@R2, guard_field@R2
+  r1_net__strike_straight_00: 5 cells, 70 s
+  r1_net__strike_straight_01: 6 cells, 102 s
+  r1_net__strike_straight_02: 6 cells, 70 s
+  r1_net__strike_straight_03: 6 cells, 55 s
+  r1_net__strike_straight_04: 2 cells, 20 s
+  r1_net__strike_flank_00: 5 cells, 145 s
+  r1_net__strike_flank_01: 6 cells, 196 s
+  r1_net__strike_flank_02: 6 cells, 154 s
+  r1_net__strike_flank_03: 6 cells, 127 s
+  r1_net__strike_flank_04: 2 cells, 88 s
+  r1_net__strike_high_00: 5 cells, 86 s
+  r1_net__strike_high_01: 6 cells, 74 s
+  r1_net__strike_high_02: 6 cells, 85 s
+  r1_net__strike_high_03: 6 cells, 33 s
+  r1_net__strike_high_04: 2 cells, 11 s
+  r1_net__strike_low_00: 5 cells, 42 s
+  r1_net__strike_low_01: 6 cells, 52 s
+  r1_net__strike_low_02: 6 cells, 71 s
+  r1_net__strike_low_03: 6 cells, 66 s
+  r1_net__strike_low_04: 2 cells, 24 s
+  r1_net__strike_sacrifice_00: 5 cells, 102 s
+  r1_net__strike_sacrifice_01: 6 cells, 174 s
+  r1_net__strike_sacrifice_02: 6 cells, 171 s
+  r1_net__strike_sacrifice_03: 6 cells, 176 s
+  r1_net__strike_sacrifice_04: 2 cells, 98 s
+  r1_net__strike_converge_00: 5 cells, 276 s
+  r1_net__strike_converge_01: 6 cells, 297 s
+  r1_net__strike_converge_02: 6 cells, 374 s
+  r1_net__strike_converge_03: 6 cells, 426 s
+  r1_net__strike_converge_04: 2 cells, 191 s
+[S1_guard_seed1] sealed: 150 cells written (3859 s); done

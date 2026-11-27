@@ -1,0 +1,731 @@
+{
+ "name": "c4_guard",
+ "side": "guard",
+ "assembly": {
+  "guard_parked_centre": "unfitted",
+  "guard_parked_ring": "unfitted",
+  "guard_mark_edge": "unfitted",
+  "guard_mirror": "unfitted",
+  "guard_field": "unfitted"
+ },
+ "n": 1000,
+ "tag_m": 1.15,
+ "rows": [
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_straight",
+   "b": 26,
+   "c": 3,
+   "flips": 29,
+   "diff": -0.023,
+   "ci": [
+    -0.046162802771569776,
+    -0.002905110148060445
+   ],
+   "ref_wins": 101,
+   "arm_wins": 78
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_straight",
+   "b": 49,
+   "c": 0,
+   "flips": 49,
+   "diff": -0.049,
+   "ci": [
+    -0.0774498626559514,
+    -0.025007362242829553
+   ],
+   "ref_wins": 127,
+   "arm_wins": 78
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_straight",
+   "b": 381,
+   "c": 37,
+   "flips": 418,
+   "diff": -0.344,
+   "ci": [
+    -0.40465706913200117,
+    -0.28034701632746584
+   ],
+   "ref_wins": 422,
+   "arm_wins": 78
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_straight",
+   "b": 385,
+   "c": 38,
+   "flips": 423,
+   "diff": -0.347,
+   "ci": [
+    -0.4078907712266068,
+    -0.2829831754911383
+   ],
+   "ref_wins": 425,
+   "arm_wins": 78
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_straight",
+   "b": 567,
+   "c": 0,
+   "flips": 567,
+   "diff": -0.567,
+   "ci": [
+    -0.6198206956770383,
+    -0.5074354763442104
+   ],
+   "ref_wins": 645,
+   "arm_wins": 78
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_flank",
+   "b": 0,
+   "c": 0,
+   "flips": 0,
+   "diff": 0.0,
+   "ci": [
+    -0.004295817883761154,
+    0.004295817883761154
+   ],
+   "ref_wins": 331,
+   "arm_wins": 331
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_flank",
+   "b": 0,
+   "c": 0,
+   "flips": 0,
+   "diff": 0.0,
+   "ci": [
+    -0.004295817883761154,
+    0.004295817883761154
+   ],
+   "ref_wins": 331,
+   "arm_wins": 331
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_flank",
+   "b": 447,
+   "c": 171,
+   "flips": 618,
+   "diff": -0.276,
+   "ci": [
+    -0.35634760370625,
+    -0.1902843093564453
+   ],
+   "ref_wins": 607,
+   "arm_wins": 331
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_flank",
+   "b": 415,
+   "c": 197,
+   "flips": 612,
+   "diff": -0.218,
+   "ci": [
+    -0.30061529622053695,
+    -0.131130072759853
+   ],
+   "ref_wins": 549,
+   "arm_wins": 331
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_flank",
+   "b": 435,
+   "c": 0,
+   "flips": 435,
+   "diff": -0.435,
+   "ci": [
+    -0.4880230003467248,
+    -0.37604488162766864
+   ],
+   "ref_wins": 766,
+   "arm_wins": 331
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_high",
+   "b": 14,
+   "c": 5,
+   "flips": 19,
+   "diff": -0.009,
+   "ci": [
+    -0.029942666990261258,
+    0.00918277297766976
+   ],
+   "ref_wins": 31,
+   "arm_wins": 22
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_high",
+   "b": 37,
+   "c": 4,
+   "flips": 41,
+   "diff": -0.033,
+   "ci": [
+    -0.061015875439648794,
+    -0.010714163530990195
+   ],
+   "ref_wins": 55,
+   "arm_wins": 22
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_high",
+   "b": 392,
+   "c": 12,
+   "flips": 404,
+   "diff": -0.38,
+   "ci": [
+    -0.4375186138509674,
+    -0.3213411773581843
+   ],
+   "ref_wins": 402,
+   "arm_wins": 22
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_high",
+   "b": 386,
+   "c": 12,
+   "flips": 398,
+   "diff": -0.374,
+   "ci": [
+    -0.43143707795304903,
+    -0.3155778927746469
+   ],
+   "ref_wins": 396,
+   "arm_wins": 22
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_high",
+   "b": 623,
+   "c": 0,
+   "flips": 623,
+   "diff": -0.623,
+   "ci": [
+    -0.6751278761288276,
+    -0.5648371341635656
+   ],
+   "ref_wins": 645,
+   "arm_wins": 22
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_low",
+   "b": 15,
+   "c": 0,
+   "flips": 15,
+   "diff": -0.015,
+   "ci": [
+    -0.036364411010615535,
+    -0.0005517576460782134
+   ],
+   "ref_wins": 16,
+   "arm_wins": 1
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_low",
+   "b": 33,
+   "c": 0,
+   "flips": 33,
+   "diff": -0.033,
+   "ci": [
+    -0.06005326396803215,
+    -0.014277658573303233
+   ],
+   "ref_wins": 34,
+   "arm_wins": 1
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_low",
+   "b": 407,
+   "c": 1,
+   "flips": 408,
+   "diff": -0.406,
+   "ci": [
+    -0.4626113256994375,
+    -0.349755868575279
+   ],
+   "ref_wins": 407,
+   "arm_wins": 1
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_low",
+   "b": 407,
+   "c": 1,
+   "flips": 408,
+   "diff": -0.406,
+   "ci": [
+    -0.4626113256994375,
+    -0.349755868575279
+   ],
+   "ref_wins": 407,
+   "arm_wins": 1
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_low",
+   "b": 644,
+   "c": 0,
+   "flips": 644,
+   "diff": -0.644,
+   "ci": [
+    -0.6961209599022472,
+    -0.5868542926656898
+   ],
+   "ref_wins": 645,
+   "arm_wins": 1
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_sacrifice",
+   "b": 107,
+   "c": 10,
+   "flips": 117,
+   "diff": -0.097,
+   "ci": [
+    -0.13624475490735807,
+    -0.060404571676507195
+   ],
+   "ref_wins": 210,
+   "arm_wins": 113
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_sacrifice",
+   "b": 181,
+   "c": 5,
+   "flips": 186,
+   "diff": -0.176,
+   "ci": [
+    -0.22192404124840426,
+    -0.13191758087647146
+   ],
+   "ref_wins": 289,
+   "arm_wins": 113
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_sacrifice",
+   "b": 549,
+   "c": 52,
+   "flips": 601,
+   "diff": -0.497,
+   "ci": [
+    -0.5603470185955957,
+    -0.4256192670561967
+   ],
+   "ref_wins": 610,
+   "arm_wins": 113
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_sacrifice",
+   "b": 446,
+   "c": 76,
+   "flips": 522,
+   "diff": -0.37,
+   "ci": [
+    -0.4375053917617513,
+    -0.2969463781740244
+   ],
+   "ref_wins": 483,
+   "arm_wins": 113
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_sacrifice",
+   "b": 603,
+   "c": 0,
+   "flips": 603,
+   "diff": -0.603,
+   "ci": [
+    -0.6541284693352327,
+    -0.5432678898626405
+   ],
+   "ref_wins": 716,
+   "arm_wins": 113
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_centre",
+    "guard_parked_centre",
+    "guard_parked_centre"
+   ],
+   "opponent": "strike_converge",
+   "b": 272,
+   "c": 0,
+   "flips": 272,
+   "diff": -0.272,
+   "ci": [
+    -0.32063492427235407,
+    -0.22023232963940914
+   ],
+   "ref_wins": 673,
+   "arm_wins": 401
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_parked_ring",
+    "guard_parked_ring",
+    "guard_parked_ring"
+   ],
+   "opponent": "strike_converge",
+   "b": 291,
+   "c": 0,
+   "flips": 291,
+   "diff": -0.291,
+   "ci": [
+    -0.3405490931379743,
+    -0.23804493615427733
+   ],
+   "ref_wins": 692,
+   "arm_wins": 401
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mark_edge",
+    "guard_mark_edge",
+    "guard_mark_edge"
+   ],
+   "opponent": "strike_converge",
+   "b": 420,
+   "c": 94,
+   "flips": 514,
+   "diff": -0.326,
+   "ci": [
+    -0.3953018053287577,
+    -0.2511781469021377
+   ],
+   "ref_wins": 727,
+   "arm_wins": 401
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_mirror",
+    "guard_mirror",
+    "guard_mirror"
+   ],
+   "opponent": "strike_converge",
+   "b": 427,
+   "c": 101,
+   "flips": 528,
+   "diff": -0.326,
+   "ci": [
+    -0.3964766863765809,
+    -0.24990073740989824
+   ],
+   "ref_wins": 727,
+   "arm_wins": 401
+  },
+  {
+   "kind": "fixed",
+   "codes": [
+    "guard_field",
+    "guard_field",
+    "guard_field"
+   ],
+   "opponent": "strike_converge",
+   "b": 446,
+   "c": 79,
+   "flips": 525,
+   "diff": -0.367,
+   "ci": [
+    -0.4344910700771665,
+    -0.29340751675537535
+   ],
+   "ref_wins": 768,
+   "arm_wins": 401
+  }
+ ],
+ "pooled": {
+  "diff": -0.28356666666666674,
+  "se": 0.005526646606360904,
+  "ci": [
+   -0.2943986949704146,
+   -0.2727346383629189
+  ],
+  "cells": 30,
+  "n": 1000
+ },
+ "errors": {
+  "skills": {
+   "guard_parked_centre": {
+    "rmse": [
+     0.09977826671129911,
+     0.09920114477315414,
+     0.0,
+     0.0
+    ],
+    "max_abs": [
+     0.30282124876976013,
+     0.3053800165653229,
+     0.0,
+     0.0
+    ],
+    "active": [
+     false,
+     false,
+     false,
+     false
+    ],
+    "rows": 1595902,
+    "rmse_by_n_live": {
+     "1": null,
+     "2": null,
+     "3": null
+    }
+   },
+   "guard_parked_ring": {
+    "rmse": [
+     0.5037048110988206,
+     0.5063045705460579,
+     0.0,
+     0.0
+    ],
+    "max_abs": [
+     1.2153713703155518,
+     1.2579171657562256,
+     0.0,
+     0.0
+    ],
+    "active": [
+     true,
+     true,
+     false,
+     false
+    ],
+    "rows": 1595902,
+    "rmse_by_n_live": {
+     "1": 0.5158756381813199,
+     "2": 0.5642665671189173,
+     "3": 0.5013957348960376
+    }
+   },
+   "guard_mark_edge": {
+    "rmse": [
+     0.6980579787612754,
+     0.6955454847003167,
+     0.0,
+     0.0
+    ],
+    "max_abs": [
+     1.2443056106567383,
+     1.2766215801239014,
+     0.0,
+     0.0
+    ],
+    "active": [
+     true,
+     true,
+     false,
+     false
+    ],
+    "rows": 1595902,
+    "rmse_by_n_live": {
+     "1": 0.7072503977605497,
+     "2": 0.7087880552810356,
+     "3": 0.6959994473823733
+    }
+   },
+   "guard_mirror": {
+    "rmse": [
+     0.7039644809643707,
+     0.7006426693891278,
+     0.0,
+     0.0
+    ],
+    "max_abs": [
+     1.2434968948364258,
+     1.271984338760376,
+     0.0,
+     0.0
+    ],
+    "active": [
+     true,
+     true,
+     false,
+     false
+    ],
+    "rows": 1595902,
+    "rmse_by_n_live": {
+     "1": 0.7056007862666682,
+     "2": 0.7187353282334553,
+     "3": 0.7013465634470227
+    }
+   },
+   "guard_field": {
+    "rmse": [
+     0.7551464817137631,
+     0.7512134247306425,
+     0.0,
+     0.0
+    ],
+    "max_abs": [
+     1.2728047370910645,
+     1.2945547103881836,
+     0.0,
+     0.0
+    ],
+    "active": [
+     true,
+     true,
+     false,
+     false
+    ],
+    "rows": 1595902,
+    "rmse_by_n_live": {
+     "1": 0.7072503973254675,
+     "2": 0.7413360611052926,
+     "3": 0.7544098172053296
+    }
+   }
+  },
+  "zero_skill": "guard_parked_centre"
+ },
+ "seconds": 249.24910163879395
+}

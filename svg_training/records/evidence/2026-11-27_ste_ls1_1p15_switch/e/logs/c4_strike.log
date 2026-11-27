@@ -1,0 +1,7 @@
+[c4_strike] strike: 5 batches; strike_straight@R2, strike_flank@R2, strike_high@R2, strike_low@R2, strike_sacrifice@R2, strike_converge@R2
+  r1_net__guard_parked_centre_00: 6 cells, 552 s
+  r1_net__guard_parked_ring_00: 6 cells, 590 s
+  r1_net__guard_mark_edge_00: 6 cells, 620 s
+  r1_net__guard_mirror_00: 6 cells, 560 s
+  r1_net__guard_field_00: 6 cells, 631 s
+[c4_strike] sealed: 30 cells written (2954 s); done

@@ -1,0 +1,8 @@
+[c4_guard] guard: 6 batches; guard_parked_centre@R2, guard_parked_ring@R2, guard_mark_edge@R2, guard_mirror@R2, guard_field@R2
+  r1_net__strike_straight_00: 5 cells, 22 s
+  r1_net__strike_flank_00: 5 cells, 46 s
+  r1_net__strike_high_00: 5 cells, 21 s
+  r1_net__strike_low_00: 5 cells, 22 s
+  r1_net__strike_sacrifice_00: 5 cells, 47 s
+  r1_net__strike_converge_00: 5 cells, 90 s
+[c4_guard] sealed: 30 cells written (249 s); done

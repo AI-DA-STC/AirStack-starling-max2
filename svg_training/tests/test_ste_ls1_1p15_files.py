@@ -5,7 +5,8 @@
   [variants] base (game and reference_variant tag_1p15, g* guard_field) and [run0] (no skills_reach_min).
 * ``calibration_1p15.toml``, ``calibration_topup_1p15.toml`` = their 1.6 m files but [source] skills_gates and its sha.
 * ``distil_gates_1p15.toml`` = ``distil_gates.toml`` but [source] (skills gates, game file and their shas), the Strike
-  near-miss opponent (guard_field), the owner's keys (FILL_ until the owner rules the 1.15 m limits) and nothing else.
+  near-miss opponent (guard_field) and one owner key: ``flips_max_games`` 31 (owner R52, 27 Nov 2026: "31"; the other
+  15 owner keys as R48, ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B).
 * The 1.6 m twins are unchanged (their own shas), so the 1.6 m record stays readable."""
 import copy
 import hashlib
@@ -85,25 +86,18 @@ def test_the_distil_gate_file_differs_only_in_the_named_keys():
     assert [c["codes"] for c in new["read"]["near_miss_cells"]["strike"]] == [c["codes"] for c in old["read"]["near_miss_cells"]["strike"]]
     assert new["read"]["near_miss_cells"]["guard"] == old["read"]["near_miss_cells"]["guard"]
     g = distil.load_distil_gates(ROOT / "configs/ste_ls1/distil_gates_1p15.toml")
-    unfilled = set(distil.unfilled_limits(g))
-    assert len(unfilled) == 16 and "limits.end_time_max_ticks" not in unfilled
+    assert distil.unfilled_limits(g) == []                       # R52: every owner key is set
+    assert new["limits"]["flips_max_games"] == 31 and old["limits"]["flips_max_games"] == 30
     o, n = copy.deepcopy(old), copy.deepcopy(new)
     for d in (o, n):
         for k in ("skills_gates", "skills_gates_sha256", "game_file", "game_sha256"):
             del d["source"][k]
         del d["read"]["near_miss_cells"]["strike"]
-        for sec in ("limits", "controls"):
-            for k in list(d[sec]):
-                if not isinstance(d[sec][k], dict) and k != "end_time_max_ticks":
-                    del d[sec][k]
-        for k in list(d["controls"]["near_miss"]):
-            if not isinstance(d["controls"]["near_miss"][k], dict):
-                del d["controls"]["near_miss"][k]
-        del d["controls"]["near_miss"]["switch"]
-    assert n == o
-    for k, v in new["controls"]["near_miss"]["switch"].items():
-        assert v == "FILL_R51", k
-    owner = {**new["limits"], **{k: v for k, v in new["controls"].items() if not isinstance(v, dict)},
-             **{k: v for k, v in new["controls"]["near_miss"].items() if not isinstance(v, dict)}}
-    assert {k for k, v in owner.items() if v != "FILL_R51"} == {"end_time_max_ticks"}
-    assert new["limits"]["end_time_max_ticks"] == old["limits"]["end_time_max_ticks"]
+        del d["limits"]["flips_max_games"]
+    assert n == o                                                # the other 15 owner keys and the rest as R48
+
+
+def test_the_1p15_owner_keys_carry_r52():
+    text = (ROOT / "configs/ste_ls1/distil_gates_1p15.toml").read_text()
+    assert "= \"FILL_" not in text                                  # no owner key left unset
+    assert "flips_max_games = 31  # FIXED (owner, R52" in text

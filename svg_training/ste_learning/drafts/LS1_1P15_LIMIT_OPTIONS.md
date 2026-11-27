@@ -2,6 +2,9 @@ INTERNAL · the options for the owner's ruling on the LS1 copy limits at the 1.1
 
 # LS1 copy limits at the 1.15 m tag: options for the owner (R51)
 
+**Ruled (R52, 27 Nov 2026): "31"**: option B, `flips_max_games` 31 and the other 15 keys as R48, written into
+`configs/ste_ls1/distil_gates_1p15.toml`. Step E was then judged once: [the record](../../records/2026-11-27_ste_ls1_1p15_switch_record.md).
+
 Training simulator, tier 1 (fast engine, Starling layer, exploratory PX4 model); every number here is observed in the
 training simulator. Nothing here is a flight result. Reviewed by two reviewers (section 5).
 

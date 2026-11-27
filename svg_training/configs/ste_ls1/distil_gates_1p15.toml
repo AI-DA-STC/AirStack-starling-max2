@@ -1,9 +1,10 @@
 # Route 3 at the 1.15 m tag (owner R51, 27 Nov 2026; plan ste_learning/drafts/LS1_1P15_SWITCH.md, step A): a copy of
 # configs/ste_ls1/distil_gates.toml (sha256 5cce1245052f2e9ef87d6a3c83d2301f1161100ed818224b932b0248735ee6bb) with
 # [source] on the 1.15 m skills gate file and game file (tag_1p15), the Strike near-miss opponent guard_field (the
-# 1.15 m maximin script, T50; lead's call) in place of guard_mark_edge, and the owner's limits and near-miss sizes FILL_
-# until the owner sets them from the 1.15 m calibration (R51, as R48). tests/test_ste_ls1_1p15_files.py checks it equals
-# that file except those keys and this header. The build rewrites it (R49). Below: the 1.6 m file's own header.
+# 1.15 m maximin script, T50; lead's call) in place of guard_mark_edge, and the owner's limits set from the 1.15 m
+# calibration (owner R52, 27 Nov 2026: flips_max_games 31, the other owner keys as R48). tests/test_ste_ls1_1p15_files.py
+# checks it equals that file except those keys and this header. The build rewrites it (R49). Below: the 1.6 m file's
+# own header.
 #
 # Route 3, stage LS1: the distillation gate file (task LS1-M2-T1; plan ste_learning/drafts/LS1_TASK_PLAN.md, section 3;
 # workflow ste_learning/drafts/LS_EXECUTION_WORKFLOW.md section 5). Loaded by ste/distil.load_distil_gates: every key
@@ -149,35 +150,35 @@ strike = [
 # channel's largest output, the zero-command skill's largest output; games changed (b + c) per cell; the per-cell and
 # pooled intervals inside the margins; with end_time_gated, the mean |end-tick difference| per cell (OP-18).
 # end_time_max_ticks is required and a number whatever end_time_gated says (no FILL_ survives into a run of record).
-cmd_rmse_max = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.05 at 1.6 m
-cmd_unused_max_abs = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.05 at 1.6 m
-cmd_zero_skill_max_abs = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.005 at 1.6 m
-flips_max_games = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 30 at 1.6 m
-cell_margin = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.045 at 1.6 m
-pooled_margin = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.01 at 1.6 m
-end_time_gated = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set false at 1.6 m
-end_time_max_ticks = 3.0  # required a number (header); R48's 1.6 m value kept until the owner rules the 1.15 m limits (R51); end_time_gated decides whether it is read
+cmd_rmse_max = 0.05  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+cmd_unused_max_abs = 0.05  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+cmd_zero_skill_max_abs = 0.005  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+flips_max_games = 31  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's rule at 1.15 m (6 games of room on bias 0.05 and turn 6 deg; Strike noise 0.02 changes up to 31, step D); R48 set 30 at 1.6 m
+cell_margin = 0.045  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+pooled_margin = 0.01  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+end_time_gated = false  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+end_time_max_ticks = 3.0  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's value; not read while end_time_gated is false
 
 [controls]
 # The owner's (R38, OP-21, OQ-3): at least this many cells miss for the permuted codes (C3, C5; the permutation is
 # cells.toml [permutation]) and for an unfitted network (C4).
-permuted_min_miss_cells = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 15 at 1.6 m
-unfitted_min_miss_cells = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 15 at 1.6 m
+permuted_min_miss_cells = 15  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+unfitted_min_miss_cells = 15  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
 
 [controls.near_miss]
 # The owner's (OQ-3), set with the limits so the two cannot contradict each other: bias on xy (C6), a turn of xy in
 # degrees (C6), noise (C7, which must pass).
-bias = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.05 at 1.6 m
-rotate_deg = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 6.0 at 1.6 m
-noise = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.02 at 1.6 m
+bias = 0.05  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+rotate_deg = 6.0  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+noise = 0.02  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
 
 [controls.near_miss.switch]
 # One moved-switch player per key, at this value in that player's unit (opponents/perturbed.py SWITCHES): Strike
 # SacrificeMovedEntry, ConvergeMovedGather, FlankMoved; Guard FieldMovedRange (C6).
-sacrifice_entry_rad = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.6109 at 1.6 m
-converge_gather_rad = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.15 at 1.6 m
-flank_margin_m = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 0.9 at 1.6 m
-field_range_m = "FILL_R51"  # the owner's, from the 1.15 m calibration (R51, as R48); R48 set 1.5 at 1.6 m
+sacrifice_entry_rad = 0.6109  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+converge_gather_rad = 0.15  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+flank_margin_m = 0.9  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
+field_range_m = 1.5  # FIXED (owner, R52, 27 Nov 2026: "31", the rest as R48; ste_learning/drafts/LS1_1P15_LIMIT_OPTIONS.md option B): R48's 1.6 m value kept at 1.15 m
 
 [stop]
 # The stop rules of LS1 (workflow section 5), as the owner acknowledged them on 25 Nov 2026 (R47): pre-registered with

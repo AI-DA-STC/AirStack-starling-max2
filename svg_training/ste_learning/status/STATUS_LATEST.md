@@ -1,10 +1,10 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-27 07:25 (+08:00) (event: last pilot job done, C-one does not qualify; the pilot is complete; owner decisions 2 and 8 needed)** · RTX 5090 · GPU 1 % / 32 W / 0.9 of 32 GB · 0 training processes (0 paused)
+**Status, 2026-11-27 09:25 (+08:00) (event: R51, route 3 moves to the 1.15 m tag; steps C0, A, C done; B's first finding; D restarted with a thread cap)** · RTX 5090 · GPU idle · CPU jobs: calibration (2), pilot replays (2), run 0 ceiling, test suite
 
-**Main track:** route 3 (the learned-skills route), stage LS1 stopped on T94 (R49); redesign note done ([LS1_REDESIGN.md](../drafts/LS1_REDESIGN.md)); R50 pilot trials: **PASS on both teams at two seeds** (Guard S1 at R1 + R2; Strike S2 with sacrifice and converge at R3); results note [LS1_REDESIGN_PILOT_RESULTS.md](../drafts/LS1_REDESIGN_PILOT_RESULTS.md), two reviewers; pilot complete (C-one, the last job, does not qualify: the build stays one network per skill) · **Side track:** none
+**Main track:** route 3 (the learned-skills route), LS1 redesign: 1.6 m pilots PASS both teams (R50); **owner R51: route 3 moves to the 1.15 m tag before the build** ([plan](../drafts/LS1_1P15_SWITCH.md), advisor read); CPU steps C0, A, C done, B partly, D and E running · **Side track:** none
 
-**Plain summary.** The redesigned copy (one small network per skill, seeing the world from its own drone's line to the zone) was trained on the CPU and replayed against T94's stored script games in every test cell, 1,000 games each, at two training seeds. **Guard team: PASS** (worst cell 25 and 24 changed games of the 30 allowed, median 3 to 4; T94: worst 64, 12 cells over 30). **Strike team: PASS** with the scripts' switch distances (R3) as inputs for sacrifice and converge (worst 16 and 15, median 2 to 3; T94: worst 130, 64 cells over 30); with own-frame inputs alone it missed by one cell (31) and two command errors. Flank, the worst move in T94, passes with own-frame inputs alone. Observed in the training simulator, scratch pilots on LS1.1's data; a pass is a go for the build, and the build's own copy check decides. The last job, today's shape (one network for all skills), fitted worse than a network per skill on all four compared skills (row level, one seed, not replayed), so by the plan's rule the build keeps one network per skill.
+**Plain summary.** Route 3 now plays at the 1.15 m tag (the bubble-touch tag). The 1.15 m reference games of T50 replay exactly on the CPU (30 of 30 cells), the 1.15 m gate files are built and tested, and the scripts' games at 1.15 m are stored (every control PASS). First finding: at 1.15 m the game swings hard to the Strike team: **every one of the 150 Guard cells loses wins (median 423 of 1,000) and every one of the 156 Strike cells gains (median 376)**; 22 Guard and 31 Strike cells are within 100 games of all or nothing, where a copy can change few games. Observed in the training simulator. The copy-limit calibration (D) runs on both teams; the replay of last night's networks (E) runs too and stays sealed until you set the 1.15 m limits.
 
 ## Watch
 
@@ -52,6 +52,7 @@ The route 3 flowchart, redrawn 26 Nov: LS1 stopped, the redesign's CPU trials be
 
 | P1 | Stage 1: row-level fits (B, A3, A4, next rungs, control arms) | DONE for the ladder (all B fits eligible; R3: sacrifice 0.077 to 0.025, converge 0.096 to 0.036); control arms by the 4.3 rule: own frame needed on flank, mirror, field; the slow finish on high and field; C-head and C-one qualify on neither team (C-one misses on all four skills), so S-shared does not play; reported-only fits done | tier 1 (CPU) | scratch |
 | P2 | Stage 2: closed-loop replay of every gated cell | **PASS both teams, two seeds**: Guard S1 (25 / 24, median 3 / 4); Strike S1 FAIL (one cell 31, sacrifice and converge command error), S2 PASS (16 / 15, median 3 / 2); C4 analogue PASS both; onnxruntime arm 0 games different (both teams) | tier 1 (CPU) | [results](../drafts/LS1_REDESIGN_PILOT_RESULTS.md) |
+| P3 | Route 3 to the 1.15 m tag (R51): C0 reference replay, A files and fix, C script games, B screen, D calibration, E sealed replay | C0 PASS (30/30 exact); A done (`20fbd511`, QC: 1 blocker fixed `fd3bbeca`); C PASS both teams; B: table done, run 0 ceiling running; D running (relaunched 09:20 with 8 threads after thrashing); E running, sealed | tier 1 (CPU) | [plan](../drafts/LS1_1P15_SWITCH.md) |
 
 GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 
@@ -62,10 +63,10 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 | — | Learner v2 note | NOT STARTED: after LS1 (R37) |
 | NEAR-962 | Planned-pushes flight; the Crazyflie commanded gaps | unchanged from 24 Nov |
 
-**Next.** Nothing runs; the scratch loops are stopped. On the owner's decisions 2 and 8: the build (redesign note section 5), which re-distils on its own DAgger rows; its copy check of record (LS1.2) decides.
+**Next.** D finishes (about 3 h); then a 1.15 m limits page for you (from D alone; E stays sealed until you rule); then E is judged once and decisions 2 and 8 come back to you.
 
-**Waiting on you.** Decision 2 (R3 switch distances as inputs for strike_sacrifice and strike_converge; lead: accept) and decision 8 (guard_field at R2 gets its nearest Strike drone first, the script's own choice; lead: accept); then the build (redesign note section 5). The results note is [LS1_REDESIGN_PILOT_RESULTS.md](../drafts/LS1_REDESIGN_PILOT_RESULTS.md).
+**Waiting on you.** Nothing right now. Coming: the 1.15 m copy limits (after D), then decisions 2 and 8 (after E), run 0 at 1.15 m (the parked Guard holds only 101 of 1,000 against strike_straight), and the LS1.4 GPU cap (about 5.3 against 4.0) before the build.
 
-**Usage:** 0 GPU-h for the pilots (CPU only; route 3 still 0.172 GPU-h). Pilots 01:50 to 07:22: the deciding replays by 04:40, up to 4 jobs at 6 threads (6 at once after 04:40 until a dispatcher count bug was fixed at 05:30); the two C-one fits 04:36 to 07:02 and 07:22 (2.4 h and 2.8 h against 40 to 80 min estimated: every row labelled with every code). Reviews: two Sonnet agents for the results note (numbers 130k tokens, completeness 154k), findings folded in; one Sonnet agent for the C-one addition (a row-level read; matches never gate the build's shape). Checks: the docs check and the document test set for this docs-only commit.
+**Usage:** 0 GPU-h (CPU only). The CPU was oversubscribed from about 08:35 (calibration uncapped beside step C, the suite, the run 0 ceiling and two leftover test runs of the QC reviewer: load 98 on 32 threads; one 1-cell batch took 279 s); the reviewer's test runs were stopped and the calibration relaunched at 09:20 with 8 threads each (as T90 was). Agents: advisor (Fable 5.2, plan read), mapping agent (Opus, 301k tokens), QC reviewer of step A (Sonnet). Checks: tests of the touched files; full suite running.
 
-**Ready to push.** 50 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 54 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.

@@ -1,8 +1,8 @@
 INTERNAL · the latest status of STE's own learning track and the NUS port, overwritten at every update by the `train-status` skill · [../README.md](../README.md); the history: [LOG.md](LOG.md)
 
-**Status, 2026-11-27 20:00 (+08:00) (event: you ruled the 1.15 m limits (R52: 31); step E judged: FAIL on both teams, controls PASS)** · RTX 5090 · GPU idle · CPU idle
+**Status, 2026-11-27 20:20 (+08:00) (event: decisions 2 and 8 ruled, both accepted (R53, R54); machine switch to the laptop)** · RTX 5090 · GPU idle · CPU idle; nothing running
 
-**Main track:** route 3 (the learned-skills route) at the 1.15 m tag (R51): CPU steps C0, A, C, B, D, E done; limits ruled (R52); **decisions 2 and 8 and the build wait on you** · **Side track:** none
+**Main track:** route 3 (the learned-skills route) at the 1.15 m tag (R51): CPU steps C0, A, C, B, D, E done; limits ruled (R52); decisions 2 and 8 accepted (R53, R54); **next: the full suite on the laptop, then the build plan at 1.15 m** · **Side track:** none
 
 **Plain summary.** Last night's skill networks (fitted on 1.6 m games, which passed there) were replayed unchanged at the 1.15 m tag and judged once with your new limits (31 games a cell, the rest as R48). **Both teams fail at 1.15 m**; the read's own controls pass, so it counts. Guard: 12 to 13 cells over 31 (worst 68), almost all against `strike_converge`, and `guard_field`'s command error 0.068 against 0.05. Strike (S2): only one or two `strike_converge` cells at 32 to 34; every other number has room (median 2). The plan wrote down before the run that this is a transfer test: the networks never saw drones 1.15 to 1.6 m apart, and the build refits on 1.15 m games, so the fail goes to the build as a known risk, not as a failure of the design. Strike without the R3 inputs fails far worse (worst 90), which backs decision 2. Observed in the training simulator.
 
@@ -63,10 +63,10 @@ GPU-h on route 3: 0.172 of 200 (`[budget_ls]`, R43).
 | — | Learner v2 note | NOT STARTED: after LS1 (R37) |
 | NEAR-962 | Planned-pushes flight; the Crazyflie commanded gaps | unchanged from 24 Nov |
 
-**Next.** Laptop (weekend): the full test suite on this commit (the gate file and its test changed); then, on your answers, the build plan at 1.15 m (LS1_REDESIGN.md section 5) with E's weak cells named as its known risk.
+**Next.** Laptop (weekend): pull `development`, run the full test suite on `77a452b1` or later (the gate file and its test changed, background, CPU only); then the build plan at 1.15 m (LS1_REDESIGN.md section 5, with R53, R54 and E's weak cells, Guard against `strike_converge`, named as its known risk), written and reviewed before any run.
 
-**Waiting on you.** (1) **Decision 2**, R3 inputs for `strike_sacrifice` and `strike_converge`: recommend **accept** (at 1.15 m without them their command error is 0.074 / 0.075 and the worst cell 90 games; with them 0.027 / 0.033 and 34). (2) **Decision 8**, `guard_field` at R2 (the nearest-first list, the script's own choice): recommend **accept**, as at 1.6 m; E cannot compare it with R1 (no R1 field network was replayed), and the field network carries the largest Guard command error at 1.15 m (0.068), so the build's own read decides. Then: run 0 at 1.15 m (close to trivial: keep with mark 0.934 or replace it), the LS1.4 GPU cap (about 5.3 against 4.0), and the build.
+**Waiting on you.** Push from GitHub Desktop before you switch. Later, before the build runs: run 0 at 1.15 m (close to trivial: keep with mark 0.934 or replace it) and the LS1.4 GPU cap (about 5.3 against 4.0); both come back with the build plan.
 
 **Usage:** 0 GPU-h (CPU only). E: about 6.8 CPU job-hours (ran this morning beside D); judging seconds. Agents: two reviewers of E's judgement (Sonnet; numbers 70k tokens, completeness 68k). Checks: gate-file tests PASS (29); the LS1 test files on this commit; full suite on the laptop next (code change: gate file and test).
 
-**Ready to push.** 56 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.
+**Ready to push.** 57 commits on `development` (up to this commit); mirror updated after the commit; push from GitHub Desktop. `main` unchanged.

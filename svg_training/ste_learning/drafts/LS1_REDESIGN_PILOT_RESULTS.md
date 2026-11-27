@@ -172,6 +172,9 @@ assembly S2. **The pilot's result: PASS** (both teams).
 
 ## 5. What this asks of the owner (4.5 and section 7 of the redesign note)
 
+**Ruled (27 Nov 2026, after the 1.15 m replay, step E of `LS1_1P15_SWITCH.md`):** decision 2 accepted (R53), decision 8
+accepted (R54). Route 3 moved to the 1.15 m tag (R51); the build runs there.
+
 | # | Decision | Why it is asked now | Lead's recommendation |
 |---|---|---|---|
 | 2 | R3 for strike_sacrifice and strike_converge: the scripts' switch distances (bearing margins, gather and commit margins, the pace terms) as network inputs | Strike passes only with them (S1 FAIL at R1 + R2, S2 PASS at both seeds) | accept: they are distances, the thresholds stay learnable, and LS2 can move them |

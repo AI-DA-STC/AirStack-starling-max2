@@ -69,7 +69,7 @@ Up to 4 jobs at 6 threads at once. Total about 8 to 11 CPU job-hours, 4 to 5 h w
 | # | Decision | When |
 |---|---|---|
 | 1 | The copy limits at 1.15 m (as R48), from step D alone, on a 1.15 m options page; E stays sealed until then | after D; **ruled R52 (27 Nov): 31, the rest as R48**; E judged: FAIL on both teams, controls PASS ([record](../../records/2026-11-27_ste_ls1_1p15_switch_record.md)) |
-| 2, 8 | Decisions 2 (R3 for sacrifice and converge) and 8 (guard_field at R2), from step E. At 1.15 m guard_field is the best Guard script (g*), which raises the stakes of decision 8 | after E |
+| 2, 8 | Decisions 2 (R3 for sacrifice and converge) and 8 (guard_field at R2), from step E. At 1.15 m guard_field is the best Guard script (g*), which raises the stakes of decision 8 | after E; **ruled R53, R54 (27 Nov): both accepted** |
 | 3 | Run 0 against the parked Guard at 1.15 m: the parked_centre Guard holds only 101 of 1,000 against strike_straight (534 at 1.6 m; reaches 899 against 466), so the run 0 check is close to trivial; keep it with a new mark, or replace it. Parked Guards also collapse against high and low (31, 16 holds), so the copy check sees less in their cells | after B |
 | 4 | **The LS1.4 GPU cap, before the build.** R51 means route 2's comparison arm is redone at 1.15 m on the GPU (about 0.9 to 1.1 GPU-h, plus a 0.06 GPU-h recipe pilot), which puts LS1.4 near 5.3 GPU-h against its 4.0 cap (R43): raise the cap or rescope LS1.4 | before the build |
 | later | Filter option B, screened at 1.15 m before LS1.4 (R51) | before LS1.4 |
